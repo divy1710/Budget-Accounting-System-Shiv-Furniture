@@ -19,21 +19,26 @@ export default function CustomerLogin() {
     try {
       // For demo purposes, we'll use a simple check
       // In production, this would be a proper API call
-      const response = await fetch("http://localhost:5000/api/contacts/customers");
+      const response = await fetch(
+        "http://localhost:5000/api/contacts/customers",
+      );
       const customers = await response.json();
-      
+
       const customer = customers.find(
-        (c) => c.email?.toLowerCase() === formData.email.toLowerCase()
+        (c) => c.email?.toLowerCase() === formData.email.toLowerCase(),
       );
 
       if (customer) {
         // Store customer info in localStorage for demo
-        localStorage.setItem("customerPortal", JSON.stringify({
-          id: customer.id,
-          name: customer.name,
-          email: customer.email,
-          code: customer.code,
-        }));
+        localStorage.setItem(
+          "customerPortal",
+          JSON.stringify({
+            id: customer.id,
+            name: customer.name,
+            email: customer.email,
+            code: customer.code,
+          }),
+        );
         navigate("/customer/dashboard");
       } else {
         setError("Customer not found. Please check your email.");
@@ -75,11 +80,16 @@ export default function CustomerLogin() {
                 Email Address
               </label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <User
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  size={20}
+                />
                 <input
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
                   placeholder="Enter your email"
                   required
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -92,11 +102,16 @@ export default function CustomerLogin() {
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <Lock
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  size={20}
+                />
                 <input
                   type="password"
                   value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
                   placeholder="Enter your password"
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />

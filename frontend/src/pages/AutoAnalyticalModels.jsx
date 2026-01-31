@@ -10,7 +10,11 @@ import {
   Package,
   FolderTree,
 } from "lucide-react";
-import { autoAnalyticalApi, productsApi, analyticalAccountsApi } from "../services/api";
+import {
+  autoAnalyticalApi,
+  productsApi,
+  analyticalAccountsApi,
+} from "../services/api";
 
 export default function AutoAnalyticalModels() {
   const [models, setModels] = useState([]);
@@ -67,7 +71,9 @@ export default function AutoAnalyticalModels() {
       fetchData();
     } catch (error) {
       console.error("Error saving model:", error);
-      alert(error.response?.data?.error || "Error saving auto analytical model");
+      alert(
+        error.response?.data?.error || "Error saving auto analytical model",
+      );
     }
   };
 
@@ -83,7 +89,8 @@ export default function AutoAnalyticalModels() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this auto analytical model?")) return;
+    if (!confirm("Are you sure you want to delete this auto analytical model?"))
+      return;
     try {
       await autoAnalyticalApi.delete(id);
       fetchData();
@@ -138,7 +145,9 @@ export default function AutoAnalyticalModels() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Auto Analytical Models</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Auto Analytical Models
+          </h1>
           <p className="text-gray-600 mt-1">
             Configure automatic cost center assignment rules for products
           </p>
@@ -157,11 +166,14 @@ export default function AutoAnalyticalModels() {
         <div className="flex items-start gap-3">
           <Settings className="text-blue-600 mt-0.5" size={20} />
           <div>
-            <h3 className="font-medium text-blue-900">How Auto Analytical Works</h3>
+            <h3 className="font-medium text-blue-900">
+              How Auto Analytical Works
+            </h3>
             <p className="text-blue-700 text-sm mt-1">
-              When a transaction line is created with a product, the system automatically assigns 
-              the analytical account based on these rules. Higher priority models are matched first.
-              This ensures consistent cost center allocation across all transactions.
+              When a transaction line is created with a product, the system
+              automatically assigns the analytical account based on these rules.
+              Higher priority models are matched first. This ensures consistent
+              cost center allocation across all transactions.
             </p>
           </div>
         </div>
@@ -169,7 +181,10 @@ export default function AutoAnalyticalModels() {
 
       {/* Search */}
       <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+        <Search
+          className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+          size={20}
+        />
         <input
           type="text"
           placeholder="Search by product or account..."
@@ -204,10 +219,17 @@ export default function AutoAnalyticalModels() {
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredModels.length === 0 ? (
               <tr>
-                <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
+                <td
+                  colSpan="5"
+                  className="px-6 py-12 text-center text-gray-500"
+                >
                   <Settings className="mx-auto mb-3 text-gray-300" size={48} />
-                  <p className="text-lg font-medium">No auto analytical models found</p>
-                  <p className="text-sm">Create models to automate cost center assignment</p>
+                  <p className="text-lg font-medium">
+                    No auto analytical models found
+                  </p>
+                  <p className="text-sm">
+                    Create models to automate cost center assignment
+                  </p>
                 </td>
               </tr>
             ) : (
@@ -282,7 +304,9 @@ export default function AutoAnalyticalModels() {
               <Settings className="text-blue-600" size={24} />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{models.length}</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {models.length}
+              </p>
               <p className="text-gray-500 text-sm">Total Models</p>
             </div>
           </div>
@@ -321,7 +345,9 @@ export default function AutoAnalyticalModels() {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="text-lg font-semibold">
-                {editingModel ? "Edit Auto Analytical Model" : "New Auto Analytical Model"}
+                {editingModel
+                  ? "Edit Auto Analytical Model"
+                  : "New Auto Analytical Model"}
               </h2>
               <button
                 onClick={() => setShowModal(false)}
@@ -338,7 +364,9 @@ export default function AutoAnalyticalModels() {
                 </label>
                 <select
                   value={formData.productId}
-                  onChange={(e) => setFormData({ ...formData, productId: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, productId: e.target.value })
+                  }
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
@@ -358,7 +386,10 @@ export default function AutoAnalyticalModels() {
                 <select
                   value={formData.analyticalAccountId}
                   onChange={(e) =>
-                    setFormData({ ...formData, analyticalAccountId: e.target.value })
+                    setFormData({
+                      ...formData,
+                      analyticalAccountId: e.target.value,
+                    })
                   }
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -381,7 +412,9 @@ export default function AutoAnalyticalModels() {
                   min="1"
                   max="100"
                   value={formData.priority}
-                  onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, priority: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
                 <p className="text-xs text-gray-500 mt-1">
@@ -394,7 +427,9 @@ export default function AutoAnalyticalModels() {
                   type="checkbox"
                   id="isActive"
                   checked={formData.isActive}
-                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, isActive: e.target.checked })
+                  }
                   className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <label htmlFor="isActive" className="text-sm text-gray-700">

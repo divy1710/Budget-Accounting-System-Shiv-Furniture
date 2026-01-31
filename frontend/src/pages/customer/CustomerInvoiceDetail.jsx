@@ -87,7 +87,10 @@ export default function CustomerInvoiceDetail() {
         <div className="text-center">
           <FileText className="mx-auto mb-3 text-gray-300" size={48} />
           <p className="text-lg font-medium text-gray-500">Invoice not found</p>
-          <Link to="/customer/invoices" className="text-blue-600 hover:underline mt-2 inline-block">
+          <Link
+            to="/customer/invoices"
+            className="text-blue-600 hover:underline mt-2 inline-block"
+          >
             ← Back to Invoices
           </Link>
         </div>
@@ -95,10 +98,11 @@ export default function CustomerInvoiceDetail() {
     );
   }
 
-  const paidAmount = invoice.paymentAllocations?.reduce(
-    (sum, alloc) => sum + (alloc.amount || 0),
-    0
-  ) || 0;
+  const paidAmount =
+    invoice.paymentAllocations?.reduce(
+      (sum, alloc) => sum + (alloc.amount || 0),
+      0,
+    ) || 0;
   const balanceDue = (invoice.totalAmount || 0) - paidAmount;
 
   return (
@@ -112,13 +116,17 @@ export default function CustomerInvoiceDetail() {
                 <Building2 className="text-blue-600" size={24} />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-gray-900">Shiv Furniture</h1>
+                <h1 className="text-lg font-bold text-gray-900">
+                  Shiv Furniture
+                </h1>
                 <p className="text-xs text-gray-500">Customer Portal</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">{customer?.name}</p>
+                <p className="text-sm font-medium text-gray-900">
+                  {customer?.name}
+                </p>
                 <p className="text-xs text-gray-500">{customer?.code}</p>
               </div>
               <button
@@ -179,7 +187,9 @@ export default function CustomerInvoiceDetail() {
                     <Building2 className="text-blue-600" size={32} />
                   </div>
                   <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Shiv Furniture</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">
+                      Shiv Furniture
+                    </h1>
                     <p className="text-gray-500">Premium Quality Furniture</p>
                   </div>
                 </div>
@@ -190,7 +200,9 @@ export default function CustomerInvoiceDetail() {
                 </div>
               </div>
               <div className="text-right">
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">INVOICE</h2>
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                  INVOICE
+                </h2>
                 <p className="text-xl font-semibold text-blue-600">
                   {invoice.transactionNumber}
                 </p>
@@ -199,9 +211,7 @@ export default function CustomerInvoiceDetail() {
                     <Calendar size={14} />
                     Date: {formatDate(invoice.transactionDate)}
                   </p>
-                  {invoice.dueDate && (
-                    <p>Due: {formatDate(invoice.dueDate)}</p>
-                  )}
+                  {invoice.dueDate && <p>Due: {formatDate(invoice.dueDate)}</p>}
                 </div>
               </div>
             </div>
@@ -214,23 +224,31 @@ export default function CustomerInvoiceDetail() {
                 <h3 className="text-sm font-semibold text-gray-500 uppercase mb-2">
                   Bill To
                 </h3>
-                <p className="font-semibold text-gray-900">{invoice.contact?.name}</p>
+                <p className="font-semibold text-gray-900">
+                  {invoice.contact?.name}
+                </p>
                 <p className="text-gray-600 text-sm">{invoice.contact?.code}</p>
                 {invoice.contact?.address && (
-                  <p className="text-gray-600 text-sm mt-1">{invoice.contact.address}</p>
+                  <p className="text-gray-600 text-sm mt-1">
+                    {invoice.contact.address}
+                  </p>
                 )}
                 {invoice.contact?.gstNumber && (
-                  <p className="text-gray-600 text-sm">GSTIN: {invoice.contact.gstNumber}</p>
+                  <p className="text-gray-600 text-sm">
+                    GSTIN: {invoice.contact.gstNumber}
+                  </p>
                 )}
               </div>
               <div className="text-right">
-                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${
-                  invoice.paymentStatus === "PAID"
-                    ? "bg-green-100 text-green-700"
-                    : invoice.paymentStatus === "PARTIAL"
-                    ? "bg-yellow-100 text-yellow-700"
-                    : "bg-red-100 text-red-700"
-                }`}>
+                <div
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${
+                    invoice.paymentStatus === "PAID"
+                      ? "bg-green-100 text-green-700"
+                      : invoice.paymentStatus === "PARTIAL"
+                        ? "bg-yellow-100 text-yellow-700"
+                        : "bg-red-100 text-red-700"
+                  }`}
+                >
                   {invoice.paymentStatus === "PAID" ? (
                     <CheckCircle size={18} />
                   ) : (
@@ -274,7 +292,9 @@ export default function CustomerInvoiceDetail() {
                             {line.product?.name || line.description}
                           </p>
                           {line.product?.code && (
-                            <p className="text-xs text-gray-500">{line.product.code}</p>
+                            <p className="text-xs text-gray-500">
+                              {line.product.code}
+                            </p>
                           )}
                         </div>
                       </div>

@@ -17,7 +17,7 @@ export default function CustomerPayments() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const preselectedInvoice = searchParams.get("invoice");
-  
+
   const [customer, setCustomer] = useState(null);
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,24 +49,30 @@ export default function CustomerPayments() {
         contactId: customer.id,
       });
       const outstanding = response.data.filter(
-        (inv) => inv.status === "CONFIRMED" && inv.paymentStatus !== "PAID"
+        (inv) => inv.status === "CONFIRMED" && inv.paymentStatus !== "PAID",
       );
       setInvoices(outstanding);
-      
+
       // Pre-select invoice if passed in URL
       if (preselectedInvoice) {
-        const invoice = outstanding.find((inv) => inv.id === preselectedInvoice);
+        const invoice = outstanding.find(
+          (inv) => inv.id === preselectedInvoice,
+        );
         if (invoice) {
-          const paidAmount = invoice.paymentAllocations?.reduce(
-            (sum, alloc) => sum + (alloc.amount || 0), 0
-          ) || 0;
-          setSelectedInvoices([{
-            id: invoice.id,
-            number: invoice.transactionNumber,
-            total: invoice.totalAmount,
-            balance: invoice.totalAmount - paidAmount,
-            amount: invoice.totalAmount - paidAmount,
-          }]);
+          const paidAmount =
+            invoice.paymentAllocations?.reduce(
+              (sum, alloc) => sum + (alloc.amount || 0),
+              0,
+            ) || 0;
+          setSelectedInvoices([
+            {
+              id: invoice.id,
+              number: invoice.transactionNumber,
+              total: invoice.totalAmount,
+              balance: invoice.totalAmount - paidAmount,
+              amount: invoice.totalAmount - paidAmount,
+            },
+          ]);
         }
       }
     } catch (error) {
@@ -98,9 +104,11 @@ export default function CustomerPayments() {
   };
 
   const getBalance = (invoice) => {
-    const paidAmount = invoice.paymentAllocations?.reduce(
-      (sum, alloc) => sum + (alloc.amount || 0), 0
-    ) || 0;
+    const paidAmount =
+      invoice.paymentAllocations?.reduce(
+        (sum, alloc) => sum + (alloc.amount || 0),
+        0,
+      ) || 0;
     return invoice.totalAmount - paidAmount;
   };
 
@@ -132,8 +140,8 @@ export default function CustomerPayments() {
       selectedInvoices.map((s) =>
         s.id === invoiceId
           ? { ...s, amount: Math.min(parseFloat(amount) || 0, s.balance) }
-          : s
-      )
+          : s,
+      ),
     );
   };
 
@@ -188,9 +196,12 @@ export default function CustomerPayments() {
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="text-green-600" size={32} />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Successful!</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Payment Successful!
+          </h2>
           <p className="text-gray-600 mb-4">
-            Your payment of {formatCurrency(totalPayment)} has been recorded successfully.
+            Your payment of {formatCurrency(totalPayment)} has been recorded
+            successfully.
           </p>
           <p className="text-sm text-gray-500">Redirecting to dashboard...</p>
         </div>
@@ -209,13 +220,17 @@ export default function CustomerPayments() {
                 <Building2 className="text-blue-600" size={24} />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-gray-900">Shiv Furniture</h1>
+                <h1 className="text-lg font-bold text-gray-900">
+                  Shiv Furniture
+                </h1>
                 <p className="text-xs text-gray-500">Customer Portal</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">{customer?.name}</p>
+                <p className="text-sm font-medium text-gray-900">
+                  {customer?.name}
+                </p>
                 <p className="text-xs text-gray-500">{customer?.code}</p>
               </div>
               <button
@@ -242,7 +257,9 @@ export default function CustomerPayments() {
           </Link>
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Make a Payment</h2>
-            <p className="text-gray-600">Select invoices and enter payment details</p>
+            <p className="text-gray-600">
+              Select invoices and enter payment details
+            </p>
           </div>
         </div>
 
@@ -250,21 +267,32 @@ export default function CustomerPayments() {
           {/* Outstanding Invoices */}
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="p-4 border-b border-gray-200">
-              <h3 className="font-semibold text-gray-900">Outstanding Invoices</h3>
+              <h3 className="font-semibold text-gray-900">
+                Outstanding Invoices
+              </h3>
               <p className="text-sm text-gray-500">Select invoices to pay</p>
             </div>
 
             {invoices.length === 0 ? (
               <div className="p-8 text-center">
-                <CheckCircle className="mx-auto mb-3 text-green-400" size={48} />
-                <p className="text-lg font-medium text-gray-600">No outstanding invoices!</p>
-                <p className="text-sm text-gray-500">All your invoices are paid.</p>
+                <CheckCircle
+                  className="mx-auto mb-3 text-green-400"
+                  size={48}
+                />
+                <p className="text-lg font-medium text-gray-600">
+                  No outstanding invoices!
+                </p>
+                <p className="text-sm text-gray-500">
+                  All your invoices are paid.
+                </p>
               </div>
             ) : (
               <div className="divide-y divide-gray-100">
                 {invoices.map((invoice) => {
                   const balance = getBalance(invoice);
-                  const isSelected = selectedInvoices.some((s) => s.id === invoice.id);
+                  const isSelected = selectedInvoices.some(
+                    (s) => s.id === invoice.id,
+                  );
                   const overdue = isOverdue(invoice.dueDate);
 
                   return (
@@ -314,8 +342,13 @@ export default function CustomerPayments() {
                       </div>
 
                       {isSelected && (
-                        <div className="mt-3 ml-9" onClick={(e) => e.stopPropagation()}>
-                          <label className="text-sm text-gray-600">Payment Amount</label>
+                        <div
+                          className="mt-3 ml-9"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <label className="text-sm text-gray-600">
+                            Payment Amount
+                          </label>
                           <div className="relative mt-1">
                             <IndianRupee
                               className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
@@ -326,8 +359,14 @@ export default function CustomerPayments() {
                               min="0"
                               max={balance}
                               step="0.01"
-                              value={selectedInvoices.find((s) => s.id === invoice.id)?.amount || 0}
-                              onChange={(e) => updateAmount(invoice.id, e.target.value)}
+                              value={
+                                selectedInvoices.find(
+                                  (s) => s.id === invoice.id,
+                                )?.amount || 0
+                              }
+                              onChange={(e) =>
+                                updateAmount(invoice.id, e.target.value)
+                              }
                               className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                           </div>
@@ -343,7 +382,9 @@ export default function CustomerPayments() {
           {/* Payment Details */}
           {selectedInvoices.length > 0 && (
             <div className="bg-white rounded-xl shadow-sm p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Payment Details</h3>
+              <h3 className="font-semibold text-gray-900 mb-4">
+                Payment Details
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -382,7 +423,9 @@ export default function CustomerPayments() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-blue-100">Total Payment Amount</p>
-                  <p className="text-3xl font-bold">{formatCurrency(totalPayment)}</p>
+                  <p className="text-3xl font-bold">
+                    {formatCurrency(totalPayment)}
+                  </p>
                 </div>
                 <div className="text-right text-blue-100">
                   <p>{selectedInvoices.length} invoice(s) selected</p>

@@ -61,10 +61,17 @@ export default function CustomerDashboard() {
         total: data.length,
         pending: pending.length,
         paid: paid.length,
-        overdue: pending.filter((inv) => new Date(inv.dueDate) < new Date()).length,
-        totalAmount: confirmed.reduce((sum, inv) => sum + (inv.totalAmount || 0), 0),
+        overdue: pending.filter((inv) => new Date(inv.dueDate) < new Date())
+          .length,
+        totalAmount: confirmed.reduce(
+          (sum, inv) => sum + (inv.totalAmount || 0),
+          0,
+        ),
         paidAmount: paid.reduce((sum, inv) => sum + (inv.totalAmount || 0), 0),
-        pendingAmount: pending.reduce((sum, inv) => sum + (inv.totalAmount || 0), 0),
+        pendingAmount: pending.reduce(
+          (sum, inv) => sum + (inv.totalAmount || 0),
+          0,
+        ),
       });
     } catch (error) {
       console.error("Error fetching invoices:", error);
@@ -117,13 +124,17 @@ export default function CustomerDashboard() {
                 <Building2 className="text-blue-600" size={24} />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-gray-900">Shiv Furniture</h1>
+                <h1 className="text-lg font-bold text-gray-900">
+                  Shiv Furniture
+                </h1>
                 <p className="text-xs text-gray-500">Customer Portal</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">{customer?.name}</p>
+                <p className="text-sm font-medium text-gray-900">
+                  {customer?.name}
+                </p>
                 <p className="text-xs text-gray-500">{customer?.code}</p>
               </div>
               <button
@@ -158,7 +169,9 @@ export default function CustomerDashboard() {
                 <FileText className="text-blue-600" size={24} />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {stats.total}
+                </p>
                 <p className="text-sm text-gray-500">Total Invoices</p>
               </div>
             </div>
@@ -170,7 +183,9 @@ export default function CustomerDashboard() {
                 <Clock className="text-yellow-600" size={24} />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.pending}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {stats.pending}
+                </p>
                 <p className="text-sm text-gray-500">Pending Payment</p>
               </div>
             </div>
@@ -194,7 +209,9 @@ export default function CustomerDashboard() {
                 <AlertCircle className="text-red-600" size={24} />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.overdue}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {stats.overdue}
+                </p>
                 <p className="text-sm text-gray-500">Overdue</p>
               </div>
             </div>
@@ -208,7 +225,9 @@ export default function CustomerDashboard() {
               <TrendingUp size={20} />
               <span className="text-blue-100">Total Billed</span>
             </div>
-            <p className="text-3xl font-bold">{formatCurrency(stats.totalAmount)}</p>
+            <p className="text-3xl font-bold">
+              {formatCurrency(stats.totalAmount)}
+            </p>
           </div>
 
           <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-xl shadow-sm p-6 text-white">
@@ -216,7 +235,9 @@ export default function CustomerDashboard() {
               <CheckCircle size={20} />
               <span className="text-green-100">Amount Paid</span>
             </div>
-            <p className="text-3xl font-bold">{formatCurrency(stats.paidAmount)}</p>
+            <p className="text-3xl font-bold">
+              {formatCurrency(stats.paidAmount)}
+            </p>
           </div>
 
           <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl shadow-sm p-6 text-white">
@@ -224,7 +245,9 @@ export default function CustomerDashboard() {
               <Clock size={20} />
               <span className="text-orange-100">Outstanding</span>
             </div>
-            <p className="text-3xl font-bold">{formatCurrency(stats.pendingAmount)}</p>
+            <p className="text-3xl font-bold">
+              {formatCurrency(stats.pendingAmount)}
+            </p>
           </div>
         </div>
 
@@ -232,7 +255,9 @@ export default function CustomerDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Quick Actions */}
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Quick Actions
+            </h3>
             <div className="space-y-3">
               <Link
                 to="/customer/invoices"
@@ -254,7 +279,9 @@ export default function CustomerDashboard() {
           {/* Recent Invoices */}
           <div className="lg:col-span-2 bg-white rounded-xl shadow-sm p-6">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Recent Invoices</h3>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Recent Invoices
+              </h3>
               <Link
                 to="/customer/invoices"
                 className="text-sm text-blue-600 hover:underline"
@@ -298,8 +325,8 @@ export default function CustomerDashboard() {
                           invoice.paymentStatus === "PAID"
                             ? "bg-green-100 text-green-700"
                             : invoice.paymentStatus === "PARTIAL"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-red-100 text-red-700"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "bg-red-100 text-red-700"
                         }`}
                       >
                         {invoice.paymentStatus}

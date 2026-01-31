@@ -82,7 +82,10 @@ function App() {
       <Route path="/customer/login" element={<CustomerLogin />} />
       <Route path="/customer/dashboard" element={<CustomerDashboard />} />
       <Route path="/customer/invoices" element={<CustomerInvoices />} />
-      <Route path="/customer/invoices/:id" element={<CustomerInvoiceDetail />} />
+      <Route
+        path="/customer/invoices/:id"
+        element={<CustomerInvoiceDetail />}
+      />
       <Route path="/customer/payments" element={<CustomerPayments />} />
     </Routes>
   );
