@@ -1,4 +1,4 @@
-const dashboardService = require('../services/dashboard.service');
+const dashboardService = require("../services/dashboard.service");
 
 const getStats = async (req, res) => {
   try {
@@ -37,4 +37,9 @@ const getRecentActivities = async (req, res) => {
   }
 };
 
-module.exports = { getStats, getBudgetCockpit, getYearlyTrend, getRecentActivities };
+module.exports = {
+  getStats,
+  getBudgetCockpit,
+  getYearlyTrend,
+  getRecentActivities,
+};

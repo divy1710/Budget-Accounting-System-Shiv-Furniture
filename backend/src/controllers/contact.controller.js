@@ -1,4 +1,4 @@
-const contactService = require('../services/contact.service');
+const contactService = require("../services/contact.service");
 
 const getAll = async (req, res) => {
   try {
@@ -31,7 +31,7 @@ const getById = async (req, res) => {
   try {
     const contact = await contactService.getById(parseInt(req.params.id));
     if (!contact) {
-      return res.status(404).json({ error: 'Contact not found' });
+      return res.status(404).json({ error: "Contact not found" });
     }
     res.json(contact);
   } catch (error) {
@@ -50,7 +50,10 @@ const create = async (req, res) => {
 
 const update = async (req, res) => {
   try {
-    const contact = await contactService.update(parseInt(req.params.id), req.body);
+    const contact = await contactService.update(
+      parseInt(req.params.id),
+      req.body,
+    );
     res.json(contact);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -66,4 +69,12 @@ const remove = async (req, res) => {
   }
 };
 
-module.exports = { getAll, getCustomers, getVendors, getById, create, update, remove };
+module.exports = {
+  getAll,
+  getCustomers,
+  getVendors,
+  getById,
+  create,
+  update,
+  remove,
+};

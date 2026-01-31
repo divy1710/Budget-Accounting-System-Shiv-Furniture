@@ -1,4 +1,4 @@
-const transactionService = require('../services/transaction.service');
+const transactionService = require("../services/transaction.service");
 
 const getAll = async (req, res) => {
   try {
@@ -11,9 +11,11 @@ const getAll = async (req, res) => {
 
 const getById = async (req, res) => {
   try {
-    const transaction = await transactionService.getById(parseInt(req.params.id));
+    const transaction = await transactionService.getById(
+      parseInt(req.params.id),
+    );
     if (!transaction) {
-      return res.status(404).json({ error: 'Transaction not found' });
+      return res.status(404).json({ error: "Transaction not found" });
     }
     res.json(transaction);
   } catch (error) {
@@ -32,7 +34,10 @@ const create = async (req, res) => {
 
 const update = async (req, res) => {
   try {
-    const transaction = await transactionService.update(parseInt(req.params.id), req.body);
+    const transaction = await transactionService.update(
+      parseInt(req.params.id),
+      req.body,
+    );
     res.json(transaction);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -41,7 +46,9 @@ const update = async (req, res) => {
 
 const confirm = async (req, res) => {
   try {
-    const transaction = await transactionService.confirm(parseInt(req.params.id));
+    const transaction = await transactionService.confirm(
+      parseInt(req.params.id),
+    );
     res.json(transaction);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -50,7 +57,9 @@ const confirm = async (req, res) => {
 
 const cancel = async (req, res) => {
   try {
-    const transaction = await transactionService.cancel(parseInt(req.params.id));
+    const transaction = await transactionService.cancel(
+      parseInt(req.params.id),
+    );
     res.json(transaction);
   } catch (error) {
     res.status(400).json({ error: error.message });

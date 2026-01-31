@@ -1,4 +1,4 @@
-const paymentService = require('../services/payment.service');
+const paymentService = require("../services/payment.service");
 
 const getAll = async (req, res) => {
   try {
@@ -13,7 +13,7 @@ const getById = async (req, res) => {
   try {
     const payment = await paymentService.getById(parseInt(req.params.id));
     if (!payment) {
-      return res.status(404).json({ error: 'Payment not found' });
+      return res.status(404).json({ error: "Payment not found" });
     }
     res.json(payment);
   } catch (error) {
@@ -32,7 +32,10 @@ const create = async (req, res) => {
 
 const update = async (req, res) => {
   try {
-    const payment = await paymentService.update(parseInt(req.params.id), req.body);
+    const payment = await paymentService.update(
+      parseInt(req.params.id),
+      req.body,
+    );
     res.json(payment);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -59,11 +62,21 @@ const remove = async (req, res) => {
 
 const getOutstanding = async (req, res) => {
   try {
-    const transactions = await paymentService.getOutstandingTransactions(req.params.contactId);
+    const transactions = await paymentService.getOutstandingTransactions(
+      req.params.contactId,
+    );
     res.json(transactions);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-module.exports = { getAll, getById, create, update, voidPayment, remove, getOutstanding };
+module.exports = {
+  getAll,
+  getById,
+  create,
+  update,
+  voidPayment,
+  remove,
+  getOutstanding,
+};

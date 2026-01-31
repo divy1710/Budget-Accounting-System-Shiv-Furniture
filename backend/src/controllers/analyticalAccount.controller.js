@@ -1,4 +1,4 @@
-const analyticalAccountService = require('../services/analyticalAccount.service');
+const analyticalAccountService = require("../services/analyticalAccount.service");
 
 const getAll = async (req, res) => {
   try {
@@ -20,9 +20,11 @@ const getTree = async (req, res) => {
 
 const getById = async (req, res) => {
   try {
-    const account = await analyticalAccountService.getById(parseInt(req.params.id));
+    const account = await analyticalAccountService.getById(
+      parseInt(req.params.id),
+    );
     if (!account) {
-      return res.status(404).json({ error: 'Analytical account not found' });
+      return res.status(404).json({ error: "Analytical account not found" });
     }
     res.json(account);
   } catch (error) {
@@ -41,7 +43,10 @@ const create = async (req, res) => {
 
 const update = async (req, res) => {
   try {
-    const account = await analyticalAccountService.update(parseInt(req.params.id), req.body);
+    const account = await analyticalAccountService.update(
+      parseInt(req.params.id),
+      req.body,
+    );
     res.json(account);
   } catch (error) {
     res.status(400).json({ error: error.message });

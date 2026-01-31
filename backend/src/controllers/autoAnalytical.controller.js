@@ -1,4 +1,4 @@
-const autoAnalyticalService = require('../services/autoAnalytical.service');
+const autoAnalyticalService = require("../services/autoAnalytical.service");
 
 const getAll = async (req, res) => {
   try {
@@ -13,7 +13,7 @@ const getById = async (req, res) => {
   try {
     const model = await autoAnalyticalService.getById(parseInt(req.params.id));
     if (!model) {
-      return res.status(404).json({ error: 'Auto analytical model not found' });
+      return res.status(404).json({ error: "Auto analytical model not found" });
     }
     res.json(model);
   } catch (error) {
@@ -32,7 +32,10 @@ const create = async (req, res) => {
 
 const update = async (req, res) => {
   try {
-    const model = await autoAnalyticalService.update(parseInt(req.params.id), req.body);
+    const model = await autoAnalyticalService.update(
+      parseInt(req.params.id),
+      req.body,
+    );
     res.json(model);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -50,7 +53,9 @@ const remove = async (req, res) => {
 
 const findMatch = async (req, res) => {
   try {
-    const accountId = await autoAnalyticalService.findMatch(parseInt(req.params.productId));
+    const accountId = await autoAnalyticalService.findMatch(
+      parseInt(req.params.productId),
+    );
     res.json({ analyticalAccountId: accountId });
   } catch (error) {
     res.status(500).json({ error: error.message });

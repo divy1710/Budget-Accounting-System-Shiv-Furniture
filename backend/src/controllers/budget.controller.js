@@ -1,4 +1,4 @@
-const budgetService = require('../services/budget.service');
+const budgetService = require("../services/budget.service");
 
 const getAll = async (req, res) => {
   try {
@@ -22,7 +22,7 @@ const getById = async (req, res) => {
   try {
     const budget = await budgetService.getById(parseInt(req.params.id));
     if (!budget) {
-      return res.status(404).json({ error: 'Budget not found' });
+      return res.status(404).json({ error: "Budget not found" });
     }
     res.json(budget);
   } catch (error) {
@@ -41,7 +41,10 @@ const create = async (req, res) => {
 
 const update = async (req, res) => {
   try {
-    const budget = await budgetService.update(parseInt(req.params.id), req.body);
+    const budget = await budgetService.update(
+      parseInt(req.params.id),
+      req.body,
+    );
     res.json(budget);
   } catch (error) {
     res.status(400).json({ error: error.message });
