@@ -76,7 +76,34 @@ const create = async (data) => {
       // Auto-assign analytical account if not provided
       let analyticalAccountId = line.analyticalAccountId
         ? parseInt(line.analyticalAccountId)
-        : await autoAnalyticalService.findMatch(line.productId);
+        : null;
+
+      // Try auto-assignment from AutoAnalyticalModel if not provided
+      if (!analyticalAccountId) {
+        // Get product's category for matching
+        const product = await prisma.product.findUnique({
+          where: { id: parseInt(line.productId) },
+          select: { categoryId: true },
+        });
+
+        // Get partner info from transaction data
+        const partnerId = data.vendorId || data.customerId;
+        let partnerTag = null;
+        if (partnerId) {
+          const partner = await prisma.contact.findUnique({
+            where: { id: parseInt(partnerId) },
+            select: { tags: true },
+          });
+          partnerTag = partner?.tags;
+        }
+
+        analyticalAccountId = await autoAnalyticalService.findMatch({
+          productId: parseInt(line.productId),
+          categoryId: product?.categoryId,
+          partnerId: partnerId ? parseInt(partnerId) : null,
+          partnerTag: partnerTag,
+        });
+      }
 
       return {
         productId: parseInt(line.productId),
@@ -142,7 +169,32 @@ const update = async (id, data) => {
 
       let analyticalAccountId = line.analyticalAccountId
         ? parseInt(line.analyticalAccountId)
-        : await autoAnalyticalService.findMatch(line.productId);
+        : null;
+
+      // Try auto-assignment from AutoAnalyticalModel if not provided
+      if (!analyticalAccountId) {
+        const product = await prisma.product.findUnique({
+          where: { id: parseInt(line.productId) },
+          select: { categoryId: true },
+        });
+
+        const partnerId = data.vendorId || data.customerId;
+        let partnerTag = null;
+        if (partnerId) {
+          const partner = await prisma.contact.findUnique({
+            where: { id: parseInt(partnerId) },
+            select: { tags: true },
+          });
+          partnerTag = partner?.tags;
+        }
+
+        analyticalAccountId = await autoAnalyticalService.findMatch({
+          productId: parseInt(line.productId),
+          categoryId: product?.categoryId,
+          partnerId: partnerId ? parseInt(partnerId) : null,
+          partnerTag: partnerTag,
+        });
+      }
 
       return {
         productId: parseInt(line.productId),

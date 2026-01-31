@@ -1,6 +1,21 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  Plus,
+  Trash2,
+  Eye,
+  Edit,
+  ChevronLeft,
+  ChevronRight,
+  ArrowLeft,
+  Check,
+  FileText,
+  Calendar,
+  AlertTriangle,
+  RefreshCw,
+  X,
+} from "lucide-react";
+import {
   transactionsApi,
   contactsApi,
   productsApi,
@@ -17,11 +32,15 @@ function PurchaseOrders() {
   const [view, setView] = useState("list"); // list, form, detail
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [budgetWarnings, setBudgetWarnings] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [internalNotes, setInternalNotes] = useState("");
+  const itemsPerPage = 10;
 
   const [formData, setFormData] = useState({
     vendorId: "",
     reference: "",
     transactionDate: new Date().toISOString().split("T")[0],
+    expectedArrival: "",
     lines: [
       { productId: "", analyticalAccountId: "", quantity: 1, unitPrice: 0 },
     ],
@@ -58,11 +77,13 @@ function PurchaseOrders() {
       vendorId: "",
       reference: "",
       transactionDate: new Date().toISOString().split("T")[0],
+      expectedArrival: "",
       lines: [
         { productId: "", analyticalAccountId: "", quantity: 1, unitPrice: 0 },
       ],
     });
     setBudgetWarnings([]);
+    setInternalNotes("");
     setView("form");
   };
 
@@ -73,8 +94,12 @@ function PurchaseOrders() {
 
       // Check budget warnings
       if (res.data.status === "DRAFT") {
-        const warningsRes = await transactionsApi.getBudgetWarnings(order.id);
-        setBudgetWarnings(warningsRes.data);
+        try {
+          const warningsRes = await transactionsApi.getBudgetWarnings(order.id);
+          setBudgetWarnings(warningsRes.data);
+        } catch {
+          setBudgetWarnings([]);
+        }
       } else {
         setBudgetWarnings([]);
       }
@@ -93,6 +118,9 @@ function PurchaseOrders() {
       transactionDate: new Date(order.transactionDate)
         .toISOString()
         .split("T")[0],
+      expectedArrival: order.expectedArrival
+        ? new Date(order.expectedArrival).toISOString().split("T")[0]
+        : "",
       lines: order.lines.map((line) => ({
         productId: line.productId,
         analyticalAccountId: line.analyticalAccountId || "",
@@ -139,15 +167,23 @@ function PurchaseOrders() {
     return line.quantity * line.unitPrice;
   };
 
-  const calculateTotal = () => {
+  const calculateSubtotal = () => {
     return formData.lines.reduce(
       (sum, line) => sum + calculateLineTotal(line),
-      0,
+      0
     );
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const calculateTax = () => {
+    return calculateSubtotal() * 0.12; // 12% tax
+  };
+
+  const calculateTotal = () => {
+    return calculateSubtotal() + calculateTax();
+  };
+
+  const handleSubmit = async (e, saveAsDraft = true) => {
+    if (e) e.preventDefault();
     try {
       const data = {
         type: "PURCHASE_ORDER",
@@ -161,14 +197,20 @@ function PurchaseOrders() {
             : null,
           quantity: parseFloat(line.quantity),
           unitPrice: parseFloat(line.unitPrice),
-          gstRate: 0, // No GST for now, can be added later
+          gstRate: 12,
         })),
       };
 
+      let result;
       if (selectedOrder) {
-        await transactionsApi.update(selectedOrder.id, data);
+        result = await transactionsApi.update(selectedOrder.id, data);
       } else {
-        await transactionsApi.create(data);
+        result = await transactionsApi.create(data);
+      }
+
+      // If confirming directly
+      if (!saveAsDraft && result.data?.id) {
+        await transactionsApi.confirm(result.data.id);
       }
 
       await fetchData();
@@ -182,10 +224,9 @@ function PurchaseOrders() {
   const handleConfirm = async () => {
     if (!selectedOrder) return;
 
-    // Show warning if there are budget warnings
     if (budgetWarnings.length > 0) {
       const proceed = window.confirm(
-        `Warning: ${budgetWarnings.length} line(s) exceed the approved budget. Do you want to proceed anyway?`,
+        `Warning: ${budgetWarnings.length} line(s) exceed the approved budget. Do you want to proceed anyway?`
       );
       if (!proceed) return;
     }
@@ -195,6 +236,7 @@ function PurchaseOrders() {
       await fetchData();
       const res = await transactionsApi.getById(selectedOrder.id);
       setSelectedOrder(res.data);
+      setBudgetWarnings([]);
     } catch (error) {
       console.error("Error confirming order:", error);
       alert(error.response?.data?.error || "Error confirming order");
@@ -242,732 +284,1910 @@ function PurchaseOrders() {
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "DRAFT":
-        return "bg-gray-500";
-      case "CONFIRMED":
-        return "bg-green-500";
-      case "CANCELLED":
-        return "bg-red-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
-
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
-      minimumFractionDigits: 0,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(amount);
   };
 
-  const isLineOverBudget = (lineId) => {
-    return budgetWarnings.some((w) => w.lineId === lineId);
+  const formatDate = (dateStr) => {
+    return new Date(dateStr).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
   };
 
-  const getWarningForLine = (lineId) => {
-    return budgetWarnings.find((w) => w.lineId === lineId);
+  const generatePONumber = () => {
+    const year = new Date().getFullYear();
+    const num = String(Math.floor(Math.random() * 9999)).padStart(4, "0");
+    return `PO-${year}-${num}`;
   };
+
+  // Styles
+  const containerStyle = {
+    maxWidth: "1200px",
+    margin: "0 auto",
+  };
+
+  const cardStyle = {
+    backgroundColor: "white",
+    borderRadius: "16px",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+    overflow: "hidden",
+  };
+
+  const buttonPrimaryStyle = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "12px 24px",
+    backgroundColor: "#4F46E5",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    fontSize: "14px",
+    fontWeight: "600",
+    cursor: "pointer",
+  };
+
+  const buttonSecondaryStyle = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "12px 24px",
+    backgroundColor: "white",
+    color: "#374151",
+    border: "1px solid #D1D5DB",
+    borderRadius: "8px",
+    fontSize: "14px",
+    fontWeight: "500",
+    cursor: "pointer",
+  };
+
+  const inputStyle = {
+    width: "100%",
+    padding: "12px 16px",
+    border: "1px solid #E5E7EB",
+    borderRadius: "8px",
+    fontSize: "14px",
+    color: "#1F2937",
+    outline: "none",
+  };
+
+  const labelStyle = {
+    display: "block",
+    fontSize: "13px",
+    fontWeight: "500",
+    color: "#6B7280",
+    marginBottom: "6px",
+  };
+
+  // Pagination
+  const totalPages = Math.ceil(orders.length / itemsPerPage);
+  const paginatedOrders = orders.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   // List View
   const renderListView = () => (
-    <div className="space-y-6">
-      {/* Top Bar */}
-      <div className="flex justify-between items-center">
-        <button
-          onClick={handleNewOrder}
-          className="px-6 py-2 bg-gray-800 text-white rounded border border-gray-600 hover:bg-gray-700 transition"
-        >
-          New
-        </button>
-        <div className="flex gap-3">
-          <button
-            onClick={() => navigate("/")}
-            className="px-6 py-2 bg-gray-800 text-white rounded border border-gray-600 hover:bg-gray-700 transition"
-          >
-            Home
-          </button>
-          <button
-            onClick={() => setView("list")}
-            className="px-6 py-2 bg-gray-800 text-white rounded border border-gray-600 hover:bg-gray-700 transition"
-          >
-            Back
-          </button>
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="text-white text-center py-12">Loading...</div>
-      ) : (
-        <div className="border border-gray-700 rounded-lg overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-900 border-b border-gray-700">
-                <th className="px-4 py-4 text-left text-gray-400 font-normal">
-                  PO No.
-                </th>
-                <th className="px-4 py-4 text-left text-gray-400 font-normal">
-                  Vendor Name
-                </th>
-                <th className="px-4 py-4 text-left text-gray-400 font-normal">
-                  Reference
-                </th>
-                <th className="px-4 py-4 text-left text-gray-400 font-normal">
-                  PO Date
-                </th>
-                <th className="px-4 py-4 text-right text-gray-400 font-normal">
-                  Total
-                </th>
-                <th className="px-4 py-4 text-center text-gray-400 font-normal">
-                  Status
-                </th>
-                <th className="px-4 py-4 text-center text-gray-400 font-normal">
-                  Bill
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-gray-950">
-              {orders.map((order, idx) => (
-                <tr
-                  key={order.id}
-                  onClick={() => handleViewOrder(order)}
-                  className={`border-t border-gray-800 hover:bg-gray-800 cursor-pointer transition ${
-                    idx % 2 === 0 ? "bg-gray-950" : "bg-gray-900"
-                  }`}
-                >
-                  <td className="px-4 py-4 text-white font-medium">
-                    {order.transactionNumber}
-                  </td>
-                  <td className="px-4 py-4 text-white">
-                    {order.vendor?.name || "-"}
-                  </td>
-                  <td className="px-4 py-4 text-gray-500">
-                    {order.reference || "-"}
-                  </td>
-                  <td className="px-4 py-4 text-white">
-                    {new Date(order.transactionDate).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-4 text-right text-yellow-400 font-medium">
-                    {formatCurrency(order.totalAmount)}
-                  </td>
-                  <td className="px-4 py-4 text-center">
-                    <span
-                      className={`px-3 py-1.5 rounded text-xs font-medium ${
-                        order.status === "DRAFT"
-                          ? "bg-yellow-600/20 text-yellow-400 border border-yellow-600"
-                          : order.status === "CONFIRMED"
-                            ? "bg-green-600/20 text-green-400 border border-green-600"
-                            : "bg-red-600/20 text-red-400 border border-red-600"
-                      }`}
-                    >
-                      {order.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4 text-center">
-                    {order.childTransactions?.length > 0 ? (
-                      <span className="text-green-400 font-medium">
-                        ✓ Created
-                      </span>
-                    ) : order.status === "CONFIRMED" ? (
-                      <span className="text-yellow-400">Pending</span>
-                    ) : (
-                      <span className="text-gray-600">-</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {orders.length === 0 && (
-                <tr>
-                  <td
-                    colSpan="7"
-                    className="px-4 py-8 text-center text-gray-400"
-                  >
-                    No purchase orders found. Click "New" to create one.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-
-  // Form View
-  const renderFormView = () => (
-    <div className="space-y-6">
-      {/* Top Action Bar */}
-      <div className="flex justify-between items-center bg-gray-900 rounded-lg p-4 border border-gray-700">
-        <h1 className="text-2xl font-bold text-white">
-          {selectedOrder
-            ? `✏️ Edit: ${selectedOrder.transactionNumber}`
-            : "📋 New Purchase Order"}
-        </h1>
-        <div className="flex gap-3">
-          <button
-            onClick={() => navigate("/")}
-            className="px-5 py-2.5 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-600 border border-gray-600 transition-all"
-          >
-            🏠 Home
-          </button>
-          <button
-            onClick={() => setView("list")}
-            className="px-5 py-2.5 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-600 border border-gray-600 transition-all"
-          >
-            ← Back
-          </button>
-        </div>
-      </div>
-
-      <form
-        onSubmit={handleSubmit}
-        className="bg-gradient-to-b from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-2xl"
+    <div style={containerStyle}>
+      {/* Header */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          marginBottom: "32px",
+        }}
       >
-        {/* Header Info */}
-        <div className="p-6 border-b border-gray-700">
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="block text-gray-400 text-sm font-medium uppercase tracking-wide">
-                Vendor Name
-              </label>
-              <select
-                value={formData.vendorId}
-                onChange={(e) =>
-                  setFormData({ ...formData, vendorId: e.target.value })
-                }
-                className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border-2 border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
-                required
-              >
-                <option value="">Select Vendor</option>
-                {vendors.map((vendor) => (
-                  <option key={vendor.id} value={vendor.id}>
-                    {vendor.name}
-                  </option>
-                ))}
-              </select>
-              <span className="text-xs text-gray-500">
-                from Contact Master - Many to one
-              </span>
-            </div>
-            <div className="space-y-2">
-              <label className="block text-gray-400 text-sm font-medium uppercase tracking-wide">
-                PO Date
-              </label>
-              <input
-                type="date"
-                value={formData.transactionDate}
-                onChange={(e) =>
-                  setFormData({ ...formData, transactionDate: e.target.value })
-                }
-                className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border-2 border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="mt-6 space-y-2">
-            <label className="block text-gray-400 text-sm font-medium uppercase tracking-wide">
-              Reference
-            </label>
-            <input
-              type="text"
-              value={formData.reference}
-              onChange={(e) =>
-                setFormData({ ...formData, reference: e.target.value })
-              }
-              placeholder="REQ-25-0001"
-              className="w-full px-4 py-3 bg-gray-800 text-cyan-400 rounded-lg border-2 border-gray-600 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all"
-            />
-            <span className="text-xs text-gray-500">Alpha numeric (text)</span>
-          </div>
+        <div>
+          <h1
+            style={{
+              fontSize: "28px",
+              fontWeight: "700",
+              color: "#1F2937",
+              margin: "0 0 8px 0",
+            }}
+          >
+            Purchase Orders
+          </h1>
+          <p style={{ fontSize: "14px", color: "#6B7280", margin: 0 }}>
+            Manage purchase orders and vendor transactions.
+          </p>
         </div>
+        <button onClick={handleNewOrder} style={buttonPrimaryStyle}>
+          <Plus size={18} />
+          New Purchase Order
+        </button>
+      </div>
 
-        {/* Lines Table */}
-        <div className="p-6">
-          <div className="border-2 border-gray-600 rounded-xl overflow-hidden shadow-xl">
-            <table className="w-full">
+      {/* Table Card */}
+      <div style={cardStyle}>
+        {loading ? (
+          <div
+            style={{ padding: "48px", textAlign: "center", color: "#6B7280" }}
+          >
+            Loading...
+          </div>
+        ) : (
+          <>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
-                <tr className="bg-gradient-to-r from-gray-700 to-gray-600">
-                  <th className="px-4 py-3 text-left text-white font-bold w-16 border-r border-gray-600">
-                    Sr.
+                <tr style={{ borderBottom: "1px solid #E5E7EB" }}>
+                  <th
+                    style={{
+                      padding: "16px 24px",
+                      textAlign: "left",
+                      fontSize: "11px",
+                      fontWeight: "600",
+                      color: "#6B7280",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    PO Number
                   </th>
-                  <th className="px-4 py-3 text-left text-white font-bold border-r border-gray-600">
-                    Product
+                  <th
+                    style={{
+                      padding: "16px 24px",
+                      textAlign: "left",
+                      fontSize: "11px",
+                      fontWeight: "600",
+                      color: "#6B7280",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    Vendor
                   </th>
-                  <th className="px-4 py-3 text-left text-cyan-400 font-bold border-r border-gray-600">
-                    Budget Analytics
+                  <th
+                    style={{
+                      padding: "16px 24px",
+                      textAlign: "left",
+                      fontSize: "11px",
+                      fontWeight: "600",
+                      color: "#6B7280",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    Date
                   </th>
-                  <th className="px-4 py-3 text-center text-white font-bold w-28 border-r border-gray-600">
-                    Qty
+                  <th
+                    style={{
+                      padding: "16px 24px",
+                      textAlign: "right",
+                      fontSize: "11px",
+                      fontWeight: "600",
+                      color: "#6B7280",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    Amount
                   </th>
-                  <th className="px-4 py-3 text-right text-white font-bold w-36 border-r border-gray-600">
-                    Unit Price
+                  <th
+                    style={{
+                      padding: "16px 24px",
+                      textAlign: "center",
+                      fontSize: "11px",
+                      fontWeight: "600",
+                      color: "#6B7280",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    Status
                   </th>
-                  <th className="px-4 py-3 text-right text-white font-bold w-36 border-r border-gray-600">
-                    Total
+                  <th
+                    style={{
+                      padding: "16px 24px",
+                      textAlign: "center",
+                      fontSize: "11px",
+                      fontWeight: "600",
+                      color: "#6B7280",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    Actions
                   </th>
-                  <th className="px-4 py-3 w-16"></th>
                 </tr>
               </thead>
               <tbody>
-                {formData.lines.map((line, index) => (
+                {paginatedOrders.map((order) => (
                   <tr
-                    key={index}
-                    className={`border-t-2 border-gray-600 ${index % 2 === 0 ? "bg-gray-800" : "bg-gray-800/50"}`}
+                    key={order.id}
+                    style={{ borderBottom: "1px solid #F3F4F6" }}
                   >
-                    <td className="px-4 py-3 text-white font-medium border-r border-gray-700">
-                      {index + 1}
-                    </td>
-                    <td className="px-4 py-3 border-r border-gray-700">
-                      <select
-                        value={line.productId}
-                        onChange={(e) =>
-                          handleLineChange(index, "productId", e.target.value)
-                        }
-                        className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none"
-                        required
+                    <td style={{ padding: "20px 24px" }}>
+                      <p
+                        style={{
+                          fontSize: "15px",
+                          fontWeight: "600",
+                          color: "#1F2937",
+                          margin: 0,
+                        }}
                       >
-                        <option value="">Select Product</option>
-                        {products.map((product) => (
-                          <option key={product.id} value={product.id}>
-                            {product.name}
-                          </option>
-                        ))}
-                      </select>
+                        {order.transactionNumber}
+                      </p>
+                      {order.reference && (
+                        <p
+                          style={{
+                            fontSize: "12px",
+                            color: "#9CA3AF",
+                            margin: "4px 0 0 0",
+                          }}
+                        >
+                          Ref: {order.reference}
+                        </p>
+                      )}
                     </td>
-                    <td className="px-4 py-3 border-r border-gray-700">
-                      <select
-                        value={line.analyticalAccountId}
-                        onChange={(e) =>
-                          handleLineChange(
-                            index,
-                            "analyticalAccountId",
-                            e.target.value,
-                          )
-                        }
-                        className="w-full px-3 py-2 bg-gray-700 text-cyan-400 rounded-lg border border-gray-600 focus:border-cyan-500 focus:outline-none"
+                    <td style={{ padding: "20px 24px" }}>
+                      <span style={{ fontSize: "14px", color: "#4B5563" }}>
+                        {order.vendor?.name || "-"}
+                      </span>
+                    </td>
+                    <td style={{ padding: "20px 24px" }}>
+                      <span style={{ fontSize: "14px", color: "#4B5563" }}>
+                        {formatDate(order.transactionDate)}
+                      </span>
+                    </td>
+                    <td
+                      style={{
+                        padding: "20px 24px",
+                        textAlign: "right",
+                        fontWeight: "600",
+                        color: "#1F2937",
+                      }}
+                    >
+                      {formatCurrency(order.totalAmount)}
+                    </td>
+                    <td style={{ padding: "20px 24px", textAlign: "center" }}>
+                      <span
+                        style={{
+                          display: "inline-block",
+                          padding: "6px 14px",
+                          borderRadius: "6px",
+                          fontSize: "11px",
+                          fontWeight: "600",
+                          textTransform: "uppercase",
+                          backgroundColor:
+                            order.status === "DRAFT"
+                              ? "#F3F4F6"
+                              : order.status === "CONFIRMED"
+                                ? "#D1FAE5"
+                                : "#FEE2E2",
+                          color:
+                            order.status === "DRAFT"
+                              ? "#374151"
+                              : order.status === "CONFIRMED"
+                                ? "#065F46"
+                                : "#991B1B",
+                        }}
                       >
-                        <option value="">Auto / Select</option>
-                        {analyticalAccounts.map((acc) => (
-                          <option key={acc.id} value={acc.id}>
-                            {acc.name}
-                          </option>
-                        ))}
-                      </select>
+                        {order.status}
+                      </span>
                     </td>
-                    <td className="px-4 py-3 border-r border-gray-700">
-                      <input
-                        type="number"
-                        value={line.quantity}
-                        onChange={(e) =>
-                          handleLineChange(index, "quantity", e.target.value)
-                        }
-                        className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 text-center focus:border-blue-500 focus:outline-none"
-                        min="1"
-                        required
-                      />
-                    </td>
-                    <td className="px-4 py-3 border-r border-gray-700">
-                      <input
-                        type="number"
-                        value={line.unitPrice}
-                        onChange={(e) =>
-                          handleLineChange(index, "unitPrice", e.target.value)
-                        }
-                        className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 text-right focus:border-blue-500 focus:outline-none"
-                        min="0"
-                        step="0.01"
-                        required
-                      />
-                    </td>
-                    <td className="px-4 py-3 text-right text-yellow-400 font-bold border-r border-gray-700">
-                      {formatCurrency(calculateLineTotal(line))}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveLine(index)}
-                        className="w-8 h-8 rounded-full bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white transition-all text-lg font-bold"
+                    <td style={{ padding: "20px 24px" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "center",
+                          gap: "8px",
+                        }}
                       >
-                        ×
-                      </button>
+                        <button
+                          onClick={() => handleViewOrder(order)}
+                          style={{
+                            padding: "8px",
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            color: "#6B7280",
+                          }}
+                          title="View"
+                        >
+                          <Eye size={18} />
+                        </button>
+                        {order.status === "DRAFT" && (
+                          <>
+                            <button
+                              onClick={() => handleEditOrder(order)}
+                              style={{
+                                padding: "8px",
+                                background: "none",
+                                border: "none",
+                                cursor: "pointer",
+                                color: "#6B7280",
+                              }}
+                              title="Edit"
+                            >
+                              <Edit size={18} />
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (
+                                  window.confirm(
+                                    "Are you sure you want to delete this order?"
+                                  )
+                                ) {
+                                  try {
+                                    await transactionsApi.delete(order.id);
+                                    fetchData();
+                                  } catch (error) {
+                                    alert("Error deleting order");
+                                  }
+                                }
+                              }}
+                              style={{
+                                padding: "8px",
+                                background: "none",
+                                border: "none",
+                                cursor: "pointer",
+                                color: "#EF4444",
+                              }}
+                              title="Delete"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
-              </tbody>
-              <tfoot>
-                <tr className="border-t-2 border-gray-500 bg-gradient-to-r from-gray-700 to-gray-600">
-                  <td colSpan="5" className="px-4 py-4">
-                    <button
-                      type="button"
-                      onClick={handleAddLine}
-                      className="px-4 py-2 bg-blue-600/20 text-blue-400 rounded-lg hover:bg-blue-600 hover:text-white transition-all font-medium border border-blue-500/50"
+                {orders.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan="6"
+                      style={{
+                        padding: "48px",
+                        textAlign: "center",
+                        color: "#6B7280",
+                      }}
                     >
-                      + Add New Line
-                    </button>
-                  </td>
-                  <td className="px-4 py-4 text-right">
-                    <span className="text-cyan-400 font-bold text-xl bg-gray-800 px-4 py-2 rounded-lg border border-cyan-500">
-                      {formatCurrency(calculateTotal())}
-                    </span>
-                  </td>
-                  <td></td>
-                </tr>
-              </tfoot>
+                      No purchase orders found. Click "New Purchase Order" to
+                      create one.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
             </table>
+
+            {/* Pagination */}
+            {orders.length > 0 && (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "16px 24px",
+                  borderTop: "1px solid #E5E7EB",
+                }}
+              >
+                <span style={{ fontSize: "14px", color: "#6B7280" }}>
+                  Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+                  {Math.min(currentPage * itemsPerPage, orders.length)} of{" "}
+                  {orders.length} entries
+                </span>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(prev - 1, 1))
+                    }
+                    disabled={currentPage === 1}
+                    style={{
+                      padding: "8px 12px",
+                      border: "1px solid #E5E7EB",
+                      borderRadius: "6px",
+                      background: "white",
+                      cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                      opacity: currentPage === 1 ? 0.5 : 1,
+                    }}
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        style={{
+                          padding: "8px 14px",
+                          border: "1px solid #E5E7EB",
+                          borderRadius: "6px",
+                          background:
+                            currentPage === page ? "#4F46E5" : "white",
+                          color: currentPage === page ? "white" : "#374151",
+                          cursor: "pointer",
+                          fontWeight: currentPage === page ? "600" : "400",
+                        }}
+                      >
+                        {page}
+                      </button>
+                    )
+                  )}
+                  <button
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                    }
+                    disabled={currentPage === totalPages}
+                    style={{
+                      padding: "8px 12px",
+                      border: "1px solid #E5E7EB",
+                      borderRadius: "6px",
+                      background: "white",
+                      cursor:
+                        currentPage === totalPages ? "not-allowed" : "pointer",
+                      opacity: currentPage === totalPages ? 0.5 : 1,
+                    }}
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div style={{ textAlign: "center", marginTop: "48px" }}>
+        <p style={{ fontSize: "13px", color: "#9CA3AF" }}>
+          © 2023 Shiv Furniture Enterprise Resource Planning. All Rights
+          Reserved.
+        </p>
+      </div>
+    </div>
+  );
+
+  // Form View (Create/Edit Purchase Order)
+  const renderFormView = () => {
+    const poNumber = selectedOrder?.transactionNumber || generatePONumber();
+    const subtotal = calculateSubtotal();
+    const tax = calculateTax();
+    const total = calculateTotal();
+
+    // Calculate total budget warning amount
+    const totalWarningAmount = budgetWarnings.reduce((sum, w) => {
+      const exceeded = w.lineTotal - w.remaining;
+      return sum + (exceeded > 0 ? exceeded : 0);
+    }, 0);
+
+    return (
+      <div style={containerStyle}>
+        {/* Header */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            marginBottom: "24px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+            <h1
+              style={{
+                fontSize: "28px",
+                fontWeight: "700",
+                color: "#1F2937",
+                margin: 0,
+              }}
+            >
+              Create Purchase Order
+            </h1>
+            <span
+              style={{
+                padding: "6px 14px",
+                backgroundColor: "#F3F4F6",
+                color: "#374151",
+                borderRadius: "6px",
+                fontSize: "12px",
+                fontWeight: "600",
+              }}
+            >
+              DRAFT
+            </span>
+          </div>
+          <div style={{ display: "flex", gap: "12px" }}>
+            <button
+              onClick={() => handleSubmit(null, true)}
+              style={buttonSecondaryStyle}
+            >
+              Save as Draft
+            </button>
+            <button
+              onClick={() => handleSubmit(null, false)}
+              style={buttonPrimaryStyle}
+            >
+              Confirm Order
+            </button>
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-4 p-6 border-t border-gray-700">
-          <button
-            type="submit"
-            className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg font-medium hover:from-green-700 hover:to-green-800 shadow-lg shadow-green-500/20 transition-all"
+        {/* PO Info */}
+        <p style={{ fontSize: "14px", color: "#6B7280", marginBottom: "24px" }}>
+          {poNumber} • New transaction entry
+        </p>
+
+        {/* Budget Warning Alert */}
+        {budgetWarnings.length > 0 && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              backgroundColor: "#FEF3C7",
+              border: "1px solid #F59E0B",
+              borderRadius: "12px",
+              padding: "16px 20px",
+              marginBottom: "24px",
+            }}
           >
-            {selectedOrder ? "✓ Update Order" : "💾 Save Draft"}
-          </button>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <AlertTriangle size={20} color="#D97706" />
+              <div>
+                <p
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    color: "#92400E",
+                    margin: 0,
+                  }}
+                >
+                  Budget Threshold Alert
+                </p>
+                <p
+                  style={{ fontSize: "13px", color: "#A16207", margin: "4px 0 0 0" }}
+                >
+                  Line items exceed the remaining quarterly allocation by{" "}
+                  {formatCurrency(totalWarningAmount)}.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate("/budgets")}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#D97706",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+              }}
+            >
+              View Analytics →
+            </button>
+          </div>
+        )}
+
+        {/* Main Content - Two Column Layout */}
+        <div style={{ display: "flex", gap: "24px" }}>
+          {/* Left Column - Form */}
+          <div style={{ flex: 1 }}>
+            <div style={cardStyle}>
+              <div style={{ padding: "24px" }}>
+                {/* Form Fields */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "24px",
+                    marginBottom: "24px",
+                  }}
+                >
+                  <div>
+                    <label style={labelStyle}>Vendor</label>
+                    <select
+                      value={formData.vendorId}
+                      onChange={(e) =>
+                        setFormData({ ...formData, vendorId: e.target.value })
+                      }
+                      style={{
+                        ...inputStyle,
+                        backgroundColor: "white",
+                        cursor: "pointer",
+                      }}
+                      required
+                    >
+                      <option value="">Search and select supplier...</option>
+                      {vendors.map((vendor) => (
+                        <option key={vendor.id} value={vendor.id}>
+                          {vendor.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>PO Date</label>
+                    <div style={{ position: "relative" }}>
+                      <input
+                        type="date"
+                        value={formData.transactionDate}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            transactionDate: e.target.value,
+                          })
+                        }
+                        style={inputStyle}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Reference</label>
+                    <input
+                      type="text"
+                      value={formData.reference}
+                      onChange={(e) =>
+                        setFormData({ ...formData, reference: e.target.value })
+                      }
+                      placeholder="e.g. QTN-9921"
+                      style={inputStyle}
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Expected Arrival</label>
+                    <input
+                      type="date"
+                      value={formData.expectedArrival}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          expectedArrival: e.target.value,
+                        })
+                      }
+                      placeholder="mm/dd/yyyy"
+                      style={inputStyle}
+                    />
+                  </div>
+                </div>
+
+                {/* Order Line Items */}
+                <div
+                  style={{
+                    borderTop: "1px solid #E5E7EB",
+                    paddingTop: "24px",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: "16px",
+                    }}
+                  >
+                    <h3
+                      style={{
+                        fontSize: "14px",
+                        fontWeight: "600",
+                        color: "#1F2937",
+                        margin: 0,
+                      }}
+                    >
+                      ORDER LINE ITEMS
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={handleAddLine}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        padding: "8px 16px",
+                        background: "none",
+                        border: "none",
+                        color: "#4F46E5",
+                        fontSize: "14px",
+                        fontWeight: "500",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <Plus size={16} />
+                      Add a product
+                    </button>
+                  </div>
+
+                  {/* Lines Table */}
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr style={{ borderBottom: "1px solid #E5E7EB" }}>
+                        <th
+                          style={{
+                            padding: "12px 8px",
+                            textAlign: "left",
+                            fontSize: "11px",
+                            fontWeight: "600",
+                            color: "#6B7280",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          Product
+                        </th>
+                        <th
+                          style={{
+                            padding: "12px 8px",
+                            textAlign: "left",
+                            fontSize: "11px",
+                            fontWeight: "600",
+                            color: "#6B7280",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          Analytic Account
+                        </th>
+                        <th
+                          style={{
+                            padding: "12px 8px",
+                            textAlign: "center",
+                            fontSize: "11px",
+                            fontWeight: "600",
+                            color: "#6B7280",
+                            textTransform: "uppercase",
+                            width: "70px",
+                          }}
+                        >
+                          Qty
+                        </th>
+                        <th
+                          style={{
+                            padding: "12px 8px",
+                            textAlign: "right",
+                            fontSize: "11px",
+                            fontWeight: "600",
+                            color: "#6B7280",
+                            textTransform: "uppercase",
+                            width: "100px",
+                          }}
+                        >
+                          Unit Price
+                        </th>
+                        <th
+                          style={{
+                            padding: "12px 8px",
+                            textAlign: "right",
+                            fontSize: "11px",
+                            fontWeight: "600",
+                            color: "#6B7280",
+                            textTransform: "uppercase",
+                            width: "100px",
+                          }}
+                        >
+                          Total
+                        </th>
+                        <th style={{ width: "40px" }}></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {formData.lines.map((line, index) => {
+                        const product = products.find(
+                          (p) => p.id === parseInt(line.productId)
+                        );
+                        const account = analyticalAccounts.find(
+                          (a) => a.id === parseInt(line.analyticalAccountId)
+                        );
+                        return (
+                          <tr
+                            key={index}
+                            style={{ borderBottom: "1px solid #F3F4F6" }}
+                          >
+                            <td style={{ padding: "12px 8px" }}>
+                              <select
+                                value={line.productId}
+                                onChange={(e) =>
+                                  handleLineChange(
+                                    index,
+                                    "productId",
+                                    e.target.value
+                                  )
+                                }
+                                style={{
+                                  width: "100%",
+                                  padding: "8px",
+                                  border: "1px solid #E5E7EB",
+                                  borderRadius: "6px",
+                                  fontSize: "13px",
+                                  color: "#1F2937",
+                                }}
+                                required
+                              >
+                                <option value="">Select product</option>
+                                {products.map((p) => (
+                                  <option key={p.id} value={p.id}>
+                                    {p.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </td>
+                            <td style={{ padding: "12px 8px" }}>
+                              <select
+                                value={line.analyticalAccountId}
+                                onChange={(e) =>
+                                  handleLineChange(
+                                    index,
+                                    "analyticalAccountId",
+                                    e.target.value
+                                  )
+                                }
+                                style={{
+                                  width: "100%",
+                                  padding: "8px",
+                                  border: "1px solid #E5E7EB",
+                                  borderRadius: "6px",
+                                  fontSize: "13px",
+                                  color: "#6B7280",
+                                }}
+                              >
+                                <option value="">Auto / Select</option>
+                                {analyticalAccounts.map((a) => (
+                                  <option key={a.id} value={a.id}>
+                                    {a.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </td>
+                            <td style={{ padding: "12px 8px" }}>
+                              <input
+                                type="number"
+                                value={line.quantity}
+                                onChange={(e) =>
+                                  handleLineChange(
+                                    index,
+                                    "quantity",
+                                    e.target.value
+                                  )
+                                }
+                                style={{
+                                  width: "100%",
+                                  padding: "8px",
+                                  border: "1px solid #E5E7EB",
+                                  borderRadius: "6px",
+                                  fontSize: "13px",
+                                  textAlign: "center",
+                                }}
+                                min="1"
+                                required
+                              />
+                            </td>
+                            <td style={{ padding: "12px 8px" }}>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "4px",
+                                }}
+                              >
+                                <span
+                                  style={{ color: "#10B981", fontSize: "14px" }}
+                                >
+                                  ₹
+                                </span>
+                                <input
+                                  type="number"
+                                  value={line.unitPrice}
+                                  onChange={(e) =>
+                                    handleLineChange(
+                                      index,
+                                      "unitPrice",
+                                      e.target.value
+                                    )
+                                  }
+                                  style={{
+                                    width: "100%",
+                                    padding: "8px",
+                                    border: "1px solid #E5E7EB",
+                                    borderRadius: "6px",
+                                    fontSize: "13px",
+                                    textAlign: "right",
+                                  }}
+                                  min="0"
+                                  step="0.01"
+                                  required
+                                />
+                              </div>
+                            </td>
+                            <td
+                              style={{
+                                padding: "12px 8px",
+                                textAlign: "right",
+                                fontWeight: "600",
+                                color: "#4F46E5",
+                              }}
+                            >
+                              {formatCurrency(calculateLineTotal(line))}
+                            </td>
+                            <td style={{ padding: "12px 8px" }}>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveLine(index)}
+                                style={{
+                                  padding: "6px",
+                                  background: "none",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  color: "#9CA3AF",
+                                }}
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+
+                  {/* Add new line link */}
+                  <button
+                    type="button"
+                    onClick={handleAddLine}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "12px 8px",
+                      background: "none",
+                      border: "none",
+                      color: "#9CA3AF",
+                      fontSize: "13px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <Plus size={14} />
+                    Add new line
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Internal Notes */}
+            <div style={{ ...cardStyle, marginTop: "24px" }}>
+              <div style={{ padding: "24px" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: "12px",
+                  }}
+                >
+                  <h3
+                    style={{
+                      fontSize: "13px",
+                      fontWeight: "600",
+                      color: "#1F2937",
+                      margin: 0,
+                    }}
+                  >
+                    INTERNAL NOTES
+                  </h3>
+                  <button
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "#9CA3AF",
+                      cursor: "pointer",
+                    }}
+                  >
+                    ⋮
+                  </button>
+                </div>
+                <textarea
+                  value={internalNotes}
+                  onChange={(e) => setInternalNotes(e.target.value)}
+                  placeholder="Add terms or specific instructions for the warehouse team..."
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    border: "1px solid #E5E7EB",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    color: "#6B7280",
+                    minHeight: "80px",
+                    resize: "vertical",
+                    outline: "none",
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Financial Summary */}
+          <div style={{ width: "280px" }}>
+            <div style={cardStyle}>
+              <div style={{ padding: "24px" }}>
+                <h3
+                  style={{
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    color: "#1F2937",
+                    margin: "0 0 20px 0",
+                  }}
+                >
+                  FINANCIAL SUMMARY
+                </h3>
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    marginBottom: "12px",
+                  }}
+                >
+                  <span style={{ fontSize: "14px", color: "#6B7280" }}>
+                    Untaxed Amount
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      color: "#1F2937",
+                    }}
+                  >
+                    {formatCurrency(subtotal)}
+                  </span>
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    marginBottom: "16px",
+                  }}
+                >
+                  <span style={{ fontSize: "14px", color: "#6B7280" }}>
+                    Taxes (12%)
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      color: "#1F2937",
+                    }}
+                  >
+                    {formatCurrency(tax)}
+                  </span>
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    paddingTop: "16px",
+                    borderTop: "1px solid #E5E7EB",
+                    marginBottom: "24px",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: "16px",
+                      fontWeight: "600",
+                      color: "#1F2937",
+                    }}
+                  >
+                    Total
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "20px",
+                      fontWeight: "700",
+                      color: "#1F2937",
+                    }}
+                  >
+                    {formatCurrency(total)}
+                  </span>
+                </div>
+
+                {/* Action Buttons */}
+                <button
+                  onClick={() => handleSubmit(null, false)}
+                  style={{
+                    width: "100%",
+                    padding: "14px",
+                    backgroundColor: "#4F46E5",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                    marginBottom: "12px",
+                  }}
+                >
+                  <Check size={18} />
+                  Confirm Order
+                </button>
+
+                <button
+                  style={{
+                    width: "100%",
+                    padding: "14px",
+                    backgroundColor: "white",
+                    color: "#374151",
+                    border: "1px solid #D1D5DB",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                  }}
+                >
+                  <FileText size={18} />
+                  Create Bill
+                </button>
+              </div>
+            </div>
+
+            {/* Recent Activity */}
+            <div style={{ ...cardStyle, marginTop: "24px" }}>
+              <div style={{ padding: "24px" }}>
+                <h3
+                  style={{
+                    fontSize: "11px",
+                    fontWeight: "600",
+                    color: "#6B7280",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    margin: "0 0 16px 0",
+                  }}
+                >
+                  RECENT ACTIVITY
+                </h3>
+
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "12px",
+                    marginBottom: "16px",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "32px",
+                      height: "32px",
+                      borderRadius: "50%",
+                      backgroundColor: "#4F46E5",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "white",
+                      fontSize: "12px",
+                      fontWeight: "600",
+                    }}
+                  >
+                    AU
+                  </div>
+                  <div>
+                    <p
+                      style={{
+                        fontSize: "13px",
+                        fontWeight: "500",
+                        color: "#1F2937",
+                        margin: 0,
+                      }}
+                    >
+                      Admin User
+                    </p>
+                    <p
+                      style={{
+                        fontSize: "12px",
+                        color: "#9CA3AF",
+                        margin: "2px 0 0 0",
+                      }}
+                    >
+                      Created draft PO • 12:45 PM
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", gap: "12px" }}>
+                  <div
+                    style={{
+                      width: "32px",
+                      height: "32px",
+                      borderRadius: "50%",
+                      backgroundColor: "#F59E0B",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "white",
+                      fontSize: "14px",
+                    }}
+                  >
+                    📊
+                  </div>
+                  <div>
+                    <p
+                      style={{
+                        fontSize: "13px",
+                        fontWeight: "500",
+                        color: "#1F2937",
+                        margin: 0,
+                      }}
+                    >
+                      Budget System
+                    </p>
+                    <p
+                      style={{
+                        fontSize: "12px",
+                        color: "#9CA3AF",
+                        margin: "2px 0 0 0",
+                      }}
+                    >
+                      Budget warning triggered • 12:46 PM
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Cancel Button */}
+        <div style={{ marginTop: "24px" }}>
           <button
-            type="button"
             onClick={() => setView("list")}
-            className="px-6 py-3 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-600 border border-gray-600 transition-all"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "12px 20px",
+              background: "none",
+              border: "none",
+              color: "#6B7280",
+              fontSize: "14px",
+              cursor: "pointer",
+            }}
           >
-            Cancel
+            <ArrowLeft size={18} />
+            Back to List
           </button>
         </div>
-      </form>
-    </div>
-  );
+
+        {/* Footer */}
+        <div style={{ textAlign: "center", marginTop: "32px" }}>
+          <p style={{ fontSize: "13px", color: "#9CA3AF" }}>
+            Shiv Furniture ERP v4.2.0 • Cloud Sync Active •{" "}
+            <span style={{ color: "#4F46E5", cursor: "pointer" }}>
+              Support Portal
+            </span>
+          </p>
+        </div>
+      </div>
+    );
+  };
 
   // Detail View
   const renderDetailView = () => {
     if (!selectedOrder) return null;
 
     const hasBill = selectedOrder.childTransactions?.length > 0;
+    const subtotal = selectedOrder.lines?.reduce(
+      (sum, l) => sum + Number(l.lineTotal || 0),
+      0
+    );
+    const tax = subtotal * 0.12;
+    const total = subtotal + tax;
 
     return (
-      <div className="space-y-6">
-        {/* Top Action Bar */}
-        <div className="flex justify-between items-center bg-gray-900 rounded-lg p-4 border border-gray-700">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleNewOrder}
-              className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-500/20 transition-all"
-            >
-              + New
-            </button>
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={() => navigate("/")}
-              className="px-5 py-2.5 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-600 border border-gray-600 transition-all"
-            >
-              🏠 Home
-            </button>
+      <div style={containerStyle}>
+        {/* Header */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            marginBottom: "24px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
             <button
               onClick={() => setView("list")}
-              className="px-5 py-2.5 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-600 border border-gray-600 transition-all"
+              style={{
+                padding: "10px",
+                background: "white",
+                border: "1px solid #E5E7EB",
+                borderRadius: "8px",
+                cursor: "pointer",
+              }}
             >
-              ← Back
+              <ArrowLeft size={20} color="#374151" />
             </button>
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-b from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-2xl">
-          {/* Header Section */}
-          <div className="p-6 border-b border-gray-700">
-            <div className="flex justify-between items-start">
-              <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <span className="text-gray-400 text-sm uppercase tracking-wide">
-                    PO No.
-                  </span>
-                  <span className="text-2xl font-bold text-white bg-gray-800 px-4 py-1 rounded-lg border border-gray-600">
-                    {selectedOrder.transactionNumber}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="flex items-center gap-3">
-                    <span className="text-gray-400 text-sm">Vendor Name</span>
-                    <span className="text-white font-medium px-3 py-1 bg-gray-800 rounded border border-gray-600">
-                      {selectedOrder.vendor?.name || "-"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-gray-400 text-sm">Reference</span>
-                    <span className="text-cyan-400 font-medium px-3 py-1 bg-gray-800 rounded border border-gray-600">
-                      {selectedOrder.reference || "-"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="flex items-center gap-3 bg-gray-800 px-4 py-2 rounded-lg border border-gray-600">
-                  <span className="text-gray-400 text-sm">PO Date</span>
-                  <span className="text-white font-medium">
-                    {new Date(
-                      selectedOrder.transactionDate,
-                    ).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
+            <div>
+              <h1
+                style={{
+                  fontSize: "28px",
+                  fontWeight: "700",
+                  color: "#1F2937",
+                  margin: 0,
+                }}
+              >
+                {selectedOrder.transactionNumber}
+              </h1>
+              <p
+                style={{ fontSize: "14px", color: "#6B7280", margin: "4px 0 0 0" }}
+              >
+                {selectedOrder.vendor?.name || "Vendor"} •{" "}
+                {formatDate(selectedOrder.transactionDate)}
+              </p>
             </div>
+            <span
+              style={{
+                padding: "6px 14px",
+                backgroundColor:
+                  selectedOrder.status === "DRAFT"
+                    ? "#F3F4F6"
+                    : selectedOrder.status === "CONFIRMED"
+                      ? "#D1FAE5"
+                      : "#FEE2E2",
+                color:
+                  selectedOrder.status === "DRAFT"
+                    ? "#374151"
+                    : selectedOrder.status === "CONFIRMED"
+                      ? "#065F46"
+                      : "#991B1B",
+                borderRadius: "6px",
+                fontSize: "12px",
+                fontWeight: "600",
+              }}
+            >
+              {selectedOrder.status}
+            </span>
           </div>
-
-          {/* Action Buttons Bar */}
-          <div className="flex items-center gap-3 p-4 bg-gray-800/50 border-b border-gray-700">
+          <div style={{ display: "flex", gap: "12px" }}>
             {selectedOrder.status === "DRAFT" && (
               <>
-                <button
-                  onClick={handleConfirm}
-                  className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg text-sm font-medium hover:from-green-700 hover:to-green-800 shadow-lg shadow-green-500/20 transition-all flex items-center gap-2"
-                >
-                  ✓ Confirm
+                <button onClick={handleConfirm} style={buttonPrimaryStyle}>
+                  <Check size={18} />
+                  Confirm
                 </button>
                 <button
-                  onClick={() => window.print()}
-                  className="px-4 py-2 bg-gray-700 text-white rounded-lg text-sm font-medium hover:bg-gray-600 border border-gray-600 transition-all flex items-center gap-2"
+                  onClick={() => handleEditOrder(selectedOrder)}
+                  style={buttonSecondaryStyle}
                 >
-                  🖨 Print
+                  <Edit size={18} />
+                  Edit
                 </button>
                 <button
-                  onClick={() => alert("Send feature coming soon")}
-                  className="px-4 py-2 bg-gray-700 text-white rounded-lg text-sm font-medium hover:bg-gray-600 border border-gray-600 transition-all flex items-center gap-2"
+                  onClick={handleDelete}
+                  style={{
+                    ...buttonSecondaryStyle,
+                    color: "#EF4444",
+                    borderColor: "#FCA5A5",
+                  }}
                 >
-                  📧 Send
-                </button>
-                <button
-                  onClick={handleCancel}
-                  className="px-4 py-2 bg-gray-700 text-red-400 rounded-lg text-sm font-medium hover:bg-gray-600 border border-gray-600 transition-all flex items-center gap-2"
-                >
-                  ✕ Cancel
+                  <Trash2 size={18} />
                 </button>
               </>
             )}
             {selectedOrder.status === "CONFIRMED" && !hasBill && (
-              <button
-                onClick={handleCreateBill}
-                className="px-4 py-2 bg-gradient-to-r from-pink-600 to-pink-700 text-white rounded-lg text-sm font-medium hover:from-pink-700 hover:to-pink-800 shadow-lg shadow-pink-500/20 transition-all flex items-center gap-2"
-              >
-                📄 Create Bill
+              <button onClick={handleCreateBill} style={buttonPrimaryStyle}>
+                <FileText size={18} />
+                Create Bill
               </button>
             )}
+          </div>
+        </div>
+
+        {/* Budget Warning */}
+        {budgetWarnings.length > 0 && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              backgroundColor: "#FEF3C7",
+              border: "1px solid #F59E0B",
+              borderRadius: "12px",
+              padding: "16px 20px",
+              marginBottom: "24px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <AlertTriangle size={20} color="#D97706" />
+              <div>
+                <p
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    color: "#92400E",
+                    margin: 0,
+                  }}
+                >
+                  Budget Threshold Alert
+                </p>
+                <p
+                  style={{ fontSize: "13px", color: "#A16207", margin: "4px 0 0 0" }}
+                >
+                  {budgetWarnings.length} line(s) exceed the approved budget.
+                </p>
+              </div>
+            </div>
             <button
               onClick={() => navigate("/budgets")}
-              className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg text-sm font-medium hover:from-cyan-700 hover:to-cyan-800 shadow-lg shadow-cyan-500/20 transition-all flex items-center gap-2"
+              style={{
+                background: "none",
+                border: "none",
+                color: "#D97706",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: "pointer",
+              }}
             >
-              💰 Budget
+              View Analytics →
             </button>
-
-            {/* Status Indicators */}
-            <div className="flex gap-2 ml-auto">
-              <span
-                className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
-                  selectedOrder.status === "DRAFT"
-                    ? "bg-yellow-600/20 text-yellow-400 border-yellow-500 shadow-lg shadow-yellow-500/10"
-                    : "bg-gray-800 text-gray-500 border-gray-700"
-                }`}
-              >
-                ● Draft
-              </span>
-              <span
-                className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
-                  selectedOrder.status === "CONFIRMED"
-                    ? "bg-green-600/20 text-green-400 border-green-500 shadow-lg shadow-green-500/10"
-                    : "bg-gray-800 text-gray-500 border-gray-700"
-                }`}
-              >
-                ● Confirmed
-              </span>
-              <span
-                className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
-                  selectedOrder.status === "CANCELLED"
-                    ? "bg-red-600/20 text-red-400 border-red-500 shadow-lg shadow-red-500/10"
-                    : "bg-gray-800 text-gray-500 border-gray-700"
-                }`}
-              >
-                ● Cancelled
-              </span>
-            </div>
           </div>
+        )}
 
-          {/* Budget Warning */}
-          {budgetWarnings.length > 0 && (
-            <div className="mx-6 mt-4 bg-gradient-to-r from-yellow-900/30 to-orange-900/30 border-2 border-yellow-500 rounded-xl p-5 shadow-lg shadow-yellow-500/10">
-              <div className="flex items-center gap-3 text-yellow-400 mb-3">
-                <span className="text-2xl">⚠️</span>
-                <span className="font-bold text-lg">
-                  Exceeds Approved Budget
-                </span>
-              </div>
-              <p className="text-yellow-200">
-                The entered amount is higher than the remaining budget amount
-                for this budget line. Consider adjusting the value or revise the
-                budget.
-              </p>
-            </div>
-          )}
+        {/* Main Content */}
+        <div style={{ display: "flex", gap: "24px" }}>
+          {/* Left - Order Details */}
+          <div style={{ flex: 1 }}>
+            <div style={cardStyle}>
+              <div style={{ padding: "24px" }}>
+                {/* Order Info */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "24px",
+                    marginBottom: "24px",
+                    paddingBottom: "24px",
+                    borderBottom: "1px solid #E5E7EB",
+                  }}
+                >
+                  <div>
+                    <label style={labelStyle}>Vendor</label>
+                    <p
+                      style={{
+                        fontSize: "15px",
+                        fontWeight: "500",
+                        color: "#1F2937",
+                        margin: 0,
+                      }}
+                    >
+                      {selectedOrder.vendor?.name || "-"}
+                    </p>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>PO Date</label>
+                    <p
+                      style={{
+                        fontSize: "15px",
+                        fontWeight: "500",
+                        color: "#1F2937",
+                        margin: 0,
+                      }}
+                    >
+                      {formatDate(selectedOrder.transactionDate)}
+                    </p>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Reference</label>
+                    <p
+                      style={{
+                        fontSize: "15px",
+                        fontWeight: "500",
+                        color: "#1F2937",
+                        margin: 0,
+                      }}
+                    >
+                      {selectedOrder.reference || "-"}
+                    </p>
+                  </div>
+                </div>
 
-          {/* Lines Table */}
-          <div className="m-6">
-            <div className="border-2 border-gray-600 rounded-xl overflow-hidden shadow-xl">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gradient-to-r from-gray-700 to-gray-600">
-                    <th className="px-4 py-3 text-left text-white font-bold w-16 border-r border-gray-600">
-                      Sr.
-                    </th>
-                    <th className="px-4 py-3 text-left text-white font-bold border-r border-gray-600">
-                      Product
-                    </th>
-                    <th className="px-4 py-3 text-left text-cyan-400 font-bold border-r border-gray-600">
-                      Budget Analytics
-                    </th>
-                    <th className="px-4 py-3 text-center text-white font-bold w-28 border-r border-gray-600">
-                      Qty
-                    </th>
-                    <th className="px-4 py-3 text-right text-white font-bold w-36 border-r border-gray-600">
-                      Unit Price
-                    </th>
-                    <th className="px-4 py-3 text-right text-white font-bold w-40">
-                      Total
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedOrder.lines.map((line, index) => {
-                    const warning = getWarningForLine(line.id);
-                    const overBudget = isLineOverBudget(line.id);
+                {/* Lines Table */}
+                <h3
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    color: "#1F2937",
+                    margin: "0 0 16px 0",
+                  }}
+                >
+                  ORDER LINE ITEMS
+                </h3>
 
-                    return (
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid #E5E7EB" }}>
+                      <th
+                        style={{
+                          padding: "12px 8px",
+                          textAlign: "left",
+                          fontSize: "11px",
+                          fontWeight: "600",
+                          color: "#6B7280",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        Product
+                      </th>
+                      <th
+                        style={{
+                          padding: "12px 8px",
+                          textAlign: "left",
+                          fontSize: "11px",
+                          fontWeight: "600",
+                          color: "#6B7280",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        Analytic Account
+                      </th>
+                      <th
+                        style={{
+                          padding: "12px 8px",
+                          textAlign: "center",
+                          fontSize: "11px",
+                          fontWeight: "600",
+                          color: "#6B7280",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        Qty
+                      </th>
+                      <th
+                        style={{
+                          padding: "12px 8px",
+                          textAlign: "right",
+                          fontSize: "11px",
+                          fontWeight: "600",
+                          color: "#6B7280",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        Unit Price
+                      </th>
+                      <th
+                        style={{
+                          padding: "12px 8px",
+                          textAlign: "right",
+                          fontSize: "11px",
+                          fontWeight: "600",
+                          color: "#6B7280",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        Total
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedOrder.lines?.map((line, index) => (
                       <tr
                         key={line.id}
-                        className={`border-t-2 border-gray-600 transition-colors ${
-                          overBudget
-                            ? "bg-gradient-to-r from-orange-900/30 to-red-900/20"
-                            : index % 2 === 0
-                              ? "bg-gray-800"
-                              : "bg-gray-800/50"
-                        } hover:bg-gray-700/50`}
+                        style={{ borderBottom: "1px solid #F3F4F6" }}
                       >
-                        <td className="px-4 py-3 text-white font-medium border-r border-gray-700">
-                          {index + 1}
+                        <td style={{ padding: "16px 8px" }}>
+                          <span
+                            style={{
+                              fontSize: "14px",
+                              fontWeight: "500",
+                              color: "#1F2937",
+                            }}
+                          >
+                            {line.product?.name || "-"}
+                          </span>
                         </td>
-                        <td className="px-4 py-3 text-white border-r border-gray-700">
-                          {line.product?.name || "-"}
-                        </td>
-                        <td
-                          className={`px-4 py-3 border-r border-gray-700 ${overBudget ? "text-orange-400" : "text-cyan-400"}`}
-                        >
-                          <span className="font-medium">
+                        <td style={{ padding: "16px 8px" }}>
+                          <span
+                            style={{
+                              fontSize: "14px",
+                              color: "#6B7280",
+                            }}
+                          >
                             {line.analyticalAccount?.name || "-"}
                           </span>
-                          {warning && (
-                            <div className="text-xs text-orange-300 mt-1 bg-orange-900/30 px-2 py-1 rounded">
-                              💰 Budget:{" "}
-                              {formatCurrency(warning.budgetedAmount)} |
-                              Remaining: {formatCurrency(warning.remaining)}
-                            </div>
-                          )}
                         </td>
-                        <td className="px-4 py-3 text-center text-white font-medium border-r border-gray-700">
+                        <td
+                          style={{
+                            padding: "16px 8px",
+                            textAlign: "center",
+                            fontSize: "14px",
+                            color: "#1F2937",
+                          }}
+                        >
                           {Number(line.quantity)}
                         </td>
-                        <td className="px-4 py-3 text-right text-white border-r border-gray-700">
+                        <td
+                          style={{
+                            padding: "16px 8px",
+                            textAlign: "right",
+                            fontSize: "14px",
+                            color: "#1F2937",
+                          }}
+                        >
                           {formatCurrency(line.unitPrice)}
                         </td>
-                        <td className="px-4 py-3 text-right">
-                          <span className="text-yellow-400 font-bold text-lg">
-                            {formatCurrency(line.lineTotal)}
-                          </span>
-                          <div className="text-xs text-gray-400 mt-1">
-                            ({line.quantity} qty ×{" "}
-                            {formatCurrency(line.unitPrice)})
-                          </div>
+                        <td
+                          style={{
+                            padding: "16px 8px",
+                            textAlign: "right",
+                            fontSize: "14px",
+                            fontWeight: "600",
+                            color: "#4F46E5",
+                          }}
+                        >
+                          {formatCurrency(line.lineTotal)}
                         </td>
                       </tr>
-                    );
-                  })}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t-2 border-gray-500 bg-gradient-to-r from-gray-700 to-gray-600">
-                    <td
-                      colSpan="5"
-                      className="px-4 py-4 text-right font-bold text-white text-lg"
-                    >
-                      Grand Total
-                    </td>
-                    <td className="px-4 py-4 text-right">
-                      <span className="text-cyan-400 font-bold text-xl bg-gray-800 px-4 py-2 rounded-lg border border-cyan-500">
-                        {formatCurrency(selectedOrder.totalAmount)}
-                      </span>
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr style={{ borderTop: "2px solid #E5E7EB" }}>
+                      <td
+                        colSpan="4"
+                        style={{
+                          padding: "16px 8px",
+                          textAlign: "right",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "#1F2937",
+                        }}
+                      >
+                        Subtotal
+                      </td>
+                      <td
+                        style={{
+                          padding: "16px 8px",
+                          textAlign: "right",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "#1F2937",
+                        }}
+                      >
+                        {formatCurrency(subtotal)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td
+                        colSpan="4"
+                        style={{
+                          padding: "8px",
+                          textAlign: "right",
+                          fontSize: "14px",
+                          color: "#6B7280",
+                        }}
+                      >
+                        Tax (12%)
+                      </td>
+                      <td
+                        style={{
+                          padding: "8px",
+                          textAlign: "right",
+                          fontSize: "14px",
+                          color: "#6B7280",
+                        }}
+                      >
+                        {formatCurrency(tax)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td
+                        colSpan="4"
+                        style={{
+                          padding: "16px 8px",
+                          textAlign: "right",
+                          fontSize: "18px",
+                          fontWeight: "700",
+                          color: "#1F2937",
+                        }}
+                      >
+                        Total
+                      </td>
+                      <td
+                        style={{
+                          padding: "16px 8px",
+                          textAlign: "right",
+                          fontSize: "18px",
+                          fontWeight: "700",
+                          color: "#1F2937",
+                        }}
+                      >
+                        {formatCurrency(total)}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
             </div>
+
+            {/* Linked Bill */}
+            {hasBill && (
+              <div style={{ ...cardStyle, marginTop: "24px" }}>
+                <div style={{ padding: "24px" }}>
+                  <h3
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      color: "#1F2937",
+                      margin: "0 0 16px 0",
+                    }}
+                  >
+                    LINKED BILLS
+                  </h3>
+                  {selectedOrder.childTransactions.map((bill) => (
+                    <div
+                      key={bill.id}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: "12px 16px",
+                        backgroundColor: "#F0FDF4",
+                        borderRadius: "8px",
+                        border: "1px solid #BBF7D0",
+                      }}
+                    >
+                      <div
+                        style={{ display: "flex", alignItems: "center", gap: "12px" }}
+                      >
+                        <Check size={18} color="#16A34A" />
+                        <span
+                          style={{
+                            fontSize: "14px",
+                            fontWeight: "500",
+                            color: "#166534",
+                          }}
+                        >
+                          {bill.transactionNumber}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => navigate(`/vendor-bills?id=${bill.id}`)}
+                        style={{
+                          padding: "8px 16px",
+                          backgroundColor: "#4F46E5",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          cursor: "pointer",
+                        }}
+                      >
+                        View Bill
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Linked Bill */}
-          {hasBill && (
-            <div className="mx-6 bg-gradient-to-r from-green-900/30 to-emerald-900/30 border-2 border-green-500 rounded-xl p-5 shadow-lg shadow-green-500/10">
-              <div className="text-green-400 font-bold text-lg mb-3 flex items-center gap-2">
-                ✓ Bill Created
-              </div>
-              {selectedOrder.childTransactions.map((bill) => (
-                <div
-                  key={bill.id}
-                  className="flex justify-between items-center bg-gray-800/50 p-3 rounded-lg"
+          {/* Right - Summary */}
+          <div style={{ width: "280px" }}>
+            <div style={cardStyle}>
+              <div style={{ padding: "24px" }}>
+                <h3
+                  style={{
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    color: "#1F2937",
+                    margin: "0 0 20px 0",
+                  }}
                 >
-                  <span className="text-white font-medium">
-                    {bill.transactionNumber}
-                  </span>
-                  <button
-                    onClick={() => navigate(`/vendor-bills?id=${bill.id}`)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all font-medium"
-                  >
-                    View Bill →
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+                  ORDER SUMMARY
+                </h3>
 
-          {/* Edit/Delete for Draft */}
-          {selectedOrder.status === "DRAFT" && (
-            <div className="flex gap-4 p-6 border-t border-gray-700">
-              <button
-                onClick={() => handleEditOrder(selectedOrder)}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-500/20 transition-all"
-              >
-                ✏️ Edit Order
-              </button>
-              <button
-                onClick={handleDelete}
-                className="px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg font-medium hover:from-red-700 hover:to-red-800 shadow-lg shadow-red-500/20 transition-all"
-              >
-                🗑️ Delete Order
-              </button>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    marginBottom: "12px",
+                  }}
+                >
+                  <span style={{ fontSize: "14px", color: "#6B7280" }}>
+                    Subtotal
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      color: "#1F2937",
+                    }}
+                  >
+                    {formatCurrency(subtotal)}
+                  </span>
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    marginBottom: "16px",
+                  }}
+                >
+                  <span style={{ fontSize: "14px", color: "#6B7280" }}>
+                    Tax (12%)
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      color: "#1F2937",
+                    }}
+                  >
+                    {formatCurrency(tax)}
+                  </span>
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    paddingTop: "16px",
+                    borderTop: "1px solid #E5E7EB",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: "16px",
+                      fontWeight: "600",
+                      color: "#1F2937",
+                    }}
+                  >
+                    Total
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "20px",
+                      fontWeight: "700",
+                      color: "#1F2937",
+                    }}
+                  >
+                    {formatCurrency(total)}
+                  </span>
+                </div>
+              </div>
             </div>
-          )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{ textAlign: "center", marginTop: "48px" }}>
+          <p style={{ fontSize: "13px", color: "#9CA3AF" }}>
+            Shiv Furniture ERP v4.2.0 • Cloud Sync Active •{" "}
+            <span style={{ color: "#4F46E5", cursor: "pointer" }}>
+              Support Portal
+            </span>
+          </p>
         </div>
       </div>
     );
   };
 
   return (
-    <div className="min-h-screen bg-black p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Page Title */}
-        <h1 className="text-3xl font-light text-white text-center mb-8 tracking-wide">
-          Purchase Order
-        </h1>
-
-        {view === "list" && renderListView()}
-        {view === "form" && renderFormView()}
-        {view === "detail" && renderDetailView()}
-      </div>
+    <div
+      style={{
+        minHeight: "100vh",
+        backgroundColor: "#F9FAFB",
+        padding: "24px",
+      }}
+    >
+      {view === "list" && renderListView()}
+      {view === "form" && renderFormView()}
+      {view === "detail" && renderDetailView()}
     </div>
   );
 }
