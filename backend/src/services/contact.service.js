@@ -6,7 +6,9 @@ const getAll = async (filters = {}) => {
   const where = {};
 
   if (type) where.type = type;
-  if (isActive !== undefined) where.isActive = isActive;
+  if (isActive !== undefined) {
+    where.isActive = isActive === "true" || isActive === true;
+  }
   if (search) {
     where.OR = [
       { name: { contains: search, mode: "insensitive" } },

@@ -58,10 +58,21 @@ model Contact {
     name     String
     email    String?
     phone    String?
-    address  String?
-    gstin    String? // GST Number
     type     ContactType
     isActive Boolean     @default(true)
+
+    // Address fields
+    street  String?
+    city    String?
+    state   String?
+    country String?
+    pincode String?
+
+    // Image
+    imageUrl String?
+
+    // Tags (comma-separated: B2B, MSME, Retailer, Local)
+    tags String?
 
     // Portal access for customers
     isPortalUser   Boolean @default(false)

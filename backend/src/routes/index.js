@@ -11,6 +11,7 @@ const paymentRoutes = require("./payment.routes");
 const dashboardRoutes = require("./dashboard.routes");
 const authRoutes = require("./authRoutes");
 const userRoutes = require("./userRoutes");
+const uploadRoutes = require("./upload.routes");
 
 // Health check
 router.get("/health", (req, res) => {
@@ -20,6 +21,7 @@ router.get("/health", (req, res) => {
 // Auth routes
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
+router.use("/upload", uploadRoutes);
 
 // API routes
 router.use("/contacts", contactRoutes);
