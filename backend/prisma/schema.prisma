@@ -1,5 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Shiv Furniture - Budget Accounting System
+// Complete Database Schema
 
 generator client {
     provider = "prisma-client-js"
@@ -10,35 +10,248 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-// Example models for Budget Accounting System
+// ===================== ENUMS =====================
+
+enum ContactType {
+    CUSTOMER
+    VENDOR
+}
+
+enum TransactionType {
+    PURCHASE_ORDER
+    VENDOR_BILL
+    SALES_ORDER
+    CUSTOMER_INVOICE
+}
+
+enum TransactionStatus {
+    DRAFT
+    CONFIRMED
+    CANCELLED
+}
+
+enum PaymentStatus {
+    NOT_PAID
+    PARTIALLY_PAID
+    PAID
+}
+
+// ===================== USERS =====================
+
 model User {
     id        Int      @id @default(autoincrement())
     email     String   @unique
     name      String
     password  String
-    role      String   @default("user")
+    role      String   @default("admin") // admin, manager, user
+    isActive  Boolean  @default(true)
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 }
 
-model Category {
-    id           Int           @id @default(autoincrement())
-    name         String        @unique
-    type         String // "income" or "expense"
-    description  String?
-    transactions Transaction[]
-    createdAt    DateTime      @default(now())
-    updatedAt    DateTime      @updatedAt
+// ===================== MASTER DATA =====================
+
+// Customers and Vendors
+model Contact {
+    id       Int         @id @default(autoincrement())
+    name     String
+    email    String?
+    phone    String?
+    address  String?
+    gstin    String? // GST Number
+    type     ContactType
+    isActive Boolean     @default(true)
+
+    // Portal access for customers
+    isPortalUser   Boolean @default(false)
+    portalPassword String?
+
+    // Relations
+    vendorTransactions   Transaction[] @relation("VendorTransactions")
+    customerTransactions Transaction[] @relation("CustomerTransactions")
+    payments             Payment[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 }
 
-model Transaction {
-    id          Int      @id @default(autoincrement())
-    amount      Float
+// Products/Items
+model Product {
+    id          Int     @id @default(autoincrement())
+    name        String
+    sku         String? @unique
     description String?
-    date        DateTime @default(now())
-    type        String // "income" or "expense"
-    categoryId  Int
-    category    Category @relation(fields: [categoryId], references: [id])
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
+    unitPrice   Decimal @default(0) @db.Decimal(10, 2)
+    unit        String  @default("piece") // piece, kg, meter, set
+    hsnCode     String? // HSN code for GST
+    gstRate     Decimal @default(18) @db.Decimal(5, 2) // GST percentage
+    isActive    Boolean @default(true)
+
+    // Relations
+    transactionLines    TransactionLine[]
+    autoAnalyticalRules AutoAnalyticalModel[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+// Analytical Accounts (Cost Centers) - Hierarchical
+model AnalyticalAccount {
+    id          Int     @id @default(autoincrement())
+    code        String  @unique
+    name        String
+    description String?
+
+    // Hierarchy
+    parentId Int?
+    parent   AnalyticalAccount?  @relation("AccountHierarchy", fields: [parentId], references: [id])
+    children AnalyticalAccount[] @relation("AccountHierarchy")
+
+    // Relations
+    budgets             Budget[]
+    transactionLines    TransactionLine[]
+    autoAnalyticalRules AutoAnalyticalModel[]
+
+    isActive  Boolean  @default(true)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+// Monthly Budget per Analytical Account
+model Budget {
+    id                  Int               @id @default(autoincrement())
+    analyticalAccountId Int
+    analyticalAccount   AnalyticalAccount @relation(fields: [analyticalAccountId], references: [id])
+
+    year  Int
+    month Int // 1-12
+
+    allocatedAmount Decimal @default(0) @db.Decimal(15, 2)
+    usedAmount      Decimal @default(0) @db.Decimal(15, 2)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([analyticalAccountId, year, month])
+}
+
+// Auto-assignment rules for Analytical Accounts
+model AutoAnalyticalModel {
+    id          Int     @id @default(autoincrement())
+    name        String
+    description String?
+
+    // Match criteria
+    productId Int?
+    product   Product? @relation(fields: [productId], references: [id])
+
+    // Target analytical account
+    analyticalAccountId Int
+    analyticalAccount   AnalyticalAccount @relation(fields: [analyticalAccountId], references: [id])
+
+    priority  Int      @default(0) // Higher = checked first
+    isActive  Boolean  @default(true)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+// ===================== TRANSACTIONS =====================
+
+// PO, Vendor Bill, SO, Customer Invoice
+model Transaction {
+    id                String            @id @default(cuid())
+    transactionNumber String            @unique
+    type              TransactionType
+    status            TransactionStatus @default(DRAFT)
+    paymentStatus     PaymentStatus     @default(NOT_PAID)
+
+    // Contact reference
+    vendorId   Int?
+    vendor     Contact? @relation("VendorTransactions", fields: [vendorId], references: [id])
+    customerId Int?
+    customer   Contact? @relation("CustomerTransactions", fields: [customerId], references: [id])
+
+    // Dates
+    transactionDate DateTime  @default(now())
+    dueDate         DateTime?
+
+    // Amounts
+    subtotal    Decimal @default(0) @db.Decimal(15, 2)
+    taxAmount   Decimal @default(0) @db.Decimal(15, 2)
+    totalAmount Decimal @default(0) @db.Decimal(15, 2)
+    paidAmount  Decimal @default(0) @db.Decimal(15, 2)
+
+    // Link to parent transaction (PO→Bill, SO→Invoice)
+    parentId Int?
+
+    notes String?
+
+    // Relations
+    lines              TransactionLine[]
+    paymentAllocations PaymentAllocation[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+// Transaction Line Items
+model TransactionLine {
+    id            Int         @id @default(autoincrement())
+    transactionId String
+    transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+    productId Int
+    product   Product @relation(fields: [productId], references: [id])
+
+    description String?
+    quantity    Decimal @db.Decimal(10, 2)
+    unitPrice   Decimal @db.Decimal(10, 2)
+    gstRate     Decimal @default(18) @db.Decimal(5, 2)
+    lineTotal   Decimal @db.Decimal(15, 2)
+
+    // Analytical Account for budget tracking
+    analyticalAccountId Int?
+    analyticalAccount   AnalyticalAccount? @relation(fields: [analyticalAccountId], references: [id])
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+// ===================== PAYMENTS =====================
+
+// Payment Records
+model Payment {
+    id            Int      @id @default(autoincrement())
+    paymentNumber String   @unique
+    paymentDate   DateTime @default(now())
+    amount        Decimal  @db.Decimal(15, 2)
+
+    paymentMethod String // cash, bank, upi, card
+    reference     String? // Bank ref, UPI ID, etc.
+    paymentType   String // incoming (from customer) or outgoing (to vendor)
+
+    // Contact reference
+    contactId Int
+    contact   Contact @relation(fields: [contactId], references: [id])
+
+    notes String?
+
+    // Relations
+    allocations PaymentAllocation[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+// Payment allocation to transactions
+model PaymentAllocation {
+    id            Int         @id @default(autoincrement())
+    paymentId     Int
+    payment       Payment     @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+    transactionId String
+    transaction   Transaction @relation(fields: [transactionId], references: [id])
+
+    allocatedAmount Decimal @db.Decimal(15, 2)
+
+    createdAt DateTime @default(now())
 }

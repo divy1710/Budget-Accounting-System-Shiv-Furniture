@@ -1,17 +1,45 @@
 import { Routes, Route } from "react-router-dom";
-import Layout from "./components/Layout";
+import MainLayout from "./components/layout/MainLayout";
 import Dashboard from "./pages/Dashboard";
-import Transactions from "./pages/Transactions";
-import Categories from "./pages/Categories";
+import Contacts from "./pages/Contacts";
+import Products from "./pages/Products";
+import AnalyticalAccounts from "./pages/AnalyticalAccounts";
+import Budgets from "./pages/Budgets";
+import BudgetCockpit from "./pages/BudgetCockpit";
+import TransactionList from "./pages/TransactionList";
+import TransactionForm from "./pages/TransactionForm";
+import TransactionDetail from "./pages/TransactionDetail";
+import PaymentList from "./pages/PaymentList";
+import PaymentForm from "./pages/PaymentForm";
 import "./App.css";
 
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<Layout />}>
+      <Route path="/" element={<MainLayout />}>
         <Route index element={<Dashboard />} />
-        <Route path="transactions" element={<Transactions />} />
-        <Route path="categories" element={<Categories />} />
+        
+        {/* Master Data */}
+        <Route path="contacts" element={<Contacts />} />
+        <Route path="products" element={<Products />} />
+        <Route path="analytical-accounts" element={<AnalyticalAccounts />} />
+        <Route path="budgets" element={<Budgets />} />
+        
+        {/* Transactions */}
+        <Route path="purchase-orders" element={<TransactionList type="PURCHASE_ORDER" title="Purchase Orders" />} />
+        <Route path="vendor-bills" element={<TransactionList type="VENDOR_BILL" title="Vendor Bills" />} />
+        <Route path="sales-orders" element={<TransactionList type="SALES_ORDER" title="Sales Orders" />} />
+        <Route path="customer-invoices" element={<TransactionList type="CUSTOMER_INVOICE" title="Customer Invoices" />} />
+        <Route path="transactions/new" element={<TransactionForm />} />
+        <Route path="transactions/:id" element={<TransactionDetail />} />
+        
+        {/* Payments */}
+        <Route path="vendor-payments" element={<PaymentList contactType="VENDOR" title="Vendor Payments" />} />
+        <Route path="customer-payments" element={<PaymentList contactType="CUSTOMER" title="Customer Payments" />} />
+        <Route path="payments/new" element={<PaymentForm />} />
+        
+        {/* Reports */}
+        <Route path="budget-cockpit" element={<BudgetCockpit />} />
       </Route>
     </Routes>
   );

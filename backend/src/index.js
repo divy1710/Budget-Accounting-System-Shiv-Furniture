@@ -6,9 +6,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 // Import routes
-const userRoutes = require("./routes/userRoutes");
-const categoryRoutes = require("./routes/categoryRoutes");
-const transactionRoutes = require("./routes/transactionRoutes");
+const apiRoutes = require("./routes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -22,15 +20,8 @@ app.use(
 );
 app.use(express.json());
 
-// Routes
-app.use("/api/users", userRoutes);
-app.use("/api/categories", categoryRoutes);
-app.use("/api/transactions", transactionRoutes);
-
-// Health check route
-app.get("/api/health", (req, res) => {
-  res.json({ status: "OK", message: "Server is running" });
-});
+// API Routes
+app.use("/api", apiRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -40,4 +31,5 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  console.log(`API available at http://localhost:${PORT}/api`);
 });
