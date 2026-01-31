@@ -170,7 +170,7 @@ function PurchaseOrders() {
   const calculateSubtotal = () => {
     return formData.lines.reduce(
       (sum, line) => sum + calculateLineTotal(line),
-      0
+      0,
     );
   };
 
@@ -226,7 +226,7 @@ function PurchaseOrders() {
 
     if (budgetWarnings.length > 0) {
       const proceed = window.confirm(
-        `Warning: ${budgetWarnings.length} line(s) exceed the approved budget. Do you want to proceed anyway?`
+        `Warning: ${budgetWarnings.length} line(s) exceed the approved budget. Do you want to proceed anyway?`,
       );
       if (!proceed) return;
     }
@@ -370,7 +370,7 @@ function PurchaseOrders() {
   const totalPages = Math.ceil(orders.length / itemsPerPage);
   const paginatedOrders = orders.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
 
   // List View
@@ -614,7 +614,7 @@ function PurchaseOrders() {
                               onClick={async () => {
                                 if (
                                   window.confirm(
-                                    "Are you sure you want to delete this order?"
+                                    "Are you sure you want to delete this order?",
                                   )
                                 ) {
                                   try {
@@ -711,7 +711,7 @@ function PurchaseOrders() {
                       >
                         {page}
                       </button>
-                    )
+                    ),
                   )}
                   <button
                     onClick={() =>
@@ -844,7 +844,11 @@ function PurchaseOrders() {
                   Budget Threshold Alert
                 </p>
                 <p
-                  style={{ fontSize: "13px", color: "#A16207", margin: "4px 0 0 0" }}
+                  style={{
+                    fontSize: "13px",
+                    color: "#A16207",
+                    margin: "4px 0 0 0",
+                  }}
                 >
                   Line items exceed the remaining quarterly allocation by{" "}
                   {formatCurrency(totalWarningAmount)}.
@@ -1072,10 +1076,10 @@ function PurchaseOrders() {
                     <tbody>
                       {formData.lines.map((line, index) => {
                         const product = products.find(
-                          (p) => p.id === parseInt(line.productId)
+                          (p) => p.id === parseInt(line.productId),
                         );
                         const account = analyticalAccounts.find(
-                          (a) => a.id === parseInt(line.analyticalAccountId)
+                          (a) => a.id === parseInt(line.analyticalAccountId),
                         );
                         return (
                           <tr
@@ -1089,7 +1093,7 @@ function PurchaseOrders() {
                                   handleLineChange(
                                     index,
                                     "productId",
-                                    e.target.value
+                                    e.target.value,
                                   )
                                 }
                                 style={{
@@ -1117,7 +1121,7 @@ function PurchaseOrders() {
                                   handleLineChange(
                                     index,
                                     "analyticalAccountId",
-                                    e.target.value
+                                    e.target.value,
                                   )
                                 }
                                 style={{
@@ -1145,7 +1149,7 @@ function PurchaseOrders() {
                                   handleLineChange(
                                     index,
                                     "quantity",
-                                    e.target.value
+                                    e.target.value,
                                   )
                                 }
                                 style={{
@@ -1180,7 +1184,7 @@ function PurchaseOrders() {
                                     handleLineChange(
                                       index,
                                       "unitPrice",
-                                      e.target.value
+                                      e.target.value,
                                     )
                                   }
                                   style={{
@@ -1582,7 +1586,7 @@ function PurchaseOrders() {
     const hasBill = selectedOrder.childTransactions?.length > 0;
     const subtotal = selectedOrder.lines?.reduce(
       (sum, l) => sum + Number(l.lineTotal || 0),
-      0
+      0,
     );
     const tax = subtotal * 0.12;
     const total = subtotal + tax;
@@ -1623,7 +1627,11 @@ function PurchaseOrders() {
                 {selectedOrder.transactionNumber}
               </h1>
               <p
-                style={{ fontSize: "14px", color: "#6B7280", margin: "4px 0 0 0" }}
+                style={{
+                  fontSize: "14px",
+                  color: "#6B7280",
+                  margin: "4px 0 0 0",
+                }}
               >
                 {selectedOrder.vendor?.name || "Vendor"} •{" "}
                 {formatDate(selectedOrder.transactionDate)}
@@ -1715,7 +1723,11 @@ function PurchaseOrders() {
                   Budget Threshold Alert
                 </p>
                 <p
-                  style={{ fontSize: "13px", color: "#A16207", margin: "4px 0 0 0" }}
+                  style={{
+                    fontSize: "13px",
+                    color: "#A16207",
+                    margin: "4px 0 0 0",
+                  }}
                 >
                   {budgetWarnings.length} line(s) exceed the approved budget.
                 </p>
@@ -2040,7 +2052,11 @@ function PurchaseOrders() {
                       }}
                     >
                       <div
-                        style={{ display: "flex", alignItems: "center", gap: "12px" }}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "12px",
+                        }}
                       >
                         <Check size={18} color="#16A34A" />
                         <span

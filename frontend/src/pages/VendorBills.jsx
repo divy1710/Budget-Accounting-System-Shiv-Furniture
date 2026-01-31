@@ -188,7 +188,7 @@ function VendorBills() {
   const calculateTotal = () => {
     return formData.lines.reduce(
       (sum, line) => sum + calculateLineTotal(line),
-      0
+      0,
     );
   };
 
@@ -232,7 +232,7 @@ function VendorBills() {
 
     if (budgetWarnings.length > 0) {
       const proceed = window.confirm(
-        `Warning: ${budgetWarnings.length} line(s) exceed the approved budget. Do you want to proceed anyway?`
+        `Warning: ${budgetWarnings.length} line(s) exceed the approved budget. Do you want to proceed anyway?`,
       );
       if (!proceed) return;
     }
@@ -337,21 +337,23 @@ function VendorBills() {
 
   const calculateDetailTotals = () => {
     if (!selectedBill) return { untaxed: 0, taxes: 0, total: 0 };
-    const untaxed = selectedBill.lines?.reduce(
-      (sum, line) => sum + Number(line.lineTotal || 0),
-      0
-    ) || 0;
-    const taxes = selectedBill.lines?.reduce(
-      (sum, line) => sum + Number(line.gstAmount || 0),
-      0
-    ) || 0;
+    const untaxed =
+      selectedBill.lines?.reduce(
+        (sum, line) => sum + Number(line.lineTotal || 0),
+        0,
+      ) || 0;
+    const taxes =
+      selectedBill.lines?.reduce(
+        (sum, line) => sum + Number(line.gstAmount || 0),
+        0,
+      ) || 0;
     return { untaxed, taxes, total: untaxed + taxes };
   };
 
   const totalPages = Math.ceil(bills.length / itemsPerPage);
   const paginatedBills = bills.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
 
   const getStatusBadge = (status) => {
@@ -773,8 +775,7 @@ function VendorBills() {
                     disabled={currentPage === 1}
                     style={{
                       padding: "8px 12px",
-                      backgroundColor:
-                        currentPage === 1 ? "#F3F4F6" : "white",
+                      backgroundColor: currentPage === 1 ? "#F3F4F6" : "white",
                       color: currentPage === 1 ? "#9CA3AF" : "#374151",
                       border: "1px solid #D1D5DB",
                       borderRadius: "6px",
@@ -886,7 +887,9 @@ function VendorBills() {
       </div>
 
       {/* Two Column Layout */}
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "24px" }}>
+      <div
+        style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "24px" }}
+      >
         {/* Left Column - Form */}
         <div
           style={{
@@ -987,7 +990,10 @@ function VendorBills() {
                   type="date"
                   value={formData.transactionDate}
                   onChange={(e) =>
-                    setFormData({ ...formData, transactionDate: e.target.value })
+                    setFormData({
+                      ...formData,
+                      transactionDate: e.target.value,
+                    })
                   }
                   required
                   style={{
@@ -1125,7 +1131,10 @@ function VendorBills() {
                 </thead>
                 <tbody>
                   {formData.lines.map((line, index) => (
-                    <tr key={index} style={{ borderBottom: "1px solid #E5E7EB" }}>
+                    <tr
+                      key={index}
+                      style={{ borderBottom: "1px solid #E5E7EB" }}
+                    >
                       <td style={{ padding: "12px" }}>
                         <select
                           value={line.productId}
@@ -1156,7 +1165,7 @@ function VendorBills() {
                             handleLineChange(
                               index,
                               "analyticalAccountId",
-                              e.target.value
+                              e.target.value,
                             )
                           }
                           style={{
@@ -1358,7 +1367,9 @@ function VendorBills() {
             >
               Financial Summary
             </h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+            >
               <div
                 style={{
                   display: "flex",
@@ -1392,7 +1403,13 @@ function VendorBills() {
                   alignItems: "center",
                 }}
               >
-                <span style={{ fontSize: "18px", fontWeight: "600", color: "#111827" }}>
+                <span
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: "600",
+                    color: "#111827",
+                  }}
+                >
                   Total
                 </span>
                 <span
@@ -1430,7 +1447,7 @@ function VendorBills() {
               </h3>
               {(() => {
                 const vendor = vendors.find(
-                  (v) => v.id === parseInt(formData.vendorId)
+                  (v) => v.id === parseInt(formData.vendorId),
                 );
                 return vendor ? (
                   <div
@@ -1536,7 +1553,9 @@ function VendorBills() {
               <ArrowLeft size={20} color="#374151" />
             </button>
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "12px" }}
+              >
                 <h1
                   style={{
                     fontSize: "24px",
@@ -1678,7 +1697,9 @@ function VendorBills() {
                 Bill Date
               </span>
             </div>
-            <p style={{ fontSize: "18px", fontWeight: "600", color: "#111827" }}>
+            <p
+              style={{ fontSize: "18px", fontWeight: "600", color: "#111827" }}
+            >
               {formatDate(selectedBill.transactionDate)}
             </p>
           </div>
@@ -1703,7 +1724,9 @@ function VendorBills() {
                 Due Date
               </span>
             </div>
-            <p style={{ fontSize: "18px", fontWeight: "600", color: "#111827" }}>
+            <p
+              style={{ fontSize: "18px", fontWeight: "600", color: "#111827" }}
+            >
               {formatDate(selectedBill.dueDate)}
             </p>
           </div>
@@ -1728,7 +1751,9 @@ function VendorBills() {
                 Total Amount
               </span>
             </div>
-            <p style={{ fontSize: "18px", fontWeight: "600", color: "#111827" }}>
+            <p
+              style={{ fontSize: "18px", fontWeight: "600", color: "#111827" }}
+            >
               {formatCurrency(selectedBill.totalAmount)}
             </p>
           </div>
@@ -1748,7 +1773,9 @@ function VendorBills() {
                 marginBottom: "8px",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "8px" }}
+              >
                 <DollarSign size={16} color="#6B7280" />
                 <span style={{ fontSize: "13px", color: "#6B7280" }}>
                   Amount Due
@@ -2174,12 +2201,20 @@ function VendorBills() {
                 }}
               >
                 <span
-                  style={{ fontSize: "18px", fontWeight: "600", color: "#111827" }}
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: "600",
+                    color: "#111827",
+                  }}
                 >
                   Total
                 </span>
                 <span
-                  style={{ fontSize: "24px", fontWeight: "700", color: "#111827" }}
+                  style={{
+                    fontSize: "24px",
+                    fontWeight: "700",
+                    color: "#111827",
+                  }}
                 >
                   {formatCurrency(selectedBill.totalAmount)}
                 </span>
@@ -2216,7 +2251,13 @@ function VendorBills() {
         </div>
 
         {/* Bottom Section - Vendor Details & Notes */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "24px",
+          }}
+        >
           {/* Vendor Details */}
           <div
             style={{
@@ -2239,7 +2280,11 @@ function VendorBills() {
             </h3>
             {selectedBill.vendor && (
               <div
-                style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "16px",
+                }}
               >
                 <div
                   style={{ display: "flex", alignItems: "center", gap: "12px" }}
@@ -2285,7 +2330,11 @@ function VendorBills() {
                       borderRadius: "8px",
                     }}
                   >
-                    <MapPin size={16} color="#6B7280" style={{ marginTop: "2px" }} />
+                    <MapPin
+                      size={16}
+                      color="#6B7280"
+                      style={{ marginTop: "2px" }}
+                    />
                     <span style={{ color: "#374151", fontSize: "14px" }}>
                       {selectedBill.vendor.address}
                     </span>
