@@ -1,10 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import {
-  transactionsApi,
-  contactsApi,
-  productsApi,
-} from "../services/api";
+import { transactionsApi, contactsApi, productsApi } from "../services/api";
 
 function SalesOrders() {
   const navigate = useNavigate();
@@ -81,7 +77,9 @@ function SalesOrders() {
     setFormData({
       customerId: order.customerId || "",
       reference: order.reference || "",
-      transactionDate: new Date(order.transactionDate).toISOString().split("T")[0],
+      transactionDate: new Date(order.transactionDate)
+        .toISOString()
+        .split("T")[0],
       lines: order.lines.map((line) => ({
         productId: line.productId,
         quantity: Number(line.quantity),
@@ -124,7 +122,10 @@ function SalesOrders() {
   };
 
   const calculateTotal = () => {
-    return formData.lines.reduce((sum, line) => sum + calculateLineTotal(line), 0);
+    return formData.lines.reduce(
+      (sum, line) => sum + calculateLineTotal(line),
+      0,
+    );
   };
 
   const handleSubmit = async (e) => {
@@ -254,12 +255,24 @@ function SalesOrders() {
           <table className="w-full">
             <thead>
               <tr className="bg-gradient-to-r from-gray-700 to-gray-600">
-                <th className="px-4 py-3 text-left text-white font-bold border-r border-gray-600">SO No.</th>
-                <th className="px-4 py-3 text-left text-white font-bold border-r border-gray-600">Customer Name</th>
-                <th className="px-4 py-3 text-left text-white font-bold border-r border-gray-600">Reference</th>
-                <th className="px-4 py-3 text-left text-white font-bold border-r border-gray-600">SO Date</th>
-                <th className="px-4 py-3 text-right text-white font-bold border-r border-gray-600">Total</th>
-                <th className="px-4 py-3 text-center text-white font-bold">Status</th>
+                <th className="px-4 py-3 text-left text-white font-bold border-r border-gray-600">
+                  SO No.
+                </th>
+                <th className="px-4 py-3 text-left text-white font-bold border-r border-gray-600">
+                  Customer Name
+                </th>
+                <th className="px-4 py-3 text-left text-white font-bold border-r border-gray-600">
+                  Reference
+                </th>
+                <th className="px-4 py-3 text-left text-white font-bold border-r border-gray-600">
+                  SO Date
+                </th>
+                <th className="px-4 py-3 text-right text-white font-bold border-r border-gray-600">
+                  Total
+                </th>
+                <th className="px-4 py-3 text-center text-white font-bold">
+                  Status
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -271,9 +284,15 @@ function SalesOrders() {
                     index % 2 === 0 ? "bg-gray-800" : "bg-gray-800/50"
                   }`}
                 >
-                  <td className="px-4 py-3 text-white font-medium border-r border-gray-700">{order.transactionNumber}</td>
-                  <td className="px-4 py-3 text-white border-r border-gray-700">{order.customer?.name || "-"}</td>
-                  <td className="px-4 py-3 text-pink-400 border-r border-gray-700">{order.reference || "-"}</td>
+                  <td className="px-4 py-3 text-white font-medium border-r border-gray-700">
+                    {order.transactionNumber}
+                  </td>
+                  <td className="px-4 py-3 text-white border-r border-gray-700">
+                    {order.customer?.name || "-"}
+                  </td>
+                  <td className="px-4 py-3 text-pink-400 border-r border-gray-700">
+                    {order.reference || "-"}
+                  </td>
                   <td className="px-4 py-3 text-white border-r border-gray-700">
                     {new Date(order.transactionDate).toLocaleDateString()}
                   </td>
@@ -281,13 +300,15 @@ function SalesOrders() {
                     {formatCurrency(order.totalAmount)}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <span className={`px-3 py-1.5 rounded-lg text-xs font-medium border-2 ${
-                      order.status === "DRAFT" 
-                        ? "bg-yellow-600/20 text-yellow-400 border-yellow-500" 
-                        : order.status === "CONFIRMED"
-                        ? "bg-green-600/20 text-green-400 border-green-500"
-                        : "bg-red-600/20 text-red-400 border-red-500"
-                    }`}>
+                    <span
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border-2 ${
+                        order.status === "DRAFT"
+                          ? "bg-yellow-600/20 text-yellow-400 border-yellow-500"
+                          : order.status === "CONFIRMED"
+                            ? "bg-green-600/20 text-green-400 border-green-500"
+                            : "bg-red-600/20 text-red-400 border-red-500"
+                      }`}
+                    >
                       {order.status}
                     </span>
                   </td>
@@ -295,7 +316,10 @@ function SalesOrders() {
               ))}
               {orders.length === 0 && (
                 <tr>
-                  <td colSpan="6" className="px-4 py-12 text-center text-gray-400 bg-gray-800">
+                  <td
+                    colSpan="6"
+                    className="px-4 py-12 text-center text-gray-400 bg-gray-800"
+                  >
                     No sales orders found. Click "+ New" to create one.
                   </td>
                 </tr>
@@ -313,7 +337,9 @@ function SalesOrders() {
       {/* Top Action Bar */}
       <div className="flex justify-between items-center bg-gray-900 rounded-lg p-4 border border-gray-700">
         <h1 className="text-2xl font-bold text-white">
-          {selectedOrder ? `✏️ Edit: ${selectedOrder.transactionNumber}` : "📋 New Sales Order"}
+          {selectedOrder
+            ? `✏️ Edit: ${selectedOrder.transactionNumber}`
+            : "📋 New Sales Order"}
         </h1>
         <div className="flex gap-3">
           <button
@@ -331,15 +357,22 @@ function SalesOrders() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-gradient-to-b from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-2xl">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-gradient-to-b from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-2xl"
+      >
         {/* Header Info */}
         <div className="p-6 border-b border-gray-700">
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="block text-gray-400 text-sm font-medium uppercase tracking-wide">Customer Name</label>
+              <label className="block text-gray-400 text-sm font-medium uppercase tracking-wide">
+                Customer Name
+              </label>
               <select
                 value={formData.customerId}
-                onChange={(e) => setFormData({ ...formData, customerId: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, customerId: e.target.value })
+                }
                 className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border-2 border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
                 required
               >
@@ -350,14 +383,20 @@ function SalesOrders() {
                   </option>
                 ))}
               </select>
-              <span className="text-xs text-gray-500">from Contact Master - Many to one</span>
+              <span className="text-xs text-gray-500">
+                from Contact Master - Many to one
+              </span>
             </div>
             <div className="space-y-2">
-              <label className="block text-gray-400 text-sm font-medium uppercase tracking-wide">SO Date</label>
+              <label className="block text-gray-400 text-sm font-medium uppercase tracking-wide">
+                SO Date
+              </label>
               <input
                 type="date"
                 value={formData.transactionDate}
-                onChange={(e) => setFormData({ ...formData, transactionDate: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, transactionDate: e.target.value })
+                }
                 className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border-2 border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
                 required
               />
@@ -365,11 +404,15 @@ function SalesOrders() {
           </div>
 
           <div className="mt-6 space-y-2">
-            <label className="block text-gray-400 text-sm font-medium uppercase tracking-wide">Reference</label>
+            <label className="block text-gray-400 text-sm font-medium uppercase tracking-wide">
+              Reference
+            </label>
             <input
               type="text"
               value={formData.reference}
-              onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, reference: e.target.value })
+              }
               placeholder="alpha numeric (text)"
               className="w-full px-4 py-3 bg-gray-800 text-pink-400 rounded-lg border-2 border-gray-600 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-500/20 transition-all"
             />
@@ -382,8 +425,12 @@ function SalesOrders() {
             <table className="w-full">
               <thead>
                 <tr className="bg-gradient-to-r from-gray-700 to-gray-600">
-                  <th className="px-4 py-3 text-left text-white font-bold w-16 border-r border-gray-600">Sr. No.</th>
-                  <th className="px-4 py-3 text-left text-white font-bold border-r border-gray-600">Product</th>
+                  <th className="px-4 py-3 text-left text-white font-bold w-16 border-r border-gray-600">
+                    Sr. No.
+                  </th>
+                  <th className="px-4 py-3 text-left text-white font-bold border-r border-gray-600">
+                    Product
+                  </th>
                   <th className="px-4 py-3 text-center text-cyan-400 font-bold w-28 border-r border-gray-600">
                     <div>1</div>
                     <div className="text-xs">Qty</div>
@@ -401,12 +448,19 @@ function SalesOrders() {
               </thead>
               <tbody>
                 {formData.lines.map((line, index) => (
-                  <tr key={index} className={`border-t-2 border-gray-600 ${index % 2 === 0 ? "bg-gray-800" : "bg-gray-800/50"}`}>
-                    <td className="px-4 py-3 text-white font-medium border-r border-gray-700">{index + 1}</td>
+                  <tr
+                    key={index}
+                    className={`border-t-2 border-gray-600 ${index % 2 === 0 ? "bg-gray-800" : "bg-gray-800/50"}`}
+                  >
+                    <td className="px-4 py-3 text-white font-medium border-r border-gray-700">
+                      {index + 1}
+                    </td>
                     <td className="px-4 py-3 border-r border-gray-700">
                       <select
                         value={line.productId}
-                        onChange={(e) => handleLineChange(index, "productId", e.target.value)}
+                        onChange={(e) =>
+                          handleLineChange(index, "productId", e.target.value)
+                        }
                         className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none"
                         required
                       >
@@ -417,34 +471,49 @@ function SalesOrders() {
                           </option>
                         ))}
                       </select>
-                      <span className="text-xs text-gray-500">(from Product Master - Many to one)</span>
+                      <span className="text-xs text-gray-500">
+                        (from Product Master - Many to one)
+                      </span>
                     </td>
                     <td className="px-4 py-3 border-r border-gray-700">
                       <input
                         type="number"
                         value={line.quantity}
-                        onChange={(e) => handleLineChange(index, "quantity", e.target.value)}
+                        onChange={(e) =>
+                          handleLineChange(index, "quantity", e.target.value)
+                        }
                         className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 text-center focus:border-blue-500 focus:outline-none"
                         min="1"
                         required
                       />
-                      <div className="text-xs text-gray-500 text-center">Number</div>
+                      <div className="text-xs text-gray-500 text-center">
+                        Number
+                      </div>
                     </td>
                     <td className="px-4 py-3 border-r border-gray-700">
                       <input
                         type="number"
                         value={line.unitPrice}
-                        onChange={(e) => handleLineChange(index, "unitPrice", e.target.value)}
+                        onChange={(e) =>
+                          handleLineChange(index, "unitPrice", e.target.value)
+                        }
                         className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 text-right focus:border-blue-500 focus:outline-none"
                         min="0"
                         step="0.01"
                         required
                       />
-                      <div className="text-xs text-gray-500 text-right">Monetary</div>
+                      <div className="text-xs text-gray-500 text-right">
+                        Monetary
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-right border-r border-gray-700">
-                      <span className="text-yellow-400 font-bold">{formatCurrency(calculateLineTotal(line))}</span>
-                      <div className="text-xs text-gray-500">( {line.quantity} qty × {formatCurrency(line.unitPrice)} )</div>
+                      <span className="text-yellow-400 font-bold">
+                        {formatCurrency(calculateLineTotal(line))}
+                      </span>
+                      <div className="text-xs text-gray-500">
+                        ( {line.quantity} qty × {formatCurrency(line.unitPrice)}{" "}
+                        )
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-center">
                       <button
@@ -541,11 +610,15 @@ function SalesOrders() {
             <div className="flex justify-between items-start">
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
-                  <span className="text-gray-400 text-sm uppercase tracking-wide">SO No.</span>
+                  <span className="text-gray-400 text-sm uppercase tracking-wide">
+                    SO No.
+                  </span>
                   <span className="text-2xl font-bold text-white bg-gray-800 px-4 py-1 rounded-lg border border-gray-600">
                     {selectedOrder.transactionNumber}
                   </span>
-                  <span className="text-xs text-gray-500">( auto generate PO Number + 1 of last order )</span>
+                  <span className="text-xs text-gray-500">
+                    ( auto generate PO Number + 1 of last order )
+                  </span>
                 </div>
                 <div className="grid grid-cols-2 gap-6">
                   <div className="flex items-center gap-3">
@@ -566,7 +639,9 @@ function SalesOrders() {
                 <div className="flex items-center gap-3 bg-gray-800 px-4 py-2 rounded-lg border border-gray-600">
                   <span className="text-gray-400 text-sm">SO Date</span>
                   <span className="text-white font-medium">
-                    {new Date(selectedOrder.transactionDate).toLocaleDateString()}
+                    {new Date(
+                      selectedOrder.transactionDate,
+                    ).toLocaleDateString()}
                   </span>
                 </div>
               </div>
@@ -614,25 +689,31 @@ function SalesOrders() {
 
             {/* Status Indicators */}
             <div className="flex gap-2 ml-auto">
-              <span className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
-                selectedOrder.status === "DRAFT" 
-                  ? "bg-yellow-600/20 text-yellow-400 border-yellow-500 shadow-lg shadow-yellow-500/10" 
-                  : "bg-gray-800 text-gray-500 border-gray-700"
-              }`}>
+              <span
+                className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
+                  selectedOrder.status === "DRAFT"
+                    ? "bg-yellow-600/20 text-yellow-400 border-yellow-500 shadow-lg shadow-yellow-500/10"
+                    : "bg-gray-800 text-gray-500 border-gray-700"
+                }`}
+              >
                 Draft
               </span>
-              <span className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
-                selectedOrder.status === "CONFIRMED" 
-                  ? "bg-green-600/20 text-green-400 border-green-500 shadow-lg shadow-green-500/10" 
-                  : "bg-gray-800 text-gray-500 border-gray-700"
-              }`}>
+              <span
+                className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
+                  selectedOrder.status === "CONFIRMED"
+                    ? "bg-green-600/20 text-green-400 border-green-500 shadow-lg shadow-green-500/10"
+                    : "bg-gray-800 text-gray-500 border-gray-700"
+                }`}
+              >
                 Confirm
               </span>
-              <span className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
-                selectedOrder.status === "CANCELLED" 
-                  ? "bg-red-600/20 text-red-400 border-red-500 shadow-lg shadow-red-500/10" 
-                  : "bg-gray-800 text-gray-500 border-gray-700"
-              }`}>
+              <span
+                className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
+                  selectedOrder.status === "CANCELLED"
+                    ? "bg-red-600/20 text-red-400 border-red-500 shadow-lg shadow-red-500/10"
+                    : "bg-gray-800 text-gray-500 border-gray-700"
+                }`}
+              >
                 Cancelled
               </span>
             </div>
@@ -644,8 +725,12 @@ function SalesOrders() {
               <table className="w-full">
                 <thead>
                   <tr className="bg-gradient-to-r from-gray-700 to-gray-600">
-                    <th className="px-4 py-3 text-left text-white font-bold w-16 border-r border-gray-600">Sr. No.</th>
-                    <th className="px-4 py-3 text-left text-white font-bold border-r border-gray-600">Product</th>
+                    <th className="px-4 py-3 text-left text-white font-bold w-16 border-r border-gray-600">
+                      Sr. No.
+                    </th>
+                    <th className="px-4 py-3 text-left text-white font-bold border-r border-gray-600">
+                      Product
+                    </th>
                     <th className="px-4 py-3 text-center text-cyan-400 font-bold w-28 border-r border-gray-600">
                       <div>1</div>
                       <div className="text-xs">Qty</div>
@@ -662,14 +747,18 @@ function SalesOrders() {
                 </thead>
                 <tbody>
                   {selectedOrder.lines.map((line, index) => (
-                    <tr 
-                      key={line.id} 
+                    <tr
+                      key={line.id}
                       className={`border-t-2 border-gray-600 transition-colors ${
                         index % 2 === 0 ? "bg-gray-800" : "bg-gray-800/50"
                       } hover:bg-gray-700/50`}
                     >
-                      <td className="px-4 py-3 text-white font-medium border-r border-gray-700">{index + 1}</td>
-                      <td className="px-4 py-3 text-white border-r border-gray-700">{line.product?.name || "-"}</td>
+                      <td className="px-4 py-3 text-white font-medium border-r border-gray-700">
+                        {index + 1}
+                      </td>
+                      <td className="px-4 py-3 text-white border-r border-gray-700">
+                        {line.product?.name || "-"}
+                      </td>
                       <td className="px-4 py-3 text-center text-white font-medium border-r border-gray-700">
                         {Number(line.quantity)}
                       </td>
@@ -677,9 +766,12 @@ function SalesOrders() {
                         {formatCurrency(line.unitPrice)}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <span className="text-yellow-400 font-bold text-lg">{formatCurrency(line.lineTotal)}</span>
+                        <span className="text-yellow-400 font-bold text-lg">
+                          {formatCurrency(line.lineTotal)}
+                        </span>
                         <div className="text-xs text-gray-400 mt-1">
-                          ( {line.quantity} qty × {formatCurrency(line.unitPrice)} )
+                          ( {line.quantity} qty ×{" "}
+                          {formatCurrency(line.unitPrice)} )
                         </div>
                       </td>
                     </tr>
@@ -687,7 +779,12 @@ function SalesOrders() {
                 </tbody>
                 <tfoot>
                   <tr className="border-t-2 border-gray-500 bg-gradient-to-r from-gray-700 to-gray-600">
-                    <td colSpan="4" className="px-4 py-4 text-right font-bold text-white text-lg">Total</td>
+                    <td
+                      colSpan="4"
+                      className="px-4 py-4 text-right font-bold text-white text-lg"
+                    >
+                      Total
+                    </td>
                     <td className="px-4 py-4 text-right">
                       <span className="text-yellow-400 font-bold text-xl bg-gray-800 px-4 py-2 rounded-lg border border-yellow-500">
                         {formatCurrency(selectedOrder.totalAmount)}
@@ -706,10 +803,17 @@ function SalesOrders() {
                 ✓ Invoice Created
               </div>
               {selectedOrder.childTransactions.map((invoice) => (
-                <div key={invoice.id} className="flex justify-between items-center bg-gray-800/50 p-3 rounded-lg">
-                  <span className="text-white font-medium">{invoice.transactionNumber}</span>
+                <div
+                  key={invoice.id}
+                  className="flex justify-between items-center bg-gray-800/50 p-3 rounded-lg"
+                >
+                  <span className="text-white font-medium">
+                    {invoice.transactionNumber}
+                  </span>
                   <button
-                    onClick={() => navigate(`/customer-invoices?id=${invoice.id}`)}
+                    onClick={() =>
+                      navigate(`/customer-invoices?id=${invoice.id}`)
+                    }
                     className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all font-medium"
                   >
                     View Invoice →
@@ -748,7 +852,7 @@ function SalesOrders() {
         <h1 className="text-3xl font-light text-white text-center mb-8 tracking-wide">
           Sales Order
         </h1>
-        
+
         {view === "list" && renderListView()}
         {view === "form" && renderFormView()}
         {view === "detail" && renderDetailView()}

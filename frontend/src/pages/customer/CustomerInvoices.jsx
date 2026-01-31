@@ -70,7 +70,7 @@ export default function CustomerInvoices() {
   // Razorpay Payment Handler
   const handlePayNow = async (invoice) => {
     const amountDue = calculateAmountDue(invoice);
-    
+
     if (amountDue <= 0) {
       alert("This invoice is already paid.");
       return;
@@ -107,7 +107,7 @@ export default function CustomerInvoices() {
       handler: async function (response) {
         // Payment successful
         console.log("Payment successful:", response);
-        
+
         try {
           // Create payment record in the system
           const paymentData = {
@@ -119,20 +119,22 @@ export default function CustomerInvoices() {
             notes: `Online payment for invoice ${invoice.transactionNumber}`,
             transactionId: invoice.id,
           };
-          
+
           // Create and confirm payment
           const paymentRes = await paymentsApi.create(paymentData);
           await paymentsApi.confirm(paymentRes.data.id);
-          
+
           // Refresh invoices
           await fetchInvoices();
-          
+
           alert("Payment successful! Thank you for your payment.");
         } catch (error) {
           console.error("Error recording payment:", error);
-          alert("Payment received but there was an error recording it. Please contact support.");
+          alert(
+            "Payment received but there was an error recording it. Please contact support.",
+          );
         }
-        
+
         setPayingInvoiceId(null);
       },
       prefill: {
@@ -246,14 +248,18 @@ export default function CustomerInvoices() {
             <tbody>
               {invoices.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-4 py-12 text-center text-gray-400 bg-gray-900">
+                  <td
+                    colSpan="6"
+                    className="px-4 py-12 text-center text-gray-400 bg-gray-900"
+                  >
                     No invoices found.
                   </td>
                 </tr>
               ) : (
                 invoices.map((invoice, index) => {
                   const amountDue = calculateAmountDue(invoice);
-                  const isPaid = invoice.paymentStatus === "PAID" || amountDue <= 0;
+                  const isPaid =
+                    invoice.paymentStatus === "PAID" || amountDue <= 0;
                   const isPayingThis = payingInvoiceId === invoice.id;
 
                   return (

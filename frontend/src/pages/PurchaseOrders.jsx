@@ -22,7 +22,9 @@ function PurchaseOrders() {
     vendorId: "",
     reference: "",
     transactionDate: new Date().toISOString().split("T")[0],
-    lines: [{ productId: "", analyticalAccountId: "", quantity: 1, unitPrice: 0 }],
+    lines: [
+      { productId: "", analyticalAccountId: "", quantity: 1, unitPrice: 0 },
+    ],
   });
 
   useEffect(() => {
@@ -32,12 +34,13 @@ function PurchaseOrders() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [ordersRes, vendorsRes, productsRes, analyticalRes] = await Promise.all([
-        transactionsApi.getAll({ type: "PURCHASE_ORDER" }),
-        contactsApi.getVendors(),
-        productsApi.getAll(),
-        analyticalAccountsApi.getAll(),
-      ]);
+      const [ordersRes, vendorsRes, productsRes, analyticalRes] =
+        await Promise.all([
+          transactionsApi.getAll({ type: "PURCHASE_ORDER" }),
+          contactsApi.getVendors(),
+          productsApi.getAll(),
+          analyticalAccountsApi.getAll(),
+        ]);
       setOrders(ordersRes.data);
       setVendors(vendorsRes.data);
       setProducts(productsRes.data);
@@ -55,7 +58,9 @@ function PurchaseOrders() {
       vendorId: "",
       reference: "",
       transactionDate: new Date().toISOString().split("T")[0],
-      lines: [{ productId: "", analyticalAccountId: "", quantity: 1, unitPrice: 0 }],
+      lines: [
+        { productId: "", analyticalAccountId: "", quantity: 1, unitPrice: 0 },
+      ],
     });
     setBudgetWarnings([]);
     setView("form");
@@ -65,7 +70,7 @@ function PurchaseOrders() {
     try {
       const res = await transactionsApi.getById(order.id);
       setSelectedOrder(res.data);
-      
+
       // Check budget warnings
       if (res.data.status === "DRAFT") {
         const warningsRes = await transactionsApi.getBudgetWarnings(order.id);
@@ -73,7 +78,7 @@ function PurchaseOrders() {
       } else {
         setBudgetWarnings([]);
       }
-      
+
       setView("detail");
     } catch (error) {
       console.error("Error fetching order:", error);
@@ -85,7 +90,9 @@ function PurchaseOrders() {
     setFormData({
       vendorId: order.vendorId || "",
       reference: order.reference || "",
-      transactionDate: new Date(order.transactionDate).toISOString().split("T")[0],
+      transactionDate: new Date(order.transactionDate)
+        .toISOString()
+        .split("T")[0],
       lines: order.lines.map((line) => ({
         productId: line.productId,
         analyticalAccountId: line.analyticalAccountId || "",
@@ -99,7 +106,10 @@ function PurchaseOrders() {
   const handleAddLine = () => {
     setFormData({
       ...formData,
-      lines: [...formData.lines, { productId: "", analyticalAccountId: "", quantity: 1, unitPrice: 0 }],
+      lines: [
+        ...formData.lines,
+        { productId: "", analyticalAccountId: "", quantity: 1, unitPrice: 0 },
+      ],
     });
   };
 
@@ -130,7 +140,10 @@ function PurchaseOrders() {
   };
 
   const calculateTotal = () => {
-    return formData.lines.reduce((sum, line) => sum + calculateLineTotal(line), 0);
+    return formData.lines.reduce(
+      (sum, line) => sum + calculateLineTotal(line),
+      0,
+    );
   };
 
   const handleSubmit = async (e) => {
@@ -143,7 +156,9 @@ function PurchaseOrders() {
         transactionDate: formData.transactionDate,
         lines: formData.lines.map((line) => ({
           productId: parseInt(line.productId),
-          analyticalAccountId: line.analyticalAccountId ? parseInt(line.analyticalAccountId) : null,
+          analyticalAccountId: line.analyticalAccountId
+            ? parseInt(line.analyticalAccountId)
+            : null,
           quantity: parseFloat(line.quantity),
           unitPrice: parseFloat(line.unitPrice),
           gstRate: 0, // No GST for now, can be added later
@@ -166,11 +181,11 @@ function PurchaseOrders() {
 
   const handleConfirm = async () => {
     if (!selectedOrder) return;
-    
+
     // Show warning if there are budget warnings
     if (budgetWarnings.length > 0) {
       const proceed = window.confirm(
-        `Warning: ${budgetWarnings.length} line(s) exceed the approved budget. Do you want to proceed anyway?`
+        `Warning: ${budgetWarnings.length} line(s) exceed the approved budget. Do you want to proceed anyway?`,
       );
       if (!proceed) return;
     }
@@ -229,10 +244,14 @@ function PurchaseOrders() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "DRAFT": return "bg-gray-500";
-      case "CONFIRMED": return "bg-green-500";
-      case "CANCELLED": return "bg-red-500";
-      default: return "bg-gray-500";
+      case "DRAFT":
+        return "bg-gray-500";
+      case "CONFIRMED":
+        return "bg-green-500";
+      case "CANCELLED":
+        return "bg-red-500";
+      default:
+        return "bg-gray-500";
     }
   };
 
@@ -286,13 +305,27 @@ function PurchaseOrders() {
           <table className="w-full">
             <thead>
               <tr className="bg-gray-900 border-b border-gray-700">
-                <th className="px-4 py-4 text-left text-gray-400 font-normal">PO No.</th>
-                <th className="px-4 py-4 text-left text-gray-400 font-normal">Vendor Name</th>
-                <th className="px-4 py-4 text-left text-gray-400 font-normal">Reference</th>
-                <th className="px-4 py-4 text-left text-gray-400 font-normal">PO Date</th>
-                <th className="px-4 py-4 text-right text-gray-400 font-normal">Total</th>
-                <th className="px-4 py-4 text-center text-gray-400 font-normal">Status</th>
-                <th className="px-4 py-4 text-center text-gray-400 font-normal">Bill</th>
+                <th className="px-4 py-4 text-left text-gray-400 font-normal">
+                  PO No.
+                </th>
+                <th className="px-4 py-4 text-left text-gray-400 font-normal">
+                  Vendor Name
+                </th>
+                <th className="px-4 py-4 text-left text-gray-400 font-normal">
+                  Reference
+                </th>
+                <th className="px-4 py-4 text-left text-gray-400 font-normal">
+                  PO Date
+                </th>
+                <th className="px-4 py-4 text-right text-gray-400 font-normal">
+                  Total
+                </th>
+                <th className="px-4 py-4 text-center text-gray-400 font-normal">
+                  Status
+                </th>
+                <th className="px-4 py-4 text-center text-gray-400 font-normal">
+                  Bill
+                </th>
               </tr>
             </thead>
             <tbody className="bg-gray-950">
@@ -304,9 +337,15 @@ function PurchaseOrders() {
                     idx % 2 === 0 ? "bg-gray-950" : "bg-gray-900"
                   }`}
                 >
-                  <td className="px-4 py-4 text-white font-medium">{order.transactionNumber}</td>
-                  <td className="px-4 py-4 text-white">{order.vendor?.name || "-"}</td>
-                  <td className="px-4 py-4 text-gray-500">{order.reference || "-"}</td>
+                  <td className="px-4 py-4 text-white font-medium">
+                    {order.transactionNumber}
+                  </td>
+                  <td className="px-4 py-4 text-white">
+                    {order.vendor?.name || "-"}
+                  </td>
+                  <td className="px-4 py-4 text-gray-500">
+                    {order.reference || "-"}
+                  </td>
                   <td className="px-4 py-4 text-white">
                     {new Date(order.transactionDate).toLocaleDateString()}
                   </td>
@@ -314,17 +353,23 @@ function PurchaseOrders() {
                     {formatCurrency(order.totalAmount)}
                   </td>
                   <td className="px-4 py-4 text-center">
-                    <span className={`px-3 py-1.5 rounded text-xs font-medium ${
-                      order.status === "DRAFT" ? "bg-yellow-600/20 text-yellow-400 border border-yellow-600" :
-                      order.status === "CONFIRMED" ? "bg-green-600/20 text-green-400 border border-green-600" :
-                      "bg-red-600/20 text-red-400 border border-red-600"
-                    }`}>
+                    <span
+                      className={`px-3 py-1.5 rounded text-xs font-medium ${
+                        order.status === "DRAFT"
+                          ? "bg-yellow-600/20 text-yellow-400 border border-yellow-600"
+                          : order.status === "CONFIRMED"
+                            ? "bg-green-600/20 text-green-400 border border-green-600"
+                            : "bg-red-600/20 text-red-400 border border-red-600"
+                      }`}
+                    >
                       {order.status}
                     </span>
                   </td>
                   <td className="px-4 py-4 text-center">
                     {order.childTransactions?.length > 0 ? (
-                      <span className="text-green-400 font-medium">✓ Created</span>
+                      <span className="text-green-400 font-medium">
+                        ✓ Created
+                      </span>
                     ) : order.status === "CONFIRMED" ? (
                       <span className="text-yellow-400">Pending</span>
                     ) : (
@@ -335,7 +380,10 @@ function PurchaseOrders() {
               ))}
               {orders.length === 0 && (
                 <tr>
-                  <td colSpan="7" className="px-4 py-8 text-center text-gray-400">
+                  <td
+                    colSpan="7"
+                    className="px-4 py-8 text-center text-gray-400"
+                  >
                     No purchase orders found. Click "New" to create one.
                   </td>
                 </tr>
@@ -353,7 +401,9 @@ function PurchaseOrders() {
       {/* Top Action Bar */}
       <div className="flex justify-between items-center bg-gray-900 rounded-lg p-4 border border-gray-700">
         <h1 className="text-2xl font-bold text-white">
-          {selectedOrder ? `✏️ Edit: ${selectedOrder.transactionNumber}` : "📋 New Purchase Order"}
+          {selectedOrder
+            ? `✏️ Edit: ${selectedOrder.transactionNumber}`
+            : "📋 New Purchase Order"}
         </h1>
         <div className="flex gap-3">
           <button
@@ -371,15 +421,22 @@ function PurchaseOrders() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-gradient-to-b from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-2xl">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-gradient-to-b from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-2xl"
+      >
         {/* Header Info */}
         <div className="p-6 border-b border-gray-700">
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="block text-gray-400 text-sm font-medium uppercase tracking-wide">Vendor Name</label>
+              <label className="block text-gray-400 text-sm font-medium uppercase tracking-wide">
+                Vendor Name
+              </label>
               <select
                 value={formData.vendorId}
-                onChange={(e) => setFormData({ ...formData, vendorId: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, vendorId: e.target.value })
+                }
                 className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border-2 border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
                 required
               >
@@ -390,14 +447,20 @@ function PurchaseOrders() {
                   </option>
                 ))}
               </select>
-              <span className="text-xs text-gray-500">from Contact Master - Many to one</span>
+              <span className="text-xs text-gray-500">
+                from Contact Master - Many to one
+              </span>
             </div>
             <div className="space-y-2">
-              <label className="block text-gray-400 text-sm font-medium uppercase tracking-wide">PO Date</label>
+              <label className="block text-gray-400 text-sm font-medium uppercase tracking-wide">
+                PO Date
+              </label>
               <input
                 type="date"
                 value={formData.transactionDate}
-                onChange={(e) => setFormData({ ...formData, transactionDate: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, transactionDate: e.target.value })
+                }
                 className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border-2 border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
                 required
               />
@@ -405,11 +468,15 @@ function PurchaseOrders() {
           </div>
 
           <div className="mt-6 space-y-2">
-            <label className="block text-gray-400 text-sm font-medium uppercase tracking-wide">Reference</label>
+            <label className="block text-gray-400 text-sm font-medium uppercase tracking-wide">
+              Reference
+            </label>
             <input
               type="text"
               value={formData.reference}
-              onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, reference: e.target.value })
+              }
               placeholder="REQ-25-0001"
               className="w-full px-4 py-3 bg-gray-800 text-cyan-400 rounded-lg border-2 border-gray-600 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all"
             />
@@ -423,23 +490,42 @@ function PurchaseOrders() {
             <table className="w-full">
               <thead>
                 <tr className="bg-gradient-to-r from-gray-700 to-gray-600">
-                  <th className="px-4 py-3 text-left text-white font-bold w-16 border-r border-gray-600">Sr.</th>
-                  <th className="px-4 py-3 text-left text-white font-bold border-r border-gray-600">Product</th>
-                  <th className="px-4 py-3 text-left text-cyan-400 font-bold border-r border-gray-600">Budget Analytics</th>
-                  <th className="px-4 py-3 text-center text-white font-bold w-28 border-r border-gray-600">Qty</th>
-                  <th className="px-4 py-3 text-right text-white font-bold w-36 border-r border-gray-600">Unit Price</th>
-                  <th className="px-4 py-3 text-right text-white font-bold w-36 border-r border-gray-600">Total</th>
+                  <th className="px-4 py-3 text-left text-white font-bold w-16 border-r border-gray-600">
+                    Sr.
+                  </th>
+                  <th className="px-4 py-3 text-left text-white font-bold border-r border-gray-600">
+                    Product
+                  </th>
+                  <th className="px-4 py-3 text-left text-cyan-400 font-bold border-r border-gray-600">
+                    Budget Analytics
+                  </th>
+                  <th className="px-4 py-3 text-center text-white font-bold w-28 border-r border-gray-600">
+                    Qty
+                  </th>
+                  <th className="px-4 py-3 text-right text-white font-bold w-36 border-r border-gray-600">
+                    Unit Price
+                  </th>
+                  <th className="px-4 py-3 text-right text-white font-bold w-36 border-r border-gray-600">
+                    Total
+                  </th>
                   <th className="px-4 py-3 w-16"></th>
                 </tr>
               </thead>
               <tbody>
                 {formData.lines.map((line, index) => (
-                  <tr key={index} className={`border-t-2 border-gray-600 ${index % 2 === 0 ? "bg-gray-800" : "bg-gray-800/50"}`}>
-                    <td className="px-4 py-3 text-white font-medium border-r border-gray-700">{index + 1}</td>
+                  <tr
+                    key={index}
+                    className={`border-t-2 border-gray-600 ${index % 2 === 0 ? "bg-gray-800" : "bg-gray-800/50"}`}
+                  >
+                    <td className="px-4 py-3 text-white font-medium border-r border-gray-700">
+                      {index + 1}
+                    </td>
                     <td className="px-4 py-3 border-r border-gray-700">
                       <select
                         value={line.productId}
-                        onChange={(e) => handleLineChange(index, "productId", e.target.value)}
+                        onChange={(e) =>
+                          handleLineChange(index, "productId", e.target.value)
+                        }
                         className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none"
                         required
                       >
@@ -454,7 +540,13 @@ function PurchaseOrders() {
                     <td className="px-4 py-3 border-r border-gray-700">
                       <select
                         value={line.analyticalAccountId}
-                        onChange={(e) => handleLineChange(index, "analyticalAccountId", e.target.value)}
+                        onChange={(e) =>
+                          handleLineChange(
+                            index,
+                            "analyticalAccountId",
+                            e.target.value,
+                          )
+                        }
                         className="w-full px-3 py-2 bg-gray-700 text-cyan-400 rounded-lg border border-gray-600 focus:border-cyan-500 focus:outline-none"
                       >
                         <option value="">Auto / Select</option>
@@ -469,7 +561,9 @@ function PurchaseOrders() {
                       <input
                         type="number"
                         value={line.quantity}
-                        onChange={(e) => handleLineChange(index, "quantity", e.target.value)}
+                        onChange={(e) =>
+                          handleLineChange(index, "quantity", e.target.value)
+                        }
                         className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 text-center focus:border-blue-500 focus:outline-none"
                         min="1"
                         required
@@ -479,7 +573,9 @@ function PurchaseOrders() {
                       <input
                         type="number"
                         value={line.unitPrice}
-                        onChange={(e) => handleLineChange(index, "unitPrice", e.target.value)}
+                        onChange={(e) =>
+                          handleLineChange(index, "unitPrice", e.target.value)
+                        }
                         className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 text-right focus:border-blue-500 focus:outline-none"
                         min="0"
                         step="0.01"
@@ -584,7 +680,9 @@ function PurchaseOrders() {
             <div className="flex justify-between items-start">
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
-                  <span className="text-gray-400 text-sm uppercase tracking-wide">PO No.</span>
+                  <span className="text-gray-400 text-sm uppercase tracking-wide">
+                    PO No.
+                  </span>
                   <span className="text-2xl font-bold text-white bg-gray-800 px-4 py-1 rounded-lg border border-gray-600">
                     {selectedOrder.transactionNumber}
                   </span>
@@ -608,7 +706,9 @@ function PurchaseOrders() {
                 <div className="flex items-center gap-3 bg-gray-800 px-4 py-2 rounded-lg border border-gray-600">
                   <span className="text-gray-400 text-sm">PO Date</span>
                   <span className="text-white font-medium">
-                    {new Date(selectedOrder.transactionDate).toLocaleDateString()}
+                    {new Date(
+                      selectedOrder.transactionDate,
+                    ).toLocaleDateString()}
                   </span>
                 </div>
               </div>
@@ -662,25 +762,31 @@ function PurchaseOrders() {
 
             {/* Status Indicators */}
             <div className="flex gap-2 ml-auto">
-              <span className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
-                selectedOrder.status === "DRAFT" 
-                  ? "bg-yellow-600/20 text-yellow-400 border-yellow-500 shadow-lg shadow-yellow-500/10" 
-                  : "bg-gray-800 text-gray-500 border-gray-700"
-              }`}>
+              <span
+                className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
+                  selectedOrder.status === "DRAFT"
+                    ? "bg-yellow-600/20 text-yellow-400 border-yellow-500 shadow-lg shadow-yellow-500/10"
+                    : "bg-gray-800 text-gray-500 border-gray-700"
+                }`}
+              >
                 ● Draft
               </span>
-              <span className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
-                selectedOrder.status === "CONFIRMED" 
-                  ? "bg-green-600/20 text-green-400 border-green-500 shadow-lg shadow-green-500/10" 
-                  : "bg-gray-800 text-gray-500 border-gray-700"
-              }`}>
+              <span
+                className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
+                  selectedOrder.status === "CONFIRMED"
+                    ? "bg-green-600/20 text-green-400 border-green-500 shadow-lg shadow-green-500/10"
+                    : "bg-gray-800 text-gray-500 border-gray-700"
+                }`}
+              >
                 ● Confirmed
               </span>
-              <span className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
-                selectedOrder.status === "CANCELLED" 
-                  ? "bg-red-600/20 text-red-400 border-red-500 shadow-lg shadow-red-500/10" 
-                  : "bg-gray-800 text-gray-500 border-gray-700"
-              }`}>
+              <span
+                className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
+                  selectedOrder.status === "CANCELLED"
+                    ? "bg-red-600/20 text-red-400 border-red-500 shadow-lg shadow-red-500/10"
+                    : "bg-gray-800 text-gray-500 border-gray-700"
+                }`}
+              >
                 ● Cancelled
               </span>
             </div>
@@ -691,11 +797,14 @@ function PurchaseOrders() {
             <div className="mx-6 mt-4 bg-gradient-to-r from-yellow-900/30 to-orange-900/30 border-2 border-yellow-500 rounded-xl p-5 shadow-lg shadow-yellow-500/10">
               <div className="flex items-center gap-3 text-yellow-400 mb-3">
                 <span className="text-2xl">⚠️</span>
-                <span className="font-bold text-lg">Exceeds Approved Budget</span>
+                <span className="font-bold text-lg">
+                  Exceeds Approved Budget
+                </span>
               </div>
               <p className="text-yellow-200">
-                The entered amount is higher than the remaining budget amount for this budget line. 
-                Consider adjusting the value or revise the budget.
+                The entered amount is higher than the remaining budget amount
+                for this budget line. Consider adjusting the value or revise the
+                budget.
               </p>
             </div>
           )}
@@ -706,35 +815,58 @@ function PurchaseOrders() {
               <table className="w-full">
                 <thead>
                   <tr className="bg-gradient-to-r from-gray-700 to-gray-600">
-                    <th className="px-4 py-3 text-left text-white font-bold w-16 border-r border-gray-600">Sr.</th>
-                    <th className="px-4 py-3 text-left text-white font-bold border-r border-gray-600">Product</th>
-                    <th className="px-4 py-3 text-left text-cyan-400 font-bold border-r border-gray-600">Budget Analytics</th>
-                    <th className="px-4 py-3 text-center text-white font-bold w-28 border-r border-gray-600">Qty</th>
-                    <th className="px-4 py-3 text-right text-white font-bold w-36 border-r border-gray-600">Unit Price</th>
-                    <th className="px-4 py-3 text-right text-white font-bold w-40">Total</th>
+                    <th className="px-4 py-3 text-left text-white font-bold w-16 border-r border-gray-600">
+                      Sr.
+                    </th>
+                    <th className="px-4 py-3 text-left text-white font-bold border-r border-gray-600">
+                      Product
+                    </th>
+                    <th className="px-4 py-3 text-left text-cyan-400 font-bold border-r border-gray-600">
+                      Budget Analytics
+                    </th>
+                    <th className="px-4 py-3 text-center text-white font-bold w-28 border-r border-gray-600">
+                      Qty
+                    </th>
+                    <th className="px-4 py-3 text-right text-white font-bold w-36 border-r border-gray-600">
+                      Unit Price
+                    </th>
+                    <th className="px-4 py-3 text-right text-white font-bold w-40">
+                      Total
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {selectedOrder.lines.map((line, index) => {
                     const warning = getWarningForLine(line.id);
                     const overBudget = isLineOverBudget(line.id);
-                    
+
                     return (
-                      <tr 
-                        key={line.id} 
+                      <tr
+                        key={line.id}
                         className={`border-t-2 border-gray-600 transition-colors ${
-                          overBudget 
-                            ? "bg-gradient-to-r from-orange-900/30 to-red-900/20" 
-                            : index % 2 === 0 ? "bg-gray-800" : "bg-gray-800/50"
+                          overBudget
+                            ? "bg-gradient-to-r from-orange-900/30 to-red-900/20"
+                            : index % 2 === 0
+                              ? "bg-gray-800"
+                              : "bg-gray-800/50"
                         } hover:bg-gray-700/50`}
                       >
-                        <td className="px-4 py-3 text-white font-medium border-r border-gray-700">{index + 1}</td>
-                        <td className="px-4 py-3 text-white border-r border-gray-700">{line.product?.name || "-"}</td>
-                        <td className={`px-4 py-3 border-r border-gray-700 ${overBudget ? "text-orange-400" : "text-cyan-400"}`}>
-                          <span className="font-medium">{line.analyticalAccount?.name || "-"}</span>
+                        <td className="px-4 py-3 text-white font-medium border-r border-gray-700">
+                          {index + 1}
+                        </td>
+                        <td className="px-4 py-3 text-white border-r border-gray-700">
+                          {line.product?.name || "-"}
+                        </td>
+                        <td
+                          className={`px-4 py-3 border-r border-gray-700 ${overBudget ? "text-orange-400" : "text-cyan-400"}`}
+                        >
+                          <span className="font-medium">
+                            {line.analyticalAccount?.name || "-"}
+                          </span>
                           {warning && (
                             <div className="text-xs text-orange-300 mt-1 bg-orange-900/30 px-2 py-1 rounded">
-                              💰 Budget: {formatCurrency(warning.budgetedAmount)} | 
+                              💰 Budget:{" "}
+                              {formatCurrency(warning.budgetedAmount)} |
                               Remaining: {formatCurrency(warning.remaining)}
                             </div>
                           )}
@@ -746,9 +878,12 @@ function PurchaseOrders() {
                           {formatCurrency(line.unitPrice)}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <span className="text-yellow-400 font-bold text-lg">{formatCurrency(line.lineTotal)}</span>
+                          <span className="text-yellow-400 font-bold text-lg">
+                            {formatCurrency(line.lineTotal)}
+                          </span>
                           <div className="text-xs text-gray-400 mt-1">
-                            ({line.quantity} qty × {formatCurrency(line.unitPrice)})
+                            ({line.quantity} qty ×{" "}
+                            {formatCurrency(line.unitPrice)})
                           </div>
                         </td>
                       </tr>
@@ -757,7 +892,12 @@ function PurchaseOrders() {
                 </tbody>
                 <tfoot>
                   <tr className="border-t-2 border-gray-500 bg-gradient-to-r from-gray-700 to-gray-600">
-                    <td colSpan="5" className="px-4 py-4 text-right font-bold text-white text-lg">Grand Total</td>
+                    <td
+                      colSpan="5"
+                      className="px-4 py-4 text-right font-bold text-white text-lg"
+                    >
+                      Grand Total
+                    </td>
                     <td className="px-4 py-4 text-right">
                       <span className="text-cyan-400 font-bold text-xl bg-gray-800 px-4 py-2 rounded-lg border border-cyan-500">
                         {formatCurrency(selectedOrder.totalAmount)}
@@ -776,8 +916,13 @@ function PurchaseOrders() {
                 ✓ Bill Created
               </div>
               {selectedOrder.childTransactions.map((bill) => (
-                <div key={bill.id} className="flex justify-between items-center bg-gray-800/50 p-3 rounded-lg">
-                  <span className="text-white font-medium">{bill.transactionNumber}</span>
+                <div
+                  key={bill.id}
+                  className="flex justify-between items-center bg-gray-800/50 p-3 rounded-lg"
+                >
+                  <span className="text-white font-medium">
+                    {bill.transactionNumber}
+                  </span>
                   <button
                     onClick={() => navigate(`/vendor-bills?id=${bill.id}`)}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all font-medium"
@@ -818,7 +963,7 @@ function PurchaseOrders() {
         <h1 className="text-3xl font-light text-white text-center mb-8 tracking-wide">
           Purchase Order
         </h1>
-        
+
         {view === "list" && renderListView()}
         {view === "form" && renderFormView()}
         {view === "detail" && renderDetailView()}

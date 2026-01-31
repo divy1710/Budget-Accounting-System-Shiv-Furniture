@@ -36,7 +36,7 @@ export default function CustomerDashboard() {
         contactId: customer.id,
       });
       const data = response.data.filter((inv) => inv.status === "CONFIRMED");
-      
+
       const paid = data.filter((inv) => inv.paymentStatus === "PAID");
       const pending = data.filter((inv) => inv.paymentStatus !== "PAID");
 
@@ -44,9 +44,13 @@ export default function CustomerDashboard() {
         total: data.length,
         paid: paid.length,
         pending: pending.length,
-        totalAmount: data.reduce((sum, inv) => sum + Number(inv.totalAmount || 0), 0),
+        totalAmount: data.reduce(
+          (sum, inv) => sum + Number(inv.totalAmount || 0),
+          0,
+        ),
         pendingAmount: pending.reduce((sum, inv) => {
-          const due = Number(inv.totalAmount || 0) - Number(inv.paidAmount || 0);
+          const due =
+            Number(inv.totalAmount || 0) - Number(inv.paidAmount || 0);
           return sum + due;
         }, 0),
       });
@@ -123,11 +127,15 @@ export default function CustomerDashboard() {
           </div>
           <div className="bg-gradient-to-br from-green-900/30 to-gray-800 border border-green-700/50 rounded-xl p-6 shadow-xl">
             <div className="text-green-400 text-sm mb-2">Paid Invoices</div>
-            <div className="text-3xl font-bold text-green-400">{stats.paid}</div>
+            <div className="text-3xl font-bold text-green-400">
+              {stats.paid}
+            </div>
           </div>
           <div className="bg-gradient-to-br from-pink-900/30 to-gray-800 border border-pink-700/50 rounded-xl p-6 shadow-xl">
             <div className="text-pink-400 text-sm mb-2">Pending Invoices</div>
-            <div className="text-3xl font-bold text-pink-400">{stats.pending}</div>
+            <div className="text-3xl font-bold text-pink-400">
+              {stats.pending}
+            </div>
           </div>
         </div>
 
@@ -137,11 +145,15 @@ export default function CustomerDashboard() {
           <div className="grid grid-cols-2 gap-6">
             <div>
               <div className="text-gray-400 text-sm mb-1">Total Amount</div>
-              <div className="text-2xl font-bold text-white">{formatCurrency(stats.totalAmount)}</div>
+              <div className="text-2xl font-bold text-white">
+                {formatCurrency(stats.totalAmount)}
+              </div>
             </div>
             <div>
               <div className="text-pink-400 text-sm mb-1">Amount Due</div>
-              <div className="text-2xl font-bold text-pink-400">{formatCurrency(stats.pendingAmount)}</div>
+              <div className="text-2xl font-bold text-pink-400">
+                {formatCurrency(stats.pendingAmount)}
+              </div>
             </div>
           </div>
         </div>
