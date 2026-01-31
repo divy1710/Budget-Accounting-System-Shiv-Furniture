@@ -424,10 +424,7 @@ export default function CustomerLogin() {
 
         {/* Admin Portal Link */}
         <div className="mt-6 text-center">
-          <Link
-            to="/admin/login"
-            className="text-blue-200 hover:text-white text-sm"
-          >
+          <Link to="/login" className="text-blue-200 hover:text-white text-sm">
             ← Admin Portal
           </Link>
         </div>

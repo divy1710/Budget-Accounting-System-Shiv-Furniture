@@ -189,7 +189,7 @@ export default function AdminLogin() {
             <p className="text-center text-sm text-gray-500">
               Are you a customer?{" "}
               <Link
-                to="/customer/login"
+                to="/login"
                 className="text-blue-600 hover:underline font-medium"
               >
                 Customer Portal →

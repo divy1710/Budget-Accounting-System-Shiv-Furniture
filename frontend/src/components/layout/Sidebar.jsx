@@ -11,6 +11,7 @@ import {
   CreditCard,
   Settings,
   BarChart3,
+  UserCog,
 } from "lucide-react";
 
 const menuItems = [
@@ -25,6 +26,7 @@ const menuItems = [
   },
   { path: "/budgets", label: "Budgets", icon: Wallet },
   { path: "/auto-analytical", label: "Auto Analytical", icon: Settings },
+  { path: "/users", label: "User Management", icon: UserCog },
   { divider: true, label: "Transactions" },
   { path: "/purchase-orders", label: "Purchase Orders", icon: ShoppingCart },
   { path: "/vendor-bills", label: "Vendor Bills", icon: Receipt },
@@ -82,7 +84,7 @@ export default function Sidebar() {
       {/* Customer Portal Link */}
       <div className="p-4 border-t border-gray-700">
         <a
-          href="/customer/login"
+          href="/login"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"

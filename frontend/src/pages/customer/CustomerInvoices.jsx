@@ -27,7 +27,7 @@ export default function CustomerInvoices() {
   useEffect(() => {
     const customerData = localStorage.getItem("customerPortal");
     if (!customerData) {
-      navigate("/customer/login");
+      navigate("/login");
       return;
     }
     setCustomer(JSON.parse(customerData));
@@ -55,7 +55,7 @@ export default function CustomerInvoices() {
 
   const handleLogout = () => {
     localStorage.removeItem("customerPortal");
-    navigate("/customer/login");
+    navigate("/login");
   };
 
   const formatCurrency = (amount) => {

@@ -12,9 +12,10 @@ import TransactionForm from "./pages/TransactionForm";
 import TransactionDetail from "./pages/TransactionDetail";
 import PaymentList from "./pages/PaymentList";
 import PaymentForm from "./pages/PaymentForm";
+import UserManagement from "./pages/UserManagement";
 // Auth Pages
-import AdminLogin from "./pages/auth/AdminLogin";
-import CustomerAuth from "./pages/auth/CustomerAuth";
+import Login from "./pages/auth/Login";
+import Signup from "./pages/auth/Signup";
 // Customer Portal
 import CustomerDashboard from "./pages/customer/CustomerDashboard";
 import CustomerInvoices from "./pages/customer/CustomerInvoices";
@@ -26,8 +27,8 @@ function App() {
   return (
     <Routes>
       {/* Auth Routes */}
-      <Route path="/admin/login" element={<AdminLogin />} />
-      <Route path="/customer/login" element={<CustomerAuth />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
 
       {/* Admin Portal */}
       <Route path="/" element={<MainLayout />}>
@@ -39,6 +40,7 @@ function App() {
         <Route path="analytical-accounts" element={<AnalyticalAccounts />} />
         <Route path="budgets" element={<Budgets />} />
         <Route path="auto-analytical" element={<AutoAnalyticalModels />} />
+        <Route path="users" element={<UserManagement />} />
 
         {/* Transactions */}
         <Route

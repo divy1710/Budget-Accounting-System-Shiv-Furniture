@@ -40,10 +40,11 @@ enum PaymentStatus {
 
 model User {
     id        Int      @id @default(autoincrement())
+    loginId   String   @unique
     email     String   @unique
     name      String
     password  String
-    role      String   @default("admin") // admin, manager, user
+    role      String   @default("portal") // admin, portal
     isActive  Boolean  @default(true)
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt

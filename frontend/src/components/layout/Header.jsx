@@ -28,7 +28,7 @@ export default function Header() {
 
   const handleLogout = () => {
     adminLogout();
-    navigate("/admin/login");
+    navigate("/login");
   };
 
   const userName = adminUser?.name || "Admin";

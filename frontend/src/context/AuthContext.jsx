@@ -73,7 +73,7 @@ export function AdminProtectedRoute({ children }) {
 
   useEffect(() => {
     if (!loading && !isAdminAuthenticated) {
-      navigate("/admin/login");
+      navigate("/login");
     }
   }, [isAdminAuthenticated, loading, navigate]);
 
@@ -95,7 +95,7 @@ export function CustomerProtectedRoute({ children }) {
 
   useEffect(() => {
     if (!loading && !isCustomerAuthenticated) {
-      navigate("/customer/login");
+      navigate("/login");
     }
   }, [isCustomerAuthenticated, loading, navigate]);
 

@@ -9,11 +9,17 @@ const autoAnalyticalRoutes = require("./autoAnalytical.routes");
 const transactionRoutes = require("./transaction.routes");
 const paymentRoutes = require("./payment.routes");
 const dashboardRoutes = require("./dashboard.routes");
+const authRoutes = require("./authRoutes");
+const userRoutes = require("./userRoutes");
 
 // Health check
 router.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
+
+// Auth routes
+router.use("/auth", authRoutes);
+router.use("/users", userRoutes);
 
 // API routes
 router.use("/contacts", contactRoutes);
