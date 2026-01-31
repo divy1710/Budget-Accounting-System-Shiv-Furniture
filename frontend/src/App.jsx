@@ -12,8 +12,10 @@ import TransactionForm from "./pages/TransactionForm";
 import TransactionDetail from "./pages/TransactionDetail";
 import PaymentList from "./pages/PaymentList";
 import PaymentForm from "./pages/PaymentForm";
+// Auth Pages
+import AdminLogin from "./pages/auth/AdminLogin";
+import CustomerAuth from "./pages/auth/CustomerAuth";
 // Customer Portal
-import CustomerLogin from "./pages/customer/CustomerLogin";
 import CustomerDashboard from "./pages/customer/CustomerDashboard";
 import CustomerInvoices from "./pages/customer/CustomerInvoices";
 import CustomerInvoiceDetail from "./pages/customer/CustomerInvoiceDetail";
@@ -23,6 +25,10 @@ import "./App.css";
 function App() {
   return (
     <Routes>
+      {/* Auth Routes */}
+      <Route path="/admin/login" element={<AdminLogin />} />
+      <Route path="/customer/login" element={<CustomerAuth />} />
+
       {/* Admin Portal */}
       <Route path="/" element={<MainLayout />}>
         <Route index element={<Dashboard />} />
@@ -79,7 +85,6 @@ function App() {
       </Route>
 
       {/* Customer Portal */}
-      <Route path="/customer/login" element={<CustomerLogin />} />
       <Route path="/customer/dashboard" element={<CustomerDashboard />} />
       <Route path="/customer/invoices" element={<CustomerInvoices />} />
       <Route
