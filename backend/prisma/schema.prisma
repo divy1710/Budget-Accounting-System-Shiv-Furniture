@@ -87,17 +87,26 @@ model Contact {
     updatedAt DateTime @updatedAt
 }
 
+// Product Categories
+model Category {
+    id       Int       @id @default(autoincrement())
+    name     String    @unique
+    isActive Boolean   @default(true)
+    products Product[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
 // Products/Items
 model Product {
-    id          Int     @id @default(autoincrement())
-    name        String
-    sku         String? @unique
-    description String?
-    unitPrice   Decimal @default(0) @db.Decimal(10, 2)
-    unit        String  @default("piece") // piece, kg, meter, set
-    hsnCode     String? // HSN code for GST
-    gstRate     Decimal @default(18) @db.Decimal(5, 2) // GST percentage
-    isActive    Boolean @default(true)
+    id            Int       @id @default(autoincrement())
+    name          String
+    categoryId    Int?
+    category      Category? @relation(fields: [categoryId], references: [id])
+    salesPrice    Decimal   @default(0) @db.Decimal(10, 2)
+    purchasePrice Decimal   @default(0) @db.Decimal(10, 2)
+    isActive      Boolean   @default(true)
 
     // Relations
     transactionLines    TransactionLine[]

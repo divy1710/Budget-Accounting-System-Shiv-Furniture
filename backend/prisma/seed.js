@@ -166,77 +166,75 @@ async function main() {
     },
   });
 
+  // Create Categories
+  console.log("Creating categories...");
+  const furnitureCategory = await prisma.category.create({
+    data: { name: "Furniture" },
+  });
+  const rawMaterialCategory = await prisma.category.create({
+    data: { name: "Raw Materials" },
+  });
+  const accessoriesCategory = await prisma.category.create({
+    data: { name: "Accessories" },
+  });
+
   // Create Products
   console.log("Creating products...");
   const product1 = await prisma.product.create({
     data: {
       name: "Wooden Dining Table 6-Seater",
-      sku: "TBL-DIN-6S",
-      unitPrice: 45000,
-      unit: "piece",
-      hsnCode: "9403",
-      gstRate: 18,
+      categoryId: furnitureCategory.id,
+      salesPrice: 45000,
+      purchasePrice: 32000,
     },
   });
   const product2 = await prisma.product.create({
     data: {
       name: "Sofa Set 3+1+1",
-      sku: "SOF-311",
-      unitPrice: 65000,
-      unit: "set",
-      hsnCode: "9401",
-      gstRate: 18,
+      categoryId: furnitureCategory.id,
+      salesPrice: 65000,
+      purchasePrice: 45000,
     },
   });
   const product3 = await prisma.product.create({
     data: {
       name: "King Size Bed with Storage",
-      sku: "BED-KS-STG",
-      unitPrice: 55000,
-      unit: "piece",
-      hsnCode: "9403",
-      gstRate: 18,
+      categoryId: furnitureCategory.id,
+      salesPrice: 55000,
+      purchasePrice: 38000,
     },
   });
   const product4 = await prisma.product.create({
     data: {
       name: "Wardrobe 3-Door",
-      sku: "WRD-3D",
-      unitPrice: 35000,
-      unit: "piece",
-      hsnCode: "9403",
-      gstRate: 18,
+      categoryId: furnitureCategory.id,
+      salesPrice: 35000,
+      purchasePrice: 24000,
     },
   });
   // Raw Materials
   const rawWood = await prisma.product.create({
     data: {
       name: "Sheesham Wood",
-      sku: "RAW-SH-CUFT",
-      unitPrice: 2500,
-      unit: "cuft",
-      hsnCode: "4407",
-      gstRate: 12,
+      categoryId: rawMaterialCategory.id,
+      salesPrice: 2500,
+      purchasePrice: 1800,
     },
   });
   const rawFabric = await prisma.product.create({
     data: {
       name: "Upholstery Fabric",
-      sku: "RAW-FAB-MTR",
-      unitPrice: 800,
-      unit: "meter",
-      hsnCode: "5407",
-      gstRate: 12,
+      categoryId: rawMaterialCategory.id,
+      salesPrice: 800,
+      purchasePrice: 550,
     },
   });
   const hardware = await prisma.product.create({
     data: {
       name: "Hardware Kit",
-      sku: "RAW-HW-KIT",
-      unitPrice: 1500,
-      unit: "kit",
-      hsnCode: "8302",
-      gstRate: 18,
+      categoryId: accessoriesCategory.id,
+      salesPrice: 1500,
+      purchasePrice: 950,
     },
   });
 
@@ -315,9 +313,10 @@ async function main() {
   console.log("✅ Seed completed successfully!");
   console.log("");
   console.log("📊 Created:");
-  console.log("   - 1 Admin User (admin@shivfurniture.com / admin123)");
+  console.log("   - 2 Users (admin / Admin@123, johndoe / Portal@123)");
   console.log("   - 7 Analytical Accounts");
   console.log("   - 3 Vendors + 3 Customers");
+  console.log("   - 3 Categories");
   console.log("   - 7 Products");
   console.log("   - 7 Budgets for current month");
   console.log("   - 3 Auto Analytical Models");

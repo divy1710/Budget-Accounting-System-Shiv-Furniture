@@ -5,16 +5,16 @@ const getAll = async (filters = {}) => {
   const { search, isActive } = filters;
   const where = {};
 
-  if (isActive !== undefined) where.isActive = isActive;
+  if (isActive !== undefined) {
+    where.isActive = isActive === "true" || isActive === true;
+  }
   if (search) {
-    where.OR = [
-      { name: { contains: search, mode: "insensitive" } },
-      { sku: { contains: search, mode: "insensitive" } },
-    ];
+    where.OR = [{ name: { contains: search, mode: "insensitive" } }];
   }
 
   return prisma.product.findMany({
     where,
+    include: { category: true },
     orderBy: { name: "asc" },
   });
 };
@@ -23,12 +23,16 @@ const getAll = async (filters = {}) => {
 const getById = async (id) => {
   return prisma.product.findUnique({
     where: { id: parseInt(id) },
+    include: { category: true },
   });
 };
 
 // Create product
 const create = async (data) => {
-  return prisma.product.create({ data });
+  return prisma.product.create({
+    data,
+    include: { category: true },
+  });
 };
 
 // Update product
@@ -36,6 +40,7 @@ const update = async (id, data) => {
   return prisma.product.update({
     where: { id: parseInt(id) },
     data,
+    include: { category: true },
   });
 };
 

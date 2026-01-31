@@ -3,6 +3,7 @@ const router = express.Router();
 
 const contactRoutes = require("./contact.routes");
 const productRoutes = require("./product.routes");
+const categoryRoutes = require("./category.routes");
 const analyticalAccountRoutes = require("./analyticalAccount.routes");
 const budgetRoutes = require("./budget.routes");
 const autoAnalyticalRoutes = require("./autoAnalytical.routes");
@@ -26,6 +27,7 @@ router.use("/upload", uploadRoutes);
 // API routes
 router.use("/contacts", contactRoutes);
 router.use("/products", productRoutes);
+router.use("/categories", categoryRoutes);
 router.use("/analytical-accounts", analyticalAccountRoutes);
 router.use("/budgets", budgetRoutes);
 router.use("/auto-analytical", autoAnalyticalRoutes);
