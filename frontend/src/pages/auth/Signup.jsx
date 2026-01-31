@@ -1,6 +1,18 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { User, Mail, Lock, Eye, EyeOff, CheckCircle, XCircle, ArrowRight, HelpCircle, Globe, Shield } from "lucide-react";
+import {
+  User,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  CheckCircle,
+  XCircle,
+  ArrowRight,
+  HelpCircle,
+  Globe,
+  Shield,
+} from "lucide-react";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -113,47 +125,49 @@ export default function Signup() {
 
   // Inline styles
   const inputStyle = {
-    width: '100%',
-    padding: '14px 14px 14px 44px',
-    backgroundColor: '#EEF2FF',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '15px',
-    color: '#1F2937',
-    outline: 'none',
-    boxSizing: 'border-box',
+    width: "100%",
+    padding: "14px 14px 14px 44px",
+    backgroundColor: "#EEF2FF",
+    border: "none",
+    borderRadius: "8px",
+    fontSize: "15px",
+    color: "#1F2937",
+    outline: "none",
+    boxSizing: "border-box",
   };
 
   const inputStyleWithRightPadding = {
     ...inputStyle,
-    paddingRight: '44px',
+    paddingRight: "44px",
   };
 
   const iconStyle = {
-    position: 'absolute',
-    left: '14px',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    color: '#4F46E5',
-    pointerEvents: 'none',
+    position: "absolute",
+    left: "14px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    color: "#4F46E5",
+    pointerEvents: "none",
   };
 
   const labelStyle = {
-    display: 'block',
-    fontSize: '14px',
-    fontWeight: '500',
-    color: '#1F2937',
-    marginBottom: '8px',
+    display: "block",
+    fontSize: "14px",
+    fontWeight: "500",
+    color: "#1F2937",
+    marginBottom: "8px",
   };
 
   const ValidationItem = ({ valid, text }) => (
-    <div style={{ 
-      display: 'flex', 
-      alignItems: 'center', 
-      gap: '8px', 
-      fontSize: '12px', 
-      color: valid ? '#22C55E' : '#9CA3AF' 
-    }}>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "8px",
+        fontSize: "12px",
+        color: valid ? "#22C55E" : "#9CA3AF",
+      }}
+    >
       {valid ? <CheckCircle size={14} /> : <XCircle size={14} />}
       {text}
     </div>
@@ -161,38 +175,51 @@ export default function Signup() {
 
   if (success) {
     return (
-      <div style={{ 
-        minHeight: '100vh', 
-        backgroundColor: '#F3F4F6', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        padding: '20px' 
-      }}>
-        <div style={{ 
-          backgroundColor: 'white', 
-          borderRadius: '20px', 
-          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)', 
-          padding: '40px', 
-          textAlign: 'center', 
-          maxWidth: '400px' 
-        }}>
-          <div style={{ 
-            width: '64px', 
-            height: '64px', 
-            backgroundColor: '#DCFCE7', 
-            borderRadius: '50%', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            margin: '0 auto 16px' 
-          }}>
-            <CheckCircle style={{ color: '#22C55E' }} size={32} />
+      <div
+        style={{
+          minHeight: "100vh",
+          backgroundColor: "#F3F4F6",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "20px",
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: "white",
+            borderRadius: "20px",
+            boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
+            padding: "40px",
+            textAlign: "center",
+            maxWidth: "400px",
+          }}
+        >
+          <div
+            style={{
+              width: "64px",
+              height: "64px",
+              backgroundColor: "#DCFCE7",
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 16px",
+            }}
+          >
+            <CheckCircle style={{ color: "#22C55E" }} size={32} />
           </div>
-          <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#1F2937', marginBottom: '8px' }}>
+          <h2
+            style={{
+              fontSize: "20px",
+              fontWeight: "600",
+              color: "#1F2937",
+              marginBottom: "8px",
+            }}
+          >
             Account Created!
           </h2>
-          <p style={{ color: '#6B7280', marginBottom: '16px' }}>
+          <p style={{ color: "#6B7280", marginBottom: "16px" }}>
             Your account has been created successfully. Redirecting to login...
           </p>
         </div>
@@ -201,90 +228,108 @@ export default function Signup() {
   }
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      backgroundColor: '#F3F4F6', 
-      display: 'flex', 
-      flexDirection: 'column',
-      margin: 0,
-      padding: 0,
-    }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        backgroundColor: "#F3F4F6",
+        display: "flex",
+        flexDirection: "column",
+        margin: 0,
+        padding: 0,
+      }}
+    >
       {/* Header */}
-      <div style={{ padding: '20px 24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ 
-            width: '36px', 
-            height: '36px', 
-            backgroundColor: '#2563EB', 
-            borderRadius: '8px', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            color: 'white', 
-            fontWeight: 'bold', 
-            fontSize: '14px' 
-          }}>
+      <div style={{ padding: "20px 24px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div
+            style={{
+              width: "36px",
+              height: "36px",
+              backgroundColor: "#2563EB",
+              borderRadius: "8px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "white",
+              fontWeight: "bold",
+              fontSize: "14px",
+            }}
+          >
             SF
           </div>
-          <span style={{ fontWeight: '600', color: '#1F2937', fontSize: '16px' }}>Shiv Furniture</span>
+          <span
+            style={{ fontWeight: "600", color: "#1F2937", fontSize: "16px" }}
+          >
+            Shiv Furniture
+          </span>
         </div>
       </div>
 
       {/* Main Content */}
-      <div style={{ 
-        flex: 1, 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        padding: '20px' 
-      }}>
-        <div style={{ width: '100%', maxWidth: '420px' }}>
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "20px",
+        }}
+      >
+        <div style={{ width: "100%", maxWidth: "420px" }}>
           {/* Signup Card */}
-          <div style={{ 
-            backgroundColor: 'white', 
-            borderRadius: '20px', 
-            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)', 
-            padding: '40px',
-            margin: 0,
-          }}>
-            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-              <h2 style={{ 
-                fontSize: '32px', 
-                fontWeight: '700', 
-                color: '#1F2937', 
-                marginBottom: '8px',
-                margin: '0 0 8px 0',
-              }}>
+          <div
+            style={{
+              backgroundColor: "white",
+              borderRadius: "20px",
+              boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
+              padding: "40px",
+              margin: 0,
+            }}
+          >
+            <div style={{ textAlign: "center", marginBottom: "32px" }}>
+              <h2
+                style={{
+                  fontSize: "32px",
+                  fontWeight: "700",
+                  color: "#1F2937",
+                  marginBottom: "8px",
+                  margin: "0 0 8px 0",
+                }}
+              >
                 Create Account
               </h2>
-              <p style={{ 
-                fontSize: '14px', 
-                color: '#4F46E5',
-                margin: 0,
-              }}>
+              <p
+                style={{
+                  fontSize: "14px",
+                  color: "#4F46E5",
+                  margin: 0,
+                }}
+              >
                 Sign up to manage your budget and orders.
               </p>
             </div>
 
             {error && (
-              <div style={{ 
-                backgroundColor: '#FEF2F2', 
-                border: '1px solid #FECACA', 
-                color: '#DC2626', 
-                padding: '12px 16px', 
-                borderRadius: '8px', 
-                marginBottom: '20px', 
-                fontSize: '14px' 
-              }}>
+              <div
+                style={{
+                  backgroundColor: "#FEF2F2",
+                  border: "1px solid #FECACA",
+                  color: "#DC2626",
+                  padding: "12px 16px",
+                  borderRadius: "8px",
+                  marginBottom: "20px",
+                  fontSize: "14px",
+                }}
+              >
                 {error}
               </div>
             )}
 
             <form onSubmit={handleSubmit}>
               {/* Name Field */}
-              <div style={{ marginBottom: '16px' }}>
+              <div style={{ marginBottom: "16px" }}>
                 <label style={labelStyle}>Full Name</label>
-                <div style={{ position: 'relative' }}>
+                <div style={{ position: "relative" }}>
                   <div style={iconStyle}>
                     <User size={20} />
                   </div>
@@ -300,9 +345,9 @@ export default function Signup() {
               </div>
 
               {/* Login ID Field */}
-              <div style={{ marginBottom: '16px' }}>
+              <div style={{ marginBottom: "16px" }}>
                 <label style={labelStyle}>Login ID</label>
-                <div style={{ position: 'relative' }}>
+                <div style={{ position: "relative" }}>
                   <div style={iconStyle}>
                     <User size={20} />
                   </div>
@@ -313,26 +358,32 @@ export default function Signup() {
                     required
                     style={{
                       ...inputStyle,
-                      border: formData.loginId 
-                        ? validation.loginIdLength 
-                          ? '2px solid #22C55E' 
-                          : '2px solid #EF4444'
-                        : 'none',
+                      border: formData.loginId
+                        ? validation.loginIdLength
+                          ? "2px solid #22C55E"
+                          : "2px solid #EF4444"
+                        : "none",
                     }}
                     placeholder="6-12 characters"
                   />
                 </div>
                 {formData.loginId && !validation.loginIdLength && (
-                  <p style={{ color: '#EF4444', fontSize: '12px', marginTop: '4px' }}>
+                  <p
+                    style={{
+                      color: "#EF4444",
+                      fontSize: "12px",
+                      marginTop: "4px",
+                    }}
+                  >
                     Login ID must be 6-12 characters
                   </p>
                 )}
               </div>
 
               {/* Email Field */}
-              <div style={{ marginBottom: '16px' }}>
+              <div style={{ marginBottom: "16px" }}>
                 <label style={labelStyle}>Email</label>
-                <div style={{ position: 'relative' }}>
+                <div style={{ position: "relative" }}>
                   <div style={iconStyle}>
                     <Mail size={20} />
                   </div>
@@ -348,9 +399,9 @@ export default function Signup() {
               </div>
 
               {/* Password Field */}
-              <div style={{ marginBottom: '16px' }}>
+              <div style={{ marginBottom: "16px" }}>
                 <label style={labelStyle}>Password</label>
-                <div style={{ position: 'relative' }}>
+                <div style={{ position: "relative" }}>
                   <div style={iconStyle}>
                     <Lock size={20} />
                   </div>
@@ -365,15 +416,15 @@ export default function Signup() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    style={{ 
-                      position: 'absolute', 
-                      right: '14px', 
-                      top: '50%', 
-                      transform: 'translateY(-50%)', 
-                      background: 'none', 
-                      border: 'none', 
-                      color: '#6B7280', 
-                      cursor: 'pointer',
+                    style={{
+                      position: "absolute",
+                      right: "14px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      background: "none",
+                      border: "none",
+                      color: "#6B7280",
+                      cursor: "pointer",
                       padding: 0,
                     }}
                   >
@@ -383,24 +434,26 @@ export default function Signup() {
               </div>
 
               {/* Confirm Password Field */}
-              <div style={{ marginBottom: '16px' }}>
+              <div style={{ marginBottom: "16px" }}>
                 <label style={labelStyle}>Confirm Password</label>
-                <div style={{ position: 'relative' }}>
+                <div style={{ position: "relative" }}>
                   <div style={iconStyle}>
                     <Lock size={20} />
                   </div>
                   <input
                     type="password"
                     value={formData.confirmPassword}
-                    onChange={(e) => handleChange("confirmPassword", e.target.value)}
+                    onChange={(e) =>
+                      handleChange("confirmPassword", e.target.value)
+                    }
                     required
                     style={{
                       ...inputStyle,
-                      border: formData.confirmPassword 
-                        ? validation.passwordsMatch 
-                          ? '2px solid #22C55E' 
-                          : '2px solid #EF4444'
-                        : 'none',
+                      border: formData.confirmPassword
+                        ? validation.passwordsMatch
+                          ? "2px solid #22C55E"
+                          : "2px solid #EF4444"
+                        : "none",
                     }}
                     placeholder="Re-enter your password"
                   />
@@ -409,23 +462,47 @@ export default function Signup() {
 
               {/* Password Requirements */}
               {formData.password && (
-                <div style={{ 
-                  backgroundColor: '#F9FAFB', 
-                  borderRadius: '8px', 
-                  padding: '12px', 
-                  marginBottom: '20px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '6px',
-                }}>
-                  <p style={{ fontSize: '12px', color: '#6B7280', marginBottom: '8px', margin: '0 0 8px 0' }}>
+                <div
+                  style={{
+                    backgroundColor: "#F9FAFB",
+                    borderRadius: "8px",
+                    padding: "12px",
+                    marginBottom: "20px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "6px",
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: "12px",
+                      color: "#6B7280",
+                      marginBottom: "8px",
+                      margin: "0 0 8px 0",
+                    }}
+                  >
                     Password requirements:
                   </p>
-                  <ValidationItem valid={validation.passwordLength} text="At least 8 characters" />
-                  <ValidationItem valid={validation.passwordLower} text="Contains lowercase letter" />
-                  <ValidationItem valid={validation.passwordUpper} text="Contains uppercase letter" />
-                  <ValidationItem valid={validation.passwordSpecial} text="Contains special character" />
-                  <ValidationItem valid={validation.passwordsMatch} text="Passwords match" />
+                  <ValidationItem
+                    valid={validation.passwordLength}
+                    text="At least 8 characters"
+                  />
+                  <ValidationItem
+                    valid={validation.passwordLower}
+                    text="Contains lowercase letter"
+                  />
+                  <ValidationItem
+                    valid={validation.passwordUpper}
+                    text="Contains uppercase letter"
+                  />
+                  <ValidationItem
+                    valid={validation.passwordSpecial}
+                    text="Contains special character"
+                  />
+                  <ValidationItem
+                    valid={validation.passwordsMatch}
+                    text="Passwords match"
+                  />
                 </div>
               )}
 
@@ -433,21 +510,21 @@ export default function Signup() {
               <button
                 type="submit"
                 disabled={loading || !isFormValid()}
-                style={{ 
-                  width: '100%', 
-                  padding: '14px', 
-                  backgroundColor: '#2563EB', 
-                  color: 'white', 
-                  border: 'none', 
-                  borderRadius: '8px', 
-                  fontSize: '16px', 
-                  fontWeight: '500', 
-                  cursor: (loading || !isFormValid()) ? 'not-allowed' : 'pointer',
-                  opacity: (loading || !isFormValid()) ? 0.6 : 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
+                style={{
+                  width: "100%",
+                  padding: "14px",
+                  backgroundColor: "#2563EB",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "16px",
+                  fontWeight: "500",
+                  cursor: loading || !isFormValid() ? "not-allowed" : "pointer",
+                  opacity: loading || !isFormValid() ? 0.6 : 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
                 }}
               >
                 {loading ? "Creating account..." : "Sign Up"}
@@ -456,10 +533,17 @@ export default function Signup() {
             </form>
 
             {/* Sign in link */}
-            <div style={{ marginTop: '24px', textAlign: 'center' }}>
-              <span style={{ fontSize: '14px', color: '#6B7280' }}>
+            <div style={{ marginTop: "24px", textAlign: "center" }}>
+              <span style={{ fontSize: "14px", color: "#6B7280" }}>
                 Already have an account?{" "}
-                <Link to="/login" style={{ color: '#4F46E5', textDecoration: 'none', fontWeight: '500' }}>
+                <Link
+                  to="/login"
+                  style={{
+                    color: "#4F46E5",
+                    textDecoration: "none",
+                    fontWeight: "500",
+                  }}
+                >
                   Sign in
                 </Link>
               </span>
@@ -469,53 +553,67 @@ export default function Signup() {
       </div>
 
       {/* Footer */}
-      <div style={{ padding: '24px', textAlign: 'center' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '16px' }}>
-          <button style={{ 
-            width: '44px', 
-            height: '44px', 
-            backgroundColor: '#4F46E5', 
-            border: 'none', 
-            borderRadius: '50%', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            color: 'white', 
-            cursor: 'pointer' 
-          }}>
+      <div style={{ padding: "24px", textAlign: "center" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            gap: "16px",
+            marginBottom: "16px",
+          }}
+        >
+          <button
+            style={{
+              width: "44px",
+              height: "44px",
+              backgroundColor: "#4F46E5",
+              border: "none",
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "white",
+              cursor: "pointer",
+            }}
+          >
             <HelpCircle size={20} />
           </button>
-          <button style={{ 
-            width: '44px', 
-            height: '44px', 
-            backgroundColor: '#4F46E5', 
-            border: 'none', 
-            borderRadius: '50%', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            color: 'white', 
-            cursor: 'pointer' 
-          }}>
+          <button
+            style={{
+              width: "44px",
+              height: "44px",
+              backgroundColor: "#4F46E5",
+              border: "none",
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "white",
+              cursor: "pointer",
+            }}
+          >
             <Globe size={20} />
           </button>
-          <button style={{ 
-            width: '44px', 
-            height: '44px', 
-            backgroundColor: '#4F46E5', 
-            border: 'none', 
-            borderRadius: '50%', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            color: 'white', 
-            cursor: 'pointer' 
-          }}>
+          <button
+            style={{
+              width: "44px",
+              height: "44px",
+              backgroundColor: "#4F46E5",
+              border: "none",
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "white",
+              cursor: "pointer",
+            }}
+          >
             <Shield size={20} />
           </button>
         </div>
-        <p style={{ fontSize: '12px', color: '#9CA3AF', margin: 0 }}>
-          © 2024 Shiv Furniture Private Ltd. All rights reserved. Secure Cloud ERP.
+        <p style={{ fontSize: "12px", color: "#9CA3AF", margin: 0 }}>
+          © 2024 Shiv Furniture Private Ltd. All rights reserved. Secure Cloud
+          ERP.
         </p>
       </div>
     </div>
