@@ -1,32 +1,18 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import {
-  FileText,
-  CreditCard,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  LogOut,
-  Building2,
-  TrendingUp,
-  Calendar,
-} from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { transactionsApi } from "../../services/api";
 
 export default function CustomerDashboard() {
   const navigate = useNavigate();
   const [customer, setCustomer] = useState(null);
-  const [invoices, setInvoices] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
     paid: 0,
-    overdue: 0,
     totalAmount: 0,
-    paidAmount: 0,
     pendingAmount: 0,
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const customerData = localStorage.getItem("customerPortal");
@@ -39,42 +25,33 @@ export default function CustomerDashboard() {
 
   useEffect(() => {
     if (customer) {
-      fetchInvoices();
+      fetchStats();
     }
   }, [customer]);
 
-  const fetchInvoices = async () => {
+  const fetchStats = async () => {
     try {
       const response = await transactionsApi.getAll({
         type: "CUSTOMER_INVOICE",
         contactId: customer.id,
       });
-      const data = response.data;
-      setInvoices(data);
-
-      // Calculate stats
-      const confirmed = data.filter((inv) => inv.status === "CONFIRMED");
-      const paid = confirmed.filter((inv) => inv.paymentStatus === "PAID");
-      const pending = confirmed.filter((inv) => inv.paymentStatus !== "PAID");
+      const data = response.data.filter((inv) => inv.status === "CONFIRMED");
+      
+      const paid = data.filter((inv) => inv.paymentStatus === "PAID");
+      const pending = data.filter((inv) => inv.paymentStatus !== "PAID");
 
       setStats({
         total: data.length,
-        pending: pending.length,
         paid: paid.length,
-        overdue: pending.filter((inv) => new Date(inv.dueDate) < new Date())
-          .length,
-        totalAmount: confirmed.reduce(
-          (sum, inv) => sum + (inv.totalAmount || 0),
-          0,
-        ),
-        paidAmount: paid.reduce((sum, inv) => sum + (inv.totalAmount || 0), 0),
-        pendingAmount: pending.reduce(
-          (sum, inv) => sum + (inv.totalAmount || 0),
-          0,
-        ),
+        pending: pending.length,
+        totalAmount: data.reduce((sum, inv) => sum + Number(inv.totalAmount || 0), 0),
+        pendingAmount: pending.reduce((sum, inv) => {
+          const due = Number(inv.totalAmount || 0) - Number(inv.paidAmount || 0);
+          return sum + due;
+        }, 0),
       });
     } catch (error) {
-      console.error("Error fetching invoices:", error);
+      console.error("Error fetching stats:", error);
     } finally {
       setLoading(false);
     }
@@ -93,252 +70,98 @@ export default function CustomerDashboard() {
     }).format(amount || 0);
   };
 
-  const formatDate = (date) => {
-    return new Date(date).toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
-  const recentInvoices = invoices
-    .filter((inv) => inv.status === "CONFIRMED")
-    .slice(0, 5);
-
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Building2 className="text-blue-600" size={24} />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-gray-900">
-                  Shiv Furniture
-                </h1>
-                <p className="text-xs text-gray-500">Customer Portal</p>
-              </div>
+    <div className="min-h-screen bg-black p-6">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center text-white text-xl font-bold">
+              S
             </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">
-                  {customer?.name}
-                </p>
-                <p className="text-xs text-gray-500">{customer?.code}</p>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                title="Logout"
-              >
-                <LogOut size={20} />
-              </button>
+            <div>
+              <h1 className="text-xl font-bold text-white">Shiv Furniture</h1>
+              <p className="text-sm text-gray-400">Customer Portal</p>
             </div>
           </div>
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <p className="text-white font-medium">{customer?.name}</p>
+              <p className="text-sm text-gray-400">{customer?.code}</p>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-800 rounded-lg transition"
+              title="Logout"
+            >
+              ⚙️
+            </button>
+          </div>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900">
-            Welcome back, {customer?.name?.split(" ")[0]}!
+        {/* Welcome */}
+        <div className="text-center mb-10">
+          <h2 className="text-3xl font-light text-white mb-2">
+            Welcome, {customer?.name}
           </h2>
-          <p className="text-gray-600 mt-1">
-            Here's an overview of your account with Shiv Furniture.
-          </p>
+          <p className="text-gray-400">Manage your invoices and payments</p>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <FileText className="text-blue-600" size={24} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">
-                  {stats.total}
-                </p>
-                <p className="text-sm text-gray-500">Total Invoices</p>
-              </div>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-6 shadow-xl">
+            <div className="text-gray-400 text-sm mb-2">Total Invoices</div>
+            <div className="text-3xl font-bold text-white">{stats.total}</div>
           </div>
-
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-yellow-100 rounded-lg">
-                <Clock className="text-yellow-600" size={24} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">
-                  {stats.pending}
-                </p>
-                <p className="text-sm text-gray-500">Pending Payment</p>
-              </div>
-            </div>
+          <div className="bg-gradient-to-br from-green-900/30 to-gray-800 border border-green-700/50 rounded-xl p-6 shadow-xl">
+            <div className="text-green-400 text-sm mb-2">Paid Invoices</div>
+            <div className="text-3xl font-bold text-green-400">{stats.paid}</div>
           </div>
-
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <CheckCircle className="text-green-600" size={24} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.paid}</p>
-                <p className="text-sm text-gray-500">Paid Invoices</p>
-              </div>
-            </div>
+          <div className="bg-gradient-to-br from-pink-900/30 to-gray-800 border border-pink-700/50 rounded-xl p-6 shadow-xl">
+            <div className="text-pink-400 text-sm mb-2">Pending Invoices</div>
+            <div className="text-3xl font-bold text-pink-400">{stats.pending}</div>
           </div>
+        </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-red-100 rounded-lg">
-                <AlertCircle className="text-red-600" size={24} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">
-                  {stats.overdue}
-                </p>
-                <p className="text-sm text-gray-500">Overdue</p>
-              </div>
+        {/* Amount Summary */}
+        <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-6 mb-10 shadow-xl">
+          <h3 className="text-white font-medium mb-4">Payment Summary</h3>
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <div className="text-gray-400 text-sm mb-1">Total Amount</div>
+              <div className="text-2xl font-bold text-white">{formatCurrency(stats.totalAmount)}</div>
+            </div>
+            <div>
+              <div className="text-pink-400 text-sm mb-1">Amount Due</div>
+              <div className="text-2xl font-bold text-pink-400">{formatCurrency(stats.pendingAmount)}</div>
             </div>
           </div>
         </div>
 
-        {/* Financial Summary */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-sm p-6 text-white">
-            <div className="flex items-center gap-3 mb-2">
-              <TrendingUp size={20} />
-              <span className="text-blue-100">Total Billed</span>
-            </div>
-            <p className="text-3xl font-bold">
-              {formatCurrency(stats.totalAmount)}
-            </p>
-          </div>
-
-          <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-xl shadow-sm p-6 text-white">
-            <div className="flex items-center gap-3 mb-2">
-              <CheckCircle size={20} />
-              <span className="text-green-100">Amount Paid</span>
-            </div>
-            <p className="text-3xl font-bold">
-              {formatCurrency(stats.paidAmount)}
-            </p>
-          </div>
-
-          <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl shadow-sm p-6 text-white">
-            <div className="flex items-center gap-3 mb-2">
-              <Clock size={20} />
-              <span className="text-orange-100">Outstanding</span>
-            </div>
-            <p className="text-3xl font-bold">
-              {formatCurrency(stats.pendingAmount)}
-            </p>
-          </div>
+        {/* Action Buttons */}
+        <div className="flex justify-center gap-4">
+          <button
+            onClick={() => navigate("/customer/invoices")}
+            className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-medium hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-500/20 transition-all"
+          >
+            📄 View My Invoices
+          </button>
+          <button
+            onClick={() => navigate("/customer/payments")}
+            className="px-8 py-3 bg-gradient-to-r from-gray-700 to-gray-600 text-white rounded-xl font-medium hover:from-gray-600 hover:to-gray-500 border border-gray-600 transition-all"
+          >
+            💳 Payment History
+          </button>
         </div>
-
-        {/* Quick Actions & Recent Invoices */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Quick Actions */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Quick Actions
-            </h3>
-            <div className="space-y-3">
-              <Link
-                to="/customer/invoices"
-                className="flex items-center gap-3 p-3 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition"
-              >
-                <FileText size={20} />
-                <span className="font-medium">View All Invoices</span>
-              </Link>
-              <Link
-                to="/customer/payments"
-                className="flex items-center gap-3 p-3 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition"
-              >
-                <CreditCard size={20} />
-                <span className="font-medium">Make a Payment</span>
-              </Link>
-            </div>
-          </div>
-
-          {/* Recent Invoices */}
-          <div className="lg:col-span-2 bg-white rounded-xl shadow-sm p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Recent Invoices
-              </h3>
-              <Link
-                to="/customer/invoices"
-                className="text-sm text-blue-600 hover:underline"
-              >
-                View All
-              </Link>
-            </div>
-            {recentInvoices.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <FileText className="mx-auto mb-2 text-gray-300" size={40} />
-                <p>No invoices found</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {recentInvoices.map((invoice) => (
-                  <Link
-                    key={invoice.id}
-                    to={`/customer/invoices/${invoice.id}`}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-white rounded-lg shadow-sm">
-                        <FileText className="text-blue-600" size={18} />
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {invoice.transactionNumber}
-                        </p>
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                          <Calendar size={12} />
-                          {formatDate(invoice.transactionDate)}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-gray-900">
-                        {formatCurrency(invoice.totalAmount)}
-                      </p>
-                      <span
-                        className={`inline-flex px-2 py-0.5 text-xs rounded-full ${
-                          invoice.paymentStatus === "PAID"
-                            ? "bg-green-100 text-green-700"
-                            : invoice.paymentStatus === "PARTIAL"
-                              ? "bg-yellow-100 text-yellow-700"
-                              : "bg-red-100 text-red-700"
-                        }`}
-                      >
-                        {invoice.paymentStatus}
-                      </span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </main>
+      </div>
     </div>
   );
 }

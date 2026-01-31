@@ -9,18 +9,9 @@ const getAll = async (req, res) => {
   }
 };
 
-const getSummary = async (req, res) => {
-  try {
-    const summary = await budgetService.getSummary(req.query);
-    res.json(summary);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
 const getById = async (req, res) => {
   try {
-    const budget = await budgetService.getById(parseInt(req.params.id));
+    const budget = await budgetService.getWithAchieved(parseInt(req.params.id));
     if (!budget) {
       return res.status(404).json({ error: "Budget not found" });
     }
@@ -51,6 +42,33 @@ const update = async (req, res) => {
   }
 };
 
+const confirm = async (req, res) => {
+  try {
+    const budget = await budgetService.confirm(parseInt(req.params.id));
+    res.json(budget);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const revise = async (req, res) => {
+  try {
+    const budget = await budgetService.revise(parseInt(req.params.id));
+    res.json(budget);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const archive = async (req, res) => {
+  try {
+    const budget = await budgetService.archive(parseInt(req.params.id));
+    res.json(budget);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 const remove = async (req, res) => {
   try {
     await budgetService.remove(parseInt(req.params.id));
@@ -60,4 +78,13 @@ const remove = async (req, res) => {
   }
 };
 
-module.exports = { getAll, getSummary, getById, create, update, remove };
+module.exports = {
+  getAll,
+  getById,
+  create,
+  update,
+  confirm,
+  revise,
+  archive,
+  remove,
+};

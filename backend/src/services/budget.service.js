@@ -1,113 +1,324 @@
 const prisma = require("../lib/prisma");
 
-// Get all budgets
+// Get achieved amounts for a single budget
+const computeAchievedForBudget = async (budget) => {
+  if (!budget || budget.status !== "CONFIRMED") {
+    return budget;
+  }
+
+  const achieved = {};
+
+  for (const line of budget.lines) {
+    const transactionLines = await prisma.transactionLine.findMany({
+      where: {
+        analyticalAccountId: line.analyticalAccountId,
+        transaction: {
+          status: "CONFIRMED",
+          transactionDate: {
+            gte: budget.startDate,
+            lte: budget.endDate,
+          },
+          type:
+            line.type === "INCOME"
+              ? { in: ["SALES_ORDER", "CUSTOMER_INVOICE"] }
+              : { in: ["PURCHASE_ORDER", "VENDOR_BILL"] },
+        },
+      },
+      select: {
+        lineTotal: true,
+      },
+    });
+
+    achieved[line.id] = transactionLines.reduce(
+      (sum, tl) => sum + Number(tl.lineTotal),
+      0,
+    );
+  }
+
+  return {
+    ...budget,
+    lines: budget.lines.map((line) => {
+      const budgeted = Number(line.budgetedAmount);
+      const achievedAmount = achieved[line.id] || 0;
+      const achievedPercent =
+        budgeted > 0 ? (achievedAmount / budgeted) * 100 : 0;
+      const amountToAchieve = budgeted - achievedAmount;
+
+      return {
+        ...line,
+        budgetedAmount: budgeted,
+        achievedAmount,
+        achievedPercent: achievedPercent.toFixed(2),
+        amountToAchieve,
+      };
+    }),
+  };
+};
+
+// Get all budgets with optional status filter (includes achieved amounts for confirmed budgets)
 const getAll = async (filters = {}) => {
-  const { year, month, analyticalAccountId } = filters;
+  const { status } = filters;
   const where = {};
 
-  if (year) where.year = parseInt(year);
-  if (month) where.month = parseInt(month);
-  if (analyticalAccountId)
-    where.analyticalAccountId = parseInt(analyticalAccountId);
+  if (status) where.status = status;
 
-  return prisma.budget.findMany({
+  const budgets = await prisma.budgetMaster.findMany({
     where,
-    include: { analyticalAccount: true },
-    orderBy: [{ year: "desc" }, { month: "desc" }],
-  });
-};
-
-// Get by ID
-const getById = async (id) => {
-  return prisma.budget.findUnique({
-    where: { id: parseInt(id) },
-    include: { analyticalAccount: true },
-  });
-};
-
-// Create budget
-const create = async (data) => {
-  return prisma.budget.create({
-    data: {
-      analyticalAccountId: parseInt(data.analyticalAccountId),
-      year: parseInt(data.year),
-      month: parseInt(data.month),
-      allocatedAmount: parseFloat(data.allocatedAmount),
+    include: {
+      lines: {
+        include: {
+          analyticalAccount: true,
+        },
+      },
+      revisedFrom: {
+        select: { id: true, name: true },
+      },
+      revisedTo: {
+        select: { id: true, name: true },
+      },
     },
-    include: { analyticalAccount: true },
+    orderBy: { createdAt: "desc" },
+  });
+
+  // Compute achieved amounts for confirmed budgets
+  const budgetsWithAchieved = await Promise.all(
+    budgets.map(async (budget) => {
+      if (budget.status === "CONFIRMED") {
+        return computeAchievedForBudget(budget);
+      }
+      return budget;
+    }),
+  );
+
+  return budgetsWithAchieved;
+};
+
+// Get by ID with full details
+const getById = async (id) => {
+  return prisma.budgetMaster.findUnique({
+    where: { id: parseInt(id) },
+    include: {
+      lines: {
+        include: {
+          analyticalAccount: true,
+        },
+      },
+      revisedFrom: {
+        select: { id: true, name: true },
+      },
+      revisedTo: {
+        select: { id: true, name: true },
+      },
+    },
+  });
+};
+
+// Create budget with lines
+const create = async (data) => {
+  const { name, startDate, endDate, lines } = data;
+
+  return prisma.budgetMaster.create({
+    data: {
+      name,
+      startDate: new Date(startDate),
+      endDate: new Date(endDate),
+      status: "DRAFT",
+      lines: {
+        create: lines.map((line) => ({
+          analyticalAccountId: parseInt(line.analyticalAccountId),
+          type: line.type,
+          budgetedAmount: parseFloat(line.budgetedAmount) || 0,
+        })),
+      },
+    },
+    include: {
+      lines: {
+        include: {
+          analyticalAccount: true,
+        },
+      },
+    },
   });
 };
 
 // Update budget
 const update = async (id, data) => {
-  return prisma.budget.update({
+  const { name, startDate, endDate, lines } = data;
+
+  // First, delete existing lines
+  await prisma.budgetLine.deleteMany({
+    where: { budgetId: parseInt(id) },
+  });
+
+  // Then update master and create new lines
+  return prisma.budgetMaster.update({
     where: { id: parseInt(id) },
-    data: { allocatedAmount: parseFloat(data.allocatedAmount) },
-    include: { analyticalAccount: true },
+    data: {
+      name,
+      startDate: startDate ? new Date(startDate) : undefined,
+      endDate: endDate ? new Date(endDate) : undefined,
+      lines: lines
+        ? {
+            create: lines.map((line) => ({
+              analyticalAccountId: parseInt(line.analyticalAccountId),
+              type: line.type,
+              budgetedAmount: parseFloat(line.budgetedAmount) || 0,
+            })),
+          }
+        : undefined,
+    },
+    include: {
+      lines: {
+        include: {
+          analyticalAccount: true,
+        },
+      },
+    },
+  });
+};
+
+// Confirm budget
+const confirm = async (id) => {
+  return prisma.budgetMaster.update({
+    where: { id: parseInt(id) },
+    data: { status: "CONFIRMED" },
+    include: {
+      lines: {
+        include: {
+          analyticalAccount: true,
+        },
+      },
+    },
+  });
+};
+
+// Revise budget - creates a new budget linked to the original
+const revise = async (id) => {
+  const original = await prisma.budgetMaster.findUnique({
+    where: { id: parseInt(id) },
+    include: { lines: true },
+  });
+
+  if (!original) throw new Error("Budget not found");
+  if (original.status !== "CONFIRMED")
+    throw new Error("Only confirmed budgets can be revised");
+
+  // Format revision name: "Original Name (Rev DD MM YYYY)"
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, "0");
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const year = now.getFullYear();
+  const revisionDate = `${day} ${month} ${year}`;
+
+  // Remove any existing "(Revised)" or "(Rev...)" suffix from original name
+  const baseName = original.name
+    .replace(/\s*\(Rev.*\)$/i, "")
+    .replace(/\s*\(Revised\)$/i, "");
+  const revisedName = `${baseName} (Rev ${revisionDate})`;
+
+  // Create new budget as a revision
+  const revised = await prisma.budgetMaster.create({
+    data: {
+      name: revisedName,
+      startDate: original.startDate,
+      endDate: original.endDate,
+      status: "DRAFT",
+      revisedFromId: original.id,
+      lines: {
+        create: original.lines.map((line) => ({
+          analyticalAccountId: line.analyticalAccountId,
+          type: line.type,
+          budgetedAmount: line.budgetedAmount,
+        })),
+      },
+    },
+    include: {
+      lines: {
+        include: {
+          analyticalAccount: true,
+        },
+      },
+      revisedFrom: {
+        select: { id: true, name: true },
+      },
+    },
+  });
+
+  // Update original budget status to REVISED
+  await prisma.budgetMaster.update({
+    where: { id: parseInt(id) },
+    data: { status: "REVISED" },
+  });
+
+  return revised;
+};
+
+// Archive budget
+const archive = async (id) => {
+  return prisma.budgetMaster.update({
+    where: { id: parseInt(id) },
+    data: { status: "ARCHIVED" },
   });
 };
 
 // Delete budget
 const remove = async (id) => {
-  return prisma.budget.delete({ where: { id: parseInt(id) } });
+  return prisma.budgetMaster.delete({ where: { id: parseInt(id) } });
 };
 
-// Get budget summary for a period
-const getSummary = async (year, month) => {
-  const budgets = await prisma.budget.findMany({
-    where: { year: parseInt(year), month: parseInt(month) },
-    include: { analyticalAccount: true },
-  });
+// Get budget with computed achieved amounts (for any status, forces computation)
+const getWithAchieved = async (id) => {
+  const budget = await getById(id);
+  if (!budget) return null;
 
-  const totalAllocated = budgets.reduce(
-    (sum, b) => sum + Number(b.allocatedAmount),
-    0,
-  );
-  const totalUsed = budgets.reduce((sum, b) => sum + Number(b.usedAmount), 0);
-  const remaining = totalAllocated - totalUsed;
-  const utilizationPercent =
-    totalAllocated > 0 ? ((totalUsed / totalAllocated) * 100).toFixed(2) : 0;
+  // Force compute achieved amounts for the detail view
+  const achieved = {};
+
+  for (const line of budget.lines) {
+    const transactionLines = await prisma.transactionLine.findMany({
+      where: {
+        analyticalAccountId: line.analyticalAccountId,
+        transaction: {
+          status: "CONFIRMED",
+          transactionDate: {
+            gte: budget.startDate,
+            lte: budget.endDate,
+          },
+          type:
+            line.type === "INCOME"
+              ? { in: ["SALES_ORDER", "CUSTOMER_INVOICE"] }
+              : { in: ["PURCHASE_ORDER", "VENDOR_BILL"] },
+        },
+      },
+      select: {
+        lineTotal: true,
+      },
+    });
+
+    achieved[line.id] = transactionLines.reduce(
+      (sum, tl) => sum + Number(tl.lineTotal),
+      0,
+    );
+  }
 
   return {
-    period: { year: parseInt(year), month: parseInt(month) },
-    totalAllocated,
-    totalUsed,
-    remaining,
-    utilizationPercent,
-    budgets: budgets.map((b) => ({
-      ...b,
-      allocatedAmount: Number(b.allocatedAmount),
-      usedAmount: Number(b.usedAmount),
-      remaining: Number(b.allocatedAmount) - Number(b.usedAmount),
-      utilizationPercent:
-        Number(b.allocatedAmount) > 0
-          ? ((Number(b.usedAmount) / Number(b.allocatedAmount)) * 100).toFixed(
-              2,
-            )
-          : 0,
-    })),
+    ...budget,
+    lines: budget.lines.map((line) => {
+      const budgeted = Number(line.budgetedAmount);
+      const achievedAmount = achieved[line.id] || 0;
+      const achievedPercent =
+        budgeted > 0 ? (achievedAmount / budgeted) * 100 : 0;
+      const amountToAchieve = budgeted - achievedAmount;
+
+      return {
+        ...line,
+        budgetedAmount: budgeted,
+        achievedAmount,
+        achievedPercent: achievedPercent.toFixed(2),
+        amountToAchieve,
+      };
+    }),
   };
-};
-
-// Update budget usage (called when transaction is confirmed)
-const updateUsage = async (analyticalAccountId, year, month, amount) => {
-  const budget = await prisma.budget.findUnique({
-    where: {
-      analyticalAccountId_year_month: {
-        analyticalAccountId: parseInt(analyticalAccountId),
-        year: parseInt(year),
-        month: parseInt(month),
-      },
-    },
-  });
-
-  if (budget) {
-    return prisma.budget.update({
-      where: { id: budget.id },
-      data: { usedAmount: { increment: parseFloat(amount) } },
-    });
-  }
-  return null;
 };
 
 module.exports = {
@@ -115,7 +326,9 @@ module.exports = {
   getById,
   create,
   update,
+  confirm,
+  revise,
+  archive,
   remove,
-  getSummary,
-  updateUsage,
+  getWithAchieved,
 };

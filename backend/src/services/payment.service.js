@@ -16,11 +16,12 @@ const generateNumber = async () => {
 
 // Get all payments
 const getAll = async (filters = {}) => {
-  const { contactId, status, fromDate, toDate } = filters;
+  const { contactId, status, paymentType, fromDate, toDate } = filters;
   const where = {};
 
   if (contactId) where.contactId = parseInt(contactId);
   if (status) where.status = status;
+  if (paymentType) where.paymentType = paymentType;
   if (fromDate || toDate) {
     where.paymentDate = {};
     if (fromDate) where.paymentDate.gte = new Date(fromDate);
@@ -71,13 +72,16 @@ const create = async (data) => {
       contactId: parseInt(data.contactId),
       paymentDate: data.paymentDate ? new Date(data.paymentDate) : new Date(),
       amount,
-      paymentMethod: data.paymentMethod || "BANK_TRANSFER",
+      status: "DRAFT",
+      paymentType: data.paymentType || "SEND",
+      paymentMethod: data.paymentMethod || "bank",
       reference: data.reference,
+      sourceTransactionId: data.sourceTransactionId || null,
       notes: data.notes,
       allocations: data.allocations
         ? {
             create: data.allocations.map((a) => ({
-              transactionId: parseInt(a.transactionId),
+              transactionId: a.transactionId,
               allocatedAmount: parseFloat(a.allocatedAmount),
             })),
           }
@@ -88,15 +92,6 @@ const create = async (data) => {
       allocations: { include: { transaction: true } },
     },
   });
-
-  // Update payment status for each allocated transaction
-  if (data.allocations) {
-    for (const allocation of data.allocations) {
-      await transactionService.updatePaymentStatus(
-        parseInt(allocation.transactionId),
-      );
-    }
-  }
 
   return payment;
 };
@@ -237,19 +232,139 @@ const remove = async (id) => {
     include: { allocations: true },
   });
 
-  if (payment.status !== "POSTED") {
+  if (payment.status === "DRAFT") {
     // Delete allocations first
     await prisma.paymentAllocation.deleteMany({ where: { paymentId: id } });
-
-    // Update transaction payment status
-    for (const allocation of payment.allocations) {
-      await transactionService.updatePaymentStatus(allocation.transactionId);
-    }
 
     return prisma.payment.delete({ where: { id } });
   }
 
-  throw new Error("Cannot delete posted payment. Void it instead.");
+  throw new Error("Can only delete draft payments");
+};
+
+// Confirm payment - applies the payment to transactions
+const confirm = async (id) => {
+  const payment = await prisma.payment.findUnique({
+    where: { id },
+    include: { allocations: true },
+  });
+
+  if (!payment) throw new Error("Payment not found");
+  if (payment.status !== "DRAFT")
+    throw new Error("Can only confirm draft payments");
+
+  // Update payment status
+  const confirmedPayment = await prisma.payment.update({
+    where: { id },
+    data: { status: "CONFIRMED" },
+    include: {
+      contact: true,
+      allocations: { include: { transaction: true } },
+    },
+  });
+
+  // Update payment status for each allocated transaction
+  for (const allocation of payment.allocations) {
+    await transactionService.updatePaymentStatus(allocation.transactionId);
+  }
+
+  return confirmedPayment;
+};
+
+// Cancel payment
+const cancel = async (id) => {
+  const payment = await prisma.payment.findUnique({
+    where: { id },
+    include: { allocations: true },
+  });
+
+  if (!payment) throw new Error("Payment not found");
+  if (payment.status === "CANCELLED")
+    throw new Error("Payment already cancelled");
+
+  // Store transaction IDs
+  const transactionIds = payment.allocations.map((a) => a.transactionId);
+
+  // Delete allocations if payment was confirmed
+  if (payment.status === "CONFIRMED") {
+    await prisma.paymentAllocation.deleteMany({ where: { paymentId: id } });
+  }
+
+  const cancelledPayment = await prisma.payment.update({
+    where: { id },
+    data: { status: "CANCELLED" },
+    include: { contact: true },
+  });
+
+  // Update payment status for affected transactions
+  if (payment.status === "CONFIRMED") {
+    for (const txnId of transactionIds) {
+      await transactionService.updatePaymentStatus(txnId);
+    }
+  }
+
+  return cancelledPayment;
+};
+
+// Create payment from Bill/Invoice
+const createFromTransaction = async (transactionId) => {
+  const transaction = await prisma.transaction.findUnique({
+    where: { id: transactionId },
+    include: {
+      vendor: true,
+      customer: true,
+      paymentAllocations: true,
+    },
+  });
+
+  if (!transaction) throw new Error("Transaction not found");
+  if (!["VENDOR_BILL", "CUSTOMER_INVOICE"].includes(transaction.type)) {
+    throw new Error("Can only create payment from Bill or Invoice");
+  }
+  if (transaction.status !== "CONFIRMED") {
+    throw new Error("Transaction must be confirmed before creating payment");
+  }
+
+  // Calculate amount due
+  const paidAmount = transaction.paymentAllocations.reduce(
+    (sum, a) => sum + Number(a.allocatedAmount),
+    0,
+  );
+  const amountDue = Number(transaction.totalAmount) - paidAmount;
+
+  if (amountDue <= 0) {
+    throw new Error("Transaction is already fully paid");
+  }
+
+  const contactId = transaction.vendorId || transaction.customerId;
+  const paymentType = transaction.type === "VENDOR_BILL" ? "SEND" : "RECEIVE";
+
+  const paymentNumber = await generateNumber();
+
+  return prisma.payment.create({
+    data: {
+      paymentNumber,
+      contactId,
+      paymentDate: new Date(),
+      amount: amountDue,
+      status: "DRAFT",
+      paymentType,
+      paymentMethod: "bank",
+      sourceTransactionId: transactionId,
+      allocations: {
+        create: [
+          {
+            transactionId,
+            allocatedAmount: amountDue,
+          },
+        ],
+      },
+    },
+    include: {
+      contact: true,
+      allocations: { include: { transaction: true } },
+    },
+  });
 };
 
 module.exports = {
@@ -257,8 +372,11 @@ module.exports = {
   getById,
   create,
   update,
+  confirm,
+  cancel,
   voidPayment,
   remove,
   getOutstandingTransactions,
   generateNumber,
+  createFromTransaction,
 };

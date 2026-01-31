@@ -11,9 +11,7 @@ const getAll = async (req, res) => {
 
 const getById = async (req, res) => {
   try {
-    const transaction = await transactionService.getById(
-      parseInt(req.params.id),
-    );
+    const transaction = await transactionService.getById(req.params.id);
     if (!transaction) {
       return res.status(404).json({ error: "Transaction not found" });
     }
@@ -35,7 +33,7 @@ const create = async (req, res) => {
 const update = async (req, res) => {
   try {
     const transaction = await transactionService.update(
-      parseInt(req.params.id),
+      req.params.id,
       req.body,
     );
     res.json(transaction);
@@ -46,9 +44,7 @@ const update = async (req, res) => {
 
 const confirm = async (req, res) => {
   try {
-    const transaction = await transactionService.confirm(
-      parseInt(req.params.id),
-    );
+    const transaction = await transactionService.confirm(req.params.id);
     res.json(transaction);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -57,9 +53,7 @@ const confirm = async (req, res) => {
 
 const cancel = async (req, res) => {
   try {
-    const transaction = await transactionService.cancel(
-      parseInt(req.params.id),
-    );
+    const transaction = await transactionService.cancel(req.params.id);
     res.json(transaction);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -68,11 +62,51 @@ const cancel = async (req, res) => {
 
 const remove = async (req, res) => {
   try {
-    await transactionService.remove(parseInt(req.params.id));
+    await transactionService.remove(req.params.id);
     res.status(204).send();
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 };
 
-module.exports = { getAll, getById, create, update, confirm, cancel, remove };
+const createBillFromPO = async (req, res) => {
+  try {
+    const bill = await transactionService.createBillFromPO(req.params.id);
+    res.status(201).json(bill);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const createInvoiceFromSO = async (req, res) => {
+  try {
+    const invoice = await transactionService.createInvoiceFromSO(req.params.id);
+    res.status(201).json(invoice);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const checkBudgetWarnings = async (req, res) => {
+  try {
+    const warnings = await transactionService.checkBudgetWarnings(
+      req.params.id,
+    );
+    res.json(warnings);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+module.exports = {
+  getAll,
+  getById,
+  create,
+  update,
+  confirm,
+  cancel,
+  remove,
+  createBillFromPO,
+  createInvoiceFromSO,
+  checkBudgetWarnings,
+};

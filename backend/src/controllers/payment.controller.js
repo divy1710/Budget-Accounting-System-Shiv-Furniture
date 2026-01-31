@@ -42,6 +42,24 @@ const update = async (req, res) => {
   }
 };
 
+const confirm = async (req, res) => {
+  try {
+    const payment = await paymentService.confirm(parseInt(req.params.id));
+    res.json(payment);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const cancel = async (req, res) => {
+  try {
+    const payment = await paymentService.cancel(parseInt(req.params.id));
+    res.json(payment);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 const voidPayment = async (req, res) => {
   try {
     const payment = await paymentService.voidPayment(parseInt(req.params.id));
@@ -71,12 +89,26 @@ const getOutstanding = async (req, res) => {
   }
 };
 
+const createFromTransaction = async (req, res) => {
+  try {
+    const payment = await paymentService.createFromTransaction(
+      req.params.transactionId,
+    );
+    res.status(201).json(payment);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getAll,
   getById,
   create,
   update,
+  confirm,
+  cancel,
   voidPayment,
   remove,
   getOutstanding,
+  createFromTransaction,
 };

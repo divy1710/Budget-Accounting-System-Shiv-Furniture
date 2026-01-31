@@ -51,10 +51,12 @@ export const analyticalAccountsApi = {
 // Budgets API
 export const budgetsApi = {
   getAll: (params) => api.get("/budgets", { params }),
-  getSummary: (params) => api.get("/budgets/summary", { params }),
   getById: (id) => api.get(`/budgets/${id}`),
   create: (data) => api.post("/budgets", data),
   update: (id, data) => api.put(`/budgets/${id}`, data),
+  confirm: (id) => api.post(`/budgets/${id}/confirm`),
+  revise: (id) => api.post(`/budgets/${id}/revise`),
+  archive: (id) => api.post(`/budgets/${id}/archive`),
   delete: (id) => api.delete(`/budgets/${id}`),
 };
 
@@ -72,10 +74,13 @@ export const autoAnalyticalApi = {
 export const transactionsApi = {
   getAll: (params) => api.get("/transactions", { params }),
   getById: (id) => api.get(`/transactions/${id}`),
+  getBudgetWarnings: (id) => api.get(`/transactions/${id}/budget-warnings`),
   create: (data) => api.post("/transactions", data),
   update: (id, data) => api.put(`/transactions/${id}`, data),
   confirm: (id) => api.post(`/transactions/${id}/confirm`),
   cancel: (id) => api.post(`/transactions/${id}/cancel`),
+  createBillFromPO: (id) => api.post(`/transactions/${id}/create-bill`),
+  createInvoiceFromSO: (id) => api.post(`/transactions/${id}/create-invoice`),
   delete: (id) => api.delete(`/transactions/${id}`),
 };
 
@@ -85,7 +90,11 @@ export const paymentsApi = {
   getOutstanding: (contactId) => api.get(`/payments/outstanding/${contactId}`),
   getById: (id) => api.get(`/payments/${id}`),
   create: (data) => api.post("/payments", data),
+  createFromTransaction: (transactionId) =>
+    api.post(`/payments/from-transaction/${transactionId}`),
   update: (id, data) => api.put(`/payments/${id}`, data),
+  confirm: (id) => api.post(`/payments/${id}/confirm`),
+  cancel: (id) => api.post(`/payments/${id}/cancel`),
   void: (id) => api.post(`/payments/${id}/void`),
   delete: (id) => api.delete(`/payments/${id}`),
 };

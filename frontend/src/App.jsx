@@ -14,6 +14,14 @@ import TransactionDetail from "./pages/TransactionDetail";
 import PaymentList from "./pages/PaymentList";
 import PaymentForm from "./pages/PaymentForm";
 import UserManagement from "./pages/UserManagement";
+// New Purchase Order Flow Pages
+import PurchaseOrders from "./pages/PurchaseOrders";
+import VendorBills from "./pages/VendorBills";
+import BillPayments from "./pages/BillPayments";
+// New Sales Order Flow Pages
+import SalesOrders from "./pages/SalesOrders";
+import CustomerInvoicesPage from "./pages/CustomerInvoices";
+import InvoicePayments from "./pages/InvoicePayments";
 // Auth Pages
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
@@ -46,30 +54,17 @@ function App() {
         <Route path="auto-analytical" element={<AutoAnalyticalModels />} />
         <Route path="users" element={<UserManagement />} />
 
-        {/* Transactions */}
-        <Route
-          path="purchase-orders"
-          element={
-            <TransactionList type="PURCHASE_ORDER" title="Purchase Orders" />
-          }
-        />
-        <Route
-          path="vendor-bills"
-          element={<TransactionList type="VENDOR_BILL" title="Vendor Bills" />}
-        />
-        <Route
-          path="sales-orders"
-          element={<TransactionList type="SALES_ORDER" title="Sales Orders" />}
-        />
-        <Route
-          path="customer-invoices"
-          element={
-            <TransactionList
-              type="CUSTOMER_INVOICE"
-              title="Customer Invoices"
-            />
-          }
-        />
+        {/* Transactions - New Purchase Order Flow */}
+        <Route path="purchase-orders" element={<PurchaseOrders />} />
+        <Route path="vendor-bills" element={<VendorBills />} />
+        <Route path="bill-payments" element={<BillPayments />} />
+
+        {/* Transactions - New Sales Order Flow */}
+        <Route path="sales-orders" element={<SalesOrders />} />
+        <Route path="customer-invoices" element={<CustomerInvoicesPage />} />
+        <Route path="invoice-payments" element={<InvoicePayments />} />
+
+        {/* Transactions - Old (keeping for backwards compatibility) */}
         <Route path="transactions/new" element={<TransactionForm />} />
         <Route path="transactions/:id" element={<TransactionDetail />} />
 

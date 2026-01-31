@@ -1,5 +1,4 @@
 const prisma = require("../lib/prisma");
-const budgetService = require("./budget.service");
 const autoAnalyticalService = require("./autoAnalytical.service");
 
 // Generate transaction number
@@ -39,7 +38,9 @@ const getAll = async (filters = {}) => {
     include: {
       vendor: true,
       customer: true,
-      lines: { include: { product: true } },
+      lines: { include: { product: true, analyticalAccount: true } },
+      childTransactions: true,
+      parentTransaction: true,
     },
     orderBy: { createdAt: "desc" },
   });
@@ -54,6 +55,8 @@ const getById = async (id) => {
       customer: true,
       lines: { include: { product: true, analyticalAccount: true } },
       paymentAllocations: { include: { payment: true } },
+      childTransactions: true,
+      parentTransaction: true,
     },
   });
 };
@@ -104,7 +107,8 @@ const create = async (data) => {
         ? new Date(data.transactionDate)
         : new Date(),
       dueDate: data.dueDate ? new Date(data.dueDate) : null,
-      parentId: data.parentId ? parseInt(data.parentId) : null,
+      parentId: data.parentId || null,
+      reference: data.reference || null,
       notes: data.notes,
       subtotal,
       taxAmount,
@@ -193,21 +197,6 @@ const confirm = async (id) => {
     throw new Error("Can only confirm DRAFT transactions");
   }
 
-  // Update budget for each line with analytical account
-  const year = transaction.transactionDate.getFullYear();
-  const month = transaction.transactionDate.getMonth() + 1;
-
-  for (const line of transaction.lines) {
-    if (line.analyticalAccountId) {
-      await budgetService.updateUsage(
-        line.analyticalAccountId,
-        year,
-        month,
-        Number(line.lineTotal),
-      );
-    }
-  }
-
   return prisma.transaction.update({
     where: { id },
     data: { status: "CONFIRMED" },
@@ -267,6 +256,200 @@ const updatePaymentStatus = async (id) => {
   });
 };
 
+// Create Bill from Purchase Order
+const createBillFromPO = async (poId) => {
+  const po = await prisma.transaction.findUnique({
+    where: { id: poId },
+    include: {
+      vendor: true,
+      lines: { include: { product: true, analyticalAccount: true } },
+    },
+  });
+
+  if (!po) throw new Error("Purchase Order not found");
+  if (po.type !== "PURCHASE_ORDER")
+    throw new Error("Transaction is not a Purchase Order");
+  if (po.status !== "CONFIRMED")
+    throw new Error("Can only create bill from confirmed PO");
+
+  // Check if bill already exists
+  const existingBill = await prisma.transaction.findFirst({
+    where: { parentId: poId, type: "VENDOR_BILL" },
+  });
+  if (existingBill) throw new Error("Bill already created from this PO");
+
+  const transactionNumber = await generateNumber("VENDOR_BILL");
+
+  const lines = po.lines.map((line) => ({
+    productId: line.productId,
+    description: line.description,
+    quantity: Number(line.quantity),
+    unitPrice: Number(line.unitPrice),
+    gstRate: Number(line.gstRate),
+    lineTotal: Number(line.lineTotal),
+    analyticalAccountId: line.analyticalAccountId,
+  }));
+
+  return prisma.transaction.create({
+    data: {
+      transactionNumber,
+      type: "VENDOR_BILL",
+      vendorId: po.vendorId,
+      transactionDate: new Date(),
+      parentId: poId,
+      reference: po.reference,
+      subtotal: Number(po.subtotal),
+      taxAmount: Number(po.taxAmount),
+      totalAmount: Number(po.totalAmount),
+      lines: { create: lines },
+    },
+    include: {
+      vendor: true,
+      lines: { include: { product: true, analyticalAccount: true } },
+    },
+  });
+};
+
+// Create Customer Invoice from Sales Order
+const createInvoiceFromSO = async (soId) => {
+  const so = await prisma.transaction.findUnique({
+    where: { id: soId },
+    include: {
+      customer: true,
+      lines: { include: { product: true, analyticalAccount: true } },
+    },
+  });
+
+  if (!so) throw new Error("Sales Order not found");
+  if (so.type !== "SALES_ORDER")
+    throw new Error("Transaction is not a Sales Order");
+  if (so.status !== "CONFIRMED")
+    throw new Error("Can only create invoice from confirmed SO");
+
+  // Check if invoice already exists
+  const existingInvoice = await prisma.transaction.findFirst({
+    where: { parentId: soId, type: "CUSTOMER_INVOICE" },
+  });
+  if (existingInvoice) throw new Error("Invoice already created from this SO");
+
+  const transactionNumber = await generateNumber("CUSTOMER_INVOICE");
+
+  const lines = so.lines.map((line) => ({
+    productId: line.productId,
+    description: line.description,
+    quantity: Number(line.quantity),
+    unitPrice: Number(line.unitPrice),
+    gstRate: Number(line.gstRate),
+    lineTotal: Number(line.lineTotal),
+    analyticalAccountId: line.analyticalAccountId,
+  }));
+
+  return prisma.transaction.create({
+    data: {
+      transactionNumber,
+      type: "CUSTOMER_INVOICE",
+      customerId: so.customerId,
+      transactionDate: new Date(),
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      parentId: soId,
+      reference: so.reference,
+      subtotal: Number(so.subtotal),
+      taxAmount: Number(so.taxAmount),
+      totalAmount: Number(so.totalAmount),
+      lines: { create: lines },
+    },
+    include: {
+      customer: true,
+      lines: { include: { product: true, analyticalAccount: true } },
+    },
+  });
+};
+
+// Check budget warnings for transaction lines
+const checkBudgetWarnings = async (transactionId) => {
+  const transaction = await prisma.transaction.findUnique({
+    where: { id: transactionId },
+    include: {
+      lines: { include: { analyticalAccount: true } },
+    },
+  });
+
+  if (!transaction) return [];
+
+  const warnings = [];
+
+  for (const line of transaction.lines) {
+    if (!line.analyticalAccountId) continue;
+
+    // Find confirmed budgets that cover the transaction date
+    const budgets = await prisma.budgetMaster.findMany({
+      where: {
+        status: "CONFIRMED",
+        startDate: { lte: transaction.transactionDate },
+        endDate: { gte: transaction.transactionDate },
+      },
+      include: {
+        lines: {
+          where: {
+            analyticalAccountId: line.analyticalAccountId,
+            type:
+              transaction.type.includes("PURCHASE") ||
+              transaction.type === "VENDOR_BILL"
+                ? "EXPENSE"
+                : "INCOME",
+          },
+        },
+      },
+    });
+
+    for (const budget of budgets) {
+      for (const budgetLine of budget.lines) {
+        // Get total achieved for this analytical account in this budget period
+        const achievedResult = await prisma.transactionLine.aggregate({
+          where: {
+            analyticalAccountId: line.analyticalAccountId,
+            transaction: {
+              status: "CONFIRMED",
+              transactionDate: {
+                gte: budget.startDate,
+                lte: budget.endDate,
+              },
+              type:
+                budgetLine.type === "EXPENSE"
+                  ? { in: ["PURCHASE_ORDER", "VENDOR_BILL"] }
+                  : { in: ["SALES_ORDER", "CUSTOMER_INVOICE"] },
+            },
+          },
+          _sum: { lineTotal: true },
+        });
+
+        const achieved = Number(achievedResult._sum.lineTotal || 0);
+        const budgetedAmount = Number(budgetLine.budgetedAmount);
+        const remaining = budgetedAmount - achieved;
+
+        // Check if adding this line would exceed budget
+        if (Number(line.lineTotal) > remaining) {
+          warnings.push({
+            lineId: line.id,
+            productId: line.productId,
+            analyticalAccountId: line.analyticalAccountId,
+            analyticalAccountName: line.analyticalAccount?.name,
+            lineTotal: Number(line.lineTotal),
+            budgetId: budget.id,
+            budgetName: budget.name,
+            budgetedAmount,
+            achieved,
+            remaining,
+            exceedsBy: Number(line.lineTotal) - remaining,
+          });
+        }
+      }
+    }
+  }
+
+  return warnings;
+};
+
 module.exports = {
   getAll,
   getById,
@@ -277,4 +460,7 @@ module.exports = {
   remove,
   updatePaymentStatus,
   generateNumber,
+  createBillFromPO,
+  createInvoiceFromSO,
+  checkBudgetWarnings,
 };

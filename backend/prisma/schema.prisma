@@ -34,6 +34,29 @@ enum PaymentStatus {
     PAID
 }
 
+enum PaymentType {
+    SEND
+    RECEIVE
+}
+
+enum PaymentRecordStatus {
+    DRAFT
+    CONFIRMED
+    CANCELLED
+}
+
+enum BudgetStatus {
+    DRAFT
+    CONFIRMED
+    REVISED
+    ARCHIVED
+}
+
+enum BudgetLineType {
+    INCOME
+    EXPENSE
+}
+
 // ===================== USERS =====================
 
 model User {
@@ -103,7 +126,7 @@ model Product {
     id            Int       @id @default(autoincrement())
     name          String
     categoryId    Int?
-    category      Category? @relation(fields: [categoryId], references: [id])
+    category      Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
     salesPrice    Decimal   @default(0) @db.Decimal(10, 2)
     purchasePrice Decimal   @default(0) @db.Decimal(10, 2)
     isActive      Boolean   @default(true)
@@ -129,7 +152,7 @@ model AnalyticalAccount {
     children AnalyticalAccount[] @relation("AccountHierarchy")
 
     // Relations
-    budgets             Budget[]
+    budgetLines         BudgetLine[]
     transactionLines    TransactionLine[]
     autoAnalyticalRules AutoAnalyticalModel[]
 
@@ -138,22 +161,42 @@ model AnalyticalAccount {
     updatedAt DateTime @updatedAt
 }
 
-// Monthly Budget per Analytical Account
-model Budget {
-    id                  Int               @id @default(autoincrement())
+// Budget Master - Header for a budget period
+model BudgetMaster {
+    id        Int          @id @default(autoincrement())
+    name      String // e.g., "January 2026", "Q1 2026"
+    startDate DateTime
+    endDate   DateTime
+    status    BudgetStatus @default(DRAFT)
+
+    // Revision tracking
+    revisedFromId Int?
+    revisedFrom   BudgetMaster?  @relation("BudgetRevisions", fields: [revisedFromId], references: [id])
+    revisedTo     BudgetMaster[] @relation("BudgetRevisions")
+
+    // Relations
+    lines BudgetLine[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+// Budget Line - Individual budget entries per analytical account
+model BudgetLine {
+    id       Int            @id @default(autoincrement())
+    budgetId Int
+    budget   BudgetMaster   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+    type     BudgetLineType // INCOME or EXPENSE
+
     analyticalAccountId Int
     analyticalAccount   AnalyticalAccount @relation(fields: [analyticalAccountId], references: [id])
 
-    year  Int
-    month Int // 1-12
-
-    allocatedAmount Decimal @default(0) @db.Decimal(15, 2)
-    usedAmount      Decimal @default(0) @db.Decimal(15, 2)
+    budgetedAmount Decimal @default(0) @db.Decimal(15, 2)
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
-    @@unique([analyticalAccountId, year, month])
+    @@unique([budgetId, analyticalAccountId, type])
 }
 
 // Auto-assignment rules for Analytical Accounts
@@ -200,6 +243,9 @@ model Transaction {
     customerId Int?
     customer   Contact? @relation("CustomerTransactions", fields: [customerId], references: [id])
 
+    // Reference number (user input, e.g., REQ-25-0001)
+    reference String?
+
     // Dates
     transactionDate DateTime  @default(now())
     dueDate         DateTime?
@@ -211,7 +257,9 @@ model Transaction {
     paidAmount  Decimal @default(0) @db.Decimal(15, 2)
 
     // Link to parent transaction (PO→Bill, SO→Invoice)
-    parentId Int?
+    parentId          String?
+    parentTransaction Transaction?  @relation("TransactionParent", fields: [parentId], references: [id])
+    childTransactions Transaction[] @relation("TransactionParent")
 
     notes String?
 
@@ -250,18 +298,22 @@ model TransactionLine {
 
 // Payment Records
 model Payment {
-    id            Int      @id @default(autoincrement())
-    paymentNumber String   @unique
-    paymentDate   DateTime @default(now())
-    amount        Decimal  @db.Decimal(15, 2)
+    id            Int                 @id @default(autoincrement())
+    paymentNumber String              @unique
+    paymentDate   DateTime            @default(now())
+    amount        Decimal             @db.Decimal(15, 2)
+    status        PaymentRecordStatus @default(DRAFT)
+    paymentType   PaymentType         @default(SEND) // SEND = outgoing to vendor, RECEIVE = incoming from customer
 
     paymentMethod String // cash, bank, upi, card
     reference     String? // Bank ref, UPI ID, etc.
-    paymentType   String // incoming (from customer) or outgoing (to vendor)
 
     // Contact reference
     contactId Int
     contact   Contact @relation(fields: [contactId], references: [id])
+
+    // Link to source transaction (Bill or Invoice)
+    sourceTransactionId String?
 
     notes String?
 

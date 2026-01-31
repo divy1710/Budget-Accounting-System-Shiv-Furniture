@@ -240,49 +240,84 @@ async function main() {
 
   // Create Budgets for current month
   console.log("Creating budgets...");
-  const year = new Date().getFullYear();
-  const month = new Date().getMonth() + 1;
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-  await prisma.budget.createMany({
-    data: [
-      {
-        analyticalAccountId: production.id,
-        year,
-        month,
-        allocatedAmount: 500000,
+  // Create a confirmed budget for current month
+  const budget1 = await prisma.budgetMaster.create({
+    data: {
+      name: `${now.toLocaleString("default", { month: "long" })} ${now.getFullYear()}`,
+      startDate: startOfMonth,
+      endDate: endOfMonth,
+      status: "CONFIRMED",
+      lines: {
+        create: [
+          {
+            analyticalAccountId: production.id,
+            type: "EXPENSE",
+            budgetedAmount: 500000,
+          },
+          {
+            analyticalAccountId: marketing.id,
+            type: "EXPENSE",
+            budgetedAmount: 100000,
+          },
+          {
+            analyticalAccountId: operations.id,
+            type: "EXPENSE",
+            budgetedAmount: 150000,
+          },
+          {
+            analyticalAccountId: sales.id,
+            type: "INCOME",
+            budgetedAmount: 800000,
+          },
+          {
+            analyticalAccountId: woodwork.id,
+            type: "EXPENSE",
+            budgetedAmount: 200000,
+          },
+        ],
       },
-      {
-        analyticalAccountId: marketing.id,
-        year,
-        month,
-        allocatedAmount: 100000,
+    },
+  });
+
+  // Create a draft budget for next month
+  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const nextMonthEnd = new Date(now.getFullYear(), now.getMonth() + 2, 0);
+
+  const budget2 = await prisma.budgetMaster.create({
+    data: {
+      name: `${nextMonth.toLocaleString("default", { month: "long" })} ${nextMonth.getFullYear()}`,
+      startDate: nextMonth,
+      endDate: nextMonthEnd,
+      status: "DRAFT",
+      lines: {
+        create: [
+          {
+            analyticalAccountId: production.id,
+            type: "EXPENSE",
+            budgetedAmount: 550000,
+          },
+          {
+            analyticalAccountId: marketing.id,
+            type: "EXPENSE",
+            budgetedAmount: 120000,
+          },
+          {
+            analyticalAccountId: sales.id,
+            type: "INCOME",
+            budgetedAmount: 850000,
+          },
+          {
+            analyticalAccountId: upholstery.id,
+            type: "EXPENSE",
+            budgetedAmount: 180000,
+          },
+        ],
       },
-      {
-        analyticalAccountId: operations.id,
-        year,
-        month,
-        allocatedAmount: 150000,
-      },
-      { analyticalAccountId: sales.id, year, month, allocatedAmount: 800000 },
-      {
-        analyticalAccountId: woodwork.id,
-        year,
-        month,
-        allocatedAmount: 200000,
-      },
-      {
-        analyticalAccountId: upholstery.id,
-        year,
-        month,
-        allocatedAmount: 150000,
-      },
-      {
-        analyticalAccountId: finishing.id,
-        year,
-        month,
-        allocatedAmount: 100000,
-      },
-    ],
+    },
   });
 
   // Create Auto Analytical Models
@@ -319,7 +354,7 @@ async function main() {
   console.log("   - 3 Vendors + 3 Customers");
   console.log("   - 3 Categories");
   console.log("   - 7 Products");
-  console.log("   - 7 Budgets for current month");
+  console.log("   - 2 Budget Masters with lines (1 Confirmed, 1 Draft)");
   console.log("   - 3 Auto Analytical Models");
 }
 
