@@ -1,8 +1,9 @@
 const prisma = require("../lib/prisma");
 
 // Get achieved amounts for a single budget
+// Compute for all non-DRAFT budgets (CONFIRMED, REVISED, ARCHIVED)
 const computeAchievedForBudget = async (budget) => {
-  if (!budget || budget.status !== "CONFIRMED") {
+  if (!budget || budget.status === "DRAFT") {
     return budget;
   }
 
@@ -80,10 +81,10 @@ const getAll = async (filters = {}) => {
     orderBy: { createdAt: "desc" },
   });
 
-  // Compute achieved amounts for confirmed budgets
+  // Compute achieved amounts for all non-DRAFT budgets
   const budgetsWithAchieved = await Promise.all(
     budgets.map(async (budget) => {
-      if (budget.status === "CONFIRMED") {
+      if (budget.status !== "DRAFT") {
         return computeAchievedForBudget(budget);
       }
       return budget;
@@ -93,9 +94,9 @@ const getAll = async (filters = {}) => {
   return budgetsWithAchieved;
 };
 
-// Get by ID with full details
+// Get by ID with full details (includes achieved amounts for non-DRAFT budgets)
 const getById = async (id) => {
-  return prisma.budgetMaster.findUnique({
+  const budget = await prisma.budgetMaster.findUnique({
     where: { id: parseInt(id) },
     include: {
       lines: {
@@ -111,6 +112,11 @@ const getById = async (id) => {
       },
     },
   });
+
+  if (!budget) return null;
+
+  // Compute achieved amounts for non-DRAFT budgets
+  return computeAchievedForBudget(budget);
 };
 
 // Create budget with lines
@@ -179,7 +185,7 @@ const update = async (id, data) => {
 
 // Confirm budget
 const confirm = async (id) => {
-  return prisma.budgetMaster.update({
+  const budget = await prisma.budgetMaster.update({
     where: { id: parseInt(id) },
     data: { status: "CONFIRMED" },
     include: {
@@ -190,6 +196,9 @@ const confirm = async (id) => {
       },
     },
   });
+
+  // Return with computed achieved amounts
+  return computeAchievedForBudget(budget);
 };
 
 // Revise budget - creates a new budget linked to the original
