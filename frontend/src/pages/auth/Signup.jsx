@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Building2, Eye, EyeOff, CheckCircle, XCircle } from "lucide-react";
+import { User, Mail, Lock, Eye, EyeOff, CheckCircle, XCircle, ArrowRight, HelpCircle, Globe, Shield } from "lucide-react";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -44,7 +44,6 @@ export default function Signup() {
     const newFormData = { ...formData, [field]: value };
     setFormData(newFormData);
 
-    // Update validation
     if (field === "loginId") {
       setValidation((prev) => ({
         ...prev,
@@ -93,7 +92,7 @@ export default function Signup() {
           loginId: formData.loginId,
           email: formData.email,
           password: formData.password,
-          role: "portal", // Customer signup always creates portal user
+          role: "portal",
         }),
       });
 
@@ -112,10 +111,49 @@ export default function Signup() {
     }
   };
 
+  // Inline styles
+  const inputStyle = {
+    width: '100%',
+    padding: '14px 14px 14px 44px',
+    backgroundColor: '#EEF2FF',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '15px',
+    color: '#1F2937',
+    outline: 'none',
+    boxSizing: 'border-box',
+  };
+
+  const inputStyleWithRightPadding = {
+    ...inputStyle,
+    paddingRight: '44px',
+  };
+
+  const iconStyle = {
+    position: 'absolute',
+    left: '14px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    color: '#4F46E5',
+    pointerEvents: 'none',
+  };
+
+  const labelStyle = {
+    display: 'block',
+    fontSize: '14px',
+    fontWeight: '500',
+    color: '#1F2937',
+    marginBottom: '8px',
+  };
+
   const ValidationItem = ({ valid, text }) => (
-    <div
-      className={`flex items-center gap-2 text-xs ${valid ? "text-green-400" : "text-gray-500"}`}
-    >
+    <div style={{ 
+      display: 'flex', 
+      alignItems: 'center', 
+      gap: '8px', 
+      fontSize: '12px', 
+      color: valid ? '#22C55E' : '#9CA3AF' 
+    }}>
       {valid ? <CheckCircle size={14} /> : <XCircle size={14} />}
       {text}
     </div>
@@ -123,15 +161,38 @@ export default function Signup() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-8 text-center max-w-md">
-          <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="text-green-400" size={32} />
+      <div style={{ 
+        minHeight: '100vh', 
+        backgroundColor: '#F3F4F6', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        padding: '20px' 
+      }}>
+        <div style={{ 
+          backgroundColor: 'white', 
+          borderRadius: '20px', 
+          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)', 
+          padding: '40px', 
+          textAlign: 'center', 
+          maxWidth: '400px' 
+        }}>
+          <div style={{ 
+            width: '64px', 
+            height: '64px', 
+            backgroundColor: '#DCFCE7', 
+            borderRadius: '50%', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            margin: '0 auto 16px' 
+          }}>
+            <CheckCircle style={{ color: '#22C55E' }} size={32} />
           </div>
-          <h2 className="text-xl font-semibold text-white mb-2">
+          <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#1F2937', marginBottom: '8px' }}>
             Account Created!
           </h2>
-          <p className="text-gray-400 mb-4">
+          <p style={{ color: '#6B7280', marginBottom: '16px' }}>
             Your account has been created successfully. Redirecting to login...
           </p>
         </div>
@@ -140,172 +201,322 @@ export default function Signup() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-blue-600 rounded-xl mb-3">
-            <Building2 className="text-white" size={28} />
+    <div style={{ 
+      minHeight: '100vh', 
+      backgroundColor: '#F3F4F6', 
+      display: 'flex', 
+      flexDirection: 'column',
+      margin: 0,
+      padding: 0,
+    }}>
+      {/* Header */}
+      <div style={{ padding: '20px 24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ 
+            width: '36px', 
+            height: '36px', 
+            backgroundColor: '#2563EB', 
+            borderRadius: '8px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            color: 'white', 
+            fontWeight: 'bold', 
+            fontSize: '14px' 
+          }}>
+            SF
           </div>
-          <h1 className="text-xl font-bold text-white">Shiv Furniture</h1>
+          <span style={{ fontWeight: '600', color: '#1F2937', fontSize: '16px' }}>Shiv Furniture</span>
         </div>
+      </div>
 
-        {/* Signup Card */}
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-          <h2 className="text-xl font-semibold text-white text-center mb-6">
-            Sign up page
-          </h2>
-
-          {error && (
-            <div className="bg-red-500/20 border border-red-500 text-red-400 px-4 py-3 rounded-lg mb-4 text-sm">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm text-gray-300 mb-1">Name</label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => handleChange("name", e.target.value)}
-                required
-                className="w-full px-4 py-2.5 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-                placeholder="Enter your full name"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-gray-300 mb-1">
-                Login id
-              </label>
-              <input
-                type="text"
-                value={formData.loginId}
-                onChange={(e) => handleChange("loginId", e.target.value)}
-                required
-                className={`w-full px-4 py-2.5 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none ${
-                  formData.loginId && !validation.loginIdLength
-                    ? "border-red-500"
-                    : formData.loginId && validation.loginIdLength
-                      ? "border-green-500"
-                      : "border-gray-600"
-                }`}
-                placeholder="6-12 characters"
-              />
-              {formData.loginId && !validation.loginIdLength && (
-                <p className="text-red-400 text-xs mt-1">
-                  Login ID must be 6-12 characters
-                </p>
-              )}
+      {/* Main Content */}
+      <div style={{ 
+        flex: 1, 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        padding: '20px' 
+      }}>
+        <div style={{ width: '100%', maxWidth: '420px' }}>
+          {/* Signup Card */}
+          <div style={{ 
+            backgroundColor: 'white', 
+            borderRadius: '20px', 
+            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)', 
+            padding: '40px',
+            margin: 0,
+          }}>
+            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+              <h2 style={{ 
+                fontSize: '32px', 
+                fontWeight: '700', 
+                color: '#1F2937', 
+                marginBottom: '8px',
+                margin: '0 0 8px 0',
+              }}>
+                Create Account
+              </h2>
+              <p style={{ 
+                fontSize: '14px', 
+                color: '#4F46E5',
+                margin: 0,
+              }}>
+                Sign up to manage your budget and orders.
+              </p>
             </div>
 
-            <div>
-              <label className="block text-sm text-gray-300 mb-1">
-                Email id
-              </label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleChange("email", e.target.value)}
-                required
-                className="w-full px-4 py-2.5 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-                placeholder="Enter your email"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-gray-300 mb-1">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={formData.password}
-                  onChange={(e) => handleChange("password", e.target.value)}
-                  required
-                  className="w-full px-4 py-2.5 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 pr-12"
-                  placeholder="Create a password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm text-gray-300 mb-1">
-                Re-Enter password
-              </label>
-              <input
-                type="password"
-                value={formData.confirmPassword}
-                onChange={(e) =>
-                  handleChange("confirmPassword", e.target.value)
-                }
-                required
-                className={`w-full px-4 py-2.5 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none ${
-                  formData.confirmPassword && !validation.passwordsMatch
-                    ? "border-red-500"
-                    : formData.confirmPassword && validation.passwordsMatch
-                      ? "border-green-500"
-                      : "border-gray-600"
-                }`}
-                placeholder="Re-enter your password"
-              />
-            </div>
-
-            {/* Password Requirements */}
-            {formData.password && (
-              <div className="bg-gray-700/50 rounded-lg p-3 space-y-1">
-                <p className="text-xs text-gray-400 mb-2">
-                  Password requirements:
-                </p>
-                <ValidationItem
-                  valid={validation.passwordLength}
-                  text="At least 8 characters"
-                />
-                <ValidationItem
-                  valid={validation.passwordLower}
-                  text="Contains lowercase letter"
-                />
-                <ValidationItem
-                  valid={validation.passwordUpper}
-                  text="Contains uppercase letter"
-                />
-                <ValidationItem
-                  valid={validation.passwordSpecial}
-                  text="Contains special character"
-                />
-                <ValidationItem
-                  valid={validation.passwordsMatch}
-                  text="Passwords match"
-                />
+            {error && (
+              <div style={{ 
+                backgroundColor: '#FEF2F2', 
+                border: '1px solid #FECACA', 
+                color: '#DC2626', 
+                padding: '12px 16px', 
+                borderRadius: '8px', 
+                marginBottom: '20px', 
+                fontSize: '14px' 
+              }}>
+                {error}
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading || !isFormValid()}
-              className="w-full py-3 bg-gray-700 border border-gray-600 rounded-lg text-white font-medium hover:bg-gray-600 transition disabled:opacity-50 disabled:cursor-not-allowed mt-2"
-            >
-              {loading ? "Creating account..." : "Sign Up"}
-            </button>
-          </form>
+            <form onSubmit={handleSubmit}>
+              {/* Name Field */}
+              <div style={{ marginBottom: '16px' }}>
+                <label style={labelStyle}>Full Name</label>
+                <div style={{ position: 'relative' }}>
+                  <div style={iconStyle}>
+                    <User size={20} />
+                  </div>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => handleChange("name", e.target.value)}
+                    required
+                    style={inputStyle}
+                    placeholder="Enter your full name"
+                  />
+                </div>
+              </div>
 
-          <div className="mt-4 text-center">
-            <span className="text-gray-400 text-sm">
-              Already have an account?{" "}
-              <Link to="/login" className="text-blue-400 hover:underline">
-                Sign in
-              </Link>
-            </span>
+              {/* Login ID Field */}
+              <div style={{ marginBottom: '16px' }}>
+                <label style={labelStyle}>Login ID</label>
+                <div style={{ position: 'relative' }}>
+                  <div style={iconStyle}>
+                    <User size={20} />
+                  </div>
+                  <input
+                    type="text"
+                    value={formData.loginId}
+                    onChange={(e) => handleChange("loginId", e.target.value)}
+                    required
+                    style={{
+                      ...inputStyle,
+                      border: formData.loginId 
+                        ? validation.loginIdLength 
+                          ? '2px solid #22C55E' 
+                          : '2px solid #EF4444'
+                        : 'none',
+                    }}
+                    placeholder="6-12 characters"
+                  />
+                </div>
+                {formData.loginId && !validation.loginIdLength && (
+                  <p style={{ color: '#EF4444', fontSize: '12px', marginTop: '4px' }}>
+                    Login ID must be 6-12 characters
+                  </p>
+                )}
+              </div>
+
+              {/* Email Field */}
+              <div style={{ marginBottom: '16px' }}>
+                <label style={labelStyle}>Email</label>
+                <div style={{ position: 'relative' }}>
+                  <div style={iconStyle}>
+                    <Mail size={20} />
+                  </div>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleChange("email", e.target.value)}
+                    required
+                    style={inputStyle}
+                    placeholder="Enter your email"
+                  />
+                </div>
+              </div>
+
+              {/* Password Field */}
+              <div style={{ marginBottom: '16px' }}>
+                <label style={labelStyle}>Password</label>
+                <div style={{ position: 'relative' }}>
+                  <div style={iconStyle}>
+                    <Lock size={20} />
+                  </div>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={(e) => handleChange("password", e.target.value)}
+                    required
+                    style={inputStyleWithRightPadding}
+                    placeholder="Create a password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{ 
+                      position: 'absolute', 
+                      right: '14px', 
+                      top: '50%', 
+                      transform: 'translateY(-50%)', 
+                      background: 'none', 
+                      border: 'none', 
+                      color: '#6B7280', 
+                      cursor: 'pointer',
+                      padding: 0,
+                    }}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirm Password Field */}
+              <div style={{ marginBottom: '16px' }}>
+                <label style={labelStyle}>Confirm Password</label>
+                <div style={{ position: 'relative' }}>
+                  <div style={iconStyle}>
+                    <Lock size={20} />
+                  </div>
+                  <input
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={(e) => handleChange("confirmPassword", e.target.value)}
+                    required
+                    style={{
+                      ...inputStyle,
+                      border: formData.confirmPassword 
+                        ? validation.passwordsMatch 
+                          ? '2px solid #22C55E' 
+                          : '2px solid #EF4444'
+                        : 'none',
+                    }}
+                    placeholder="Re-enter your password"
+                  />
+                </div>
+              </div>
+
+              {/* Password Requirements */}
+              {formData.password && (
+                <div style={{ 
+                  backgroundColor: '#F9FAFB', 
+                  borderRadius: '8px', 
+                  padding: '12px', 
+                  marginBottom: '20px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px',
+                }}>
+                  <p style={{ fontSize: '12px', color: '#6B7280', marginBottom: '8px', margin: '0 0 8px 0' }}>
+                    Password requirements:
+                  </p>
+                  <ValidationItem valid={validation.passwordLength} text="At least 8 characters" />
+                  <ValidationItem valid={validation.passwordLower} text="Contains lowercase letter" />
+                  <ValidationItem valid={validation.passwordUpper} text="Contains uppercase letter" />
+                  <ValidationItem valid={validation.passwordSpecial} text="Contains special character" />
+                  <ValidationItem valid={validation.passwordsMatch} text="Passwords match" />
+                </div>
+              )}
+
+              {/* Sign Up Button */}
+              <button
+                type="submit"
+                disabled={loading || !isFormValid()}
+                style={{ 
+                  width: '100%', 
+                  padding: '14px', 
+                  backgroundColor: '#2563EB', 
+                  color: 'white', 
+                  border: 'none', 
+                  borderRadius: '8px', 
+                  fontSize: '16px', 
+                  fontWeight: '500', 
+                  cursor: (loading || !isFormValid()) ? 'not-allowed' : 'pointer',
+                  opacity: (loading || !isFormValid()) ? 0.6 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                }}
+              >
+                {loading ? "Creating account..." : "Sign Up"}
+                {!loading && <ArrowRight size={18} />}
+              </button>
+            </form>
+
+            {/* Sign in link */}
+            <div style={{ marginTop: '24px', textAlign: 'center' }}>
+              <span style={{ fontSize: '14px', color: '#6B7280' }}>
+                Already have an account?{" "}
+                <Link to="/login" style={{ color: '#4F46E5', textDecoration: 'none', fontWeight: '500' }}>
+                  Sign in
+                </Link>
+              </span>
+            </div>
           </div>
         </div>
+      </div>
+
+      {/* Footer */}
+      <div style={{ padding: '24px', textAlign: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '16px' }}>
+          <button style={{ 
+            width: '44px', 
+            height: '44px', 
+            backgroundColor: '#4F46E5', 
+            border: 'none', 
+            borderRadius: '50%', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            color: 'white', 
+            cursor: 'pointer' 
+          }}>
+            <HelpCircle size={20} />
+          </button>
+          <button style={{ 
+            width: '44px', 
+            height: '44px', 
+            backgroundColor: '#4F46E5', 
+            border: 'none', 
+            borderRadius: '50%', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            color: 'white', 
+            cursor: 'pointer' 
+          }}>
+            <Globe size={20} />
+          </button>
+          <button style={{ 
+            width: '44px', 
+            height: '44px', 
+            backgroundColor: '#4F46E5', 
+            border: 'none', 
+            borderRadius: '50%', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            color: 'white', 
+            cursor: 'pointer' 
+          }}>
+            <Shield size={20} />
+          </button>
+        </div>
+        <p style={{ fontSize: '12px', color: '#9CA3AF', margin: 0 }}>
+          © 2024 Shiv Furniture Private Ltd. All rights reserved. Secure Cloud ERP.
+        </p>
       </div>
     </div>
   );
