@@ -5,17 +5,25 @@ import Contacts from "./pages/Contacts";
 import Products from "./pages/Products";
 import AnalyticalAccounts from "./pages/AnalyticalAccounts";
 import Budgets from "./pages/Budgets";
+import AutoAnalyticalModels from "./pages/AutoAnalyticalModels";
 import BudgetCockpit from "./pages/BudgetCockpit";
 import TransactionList from "./pages/TransactionList";
 import TransactionForm from "./pages/TransactionForm";
 import TransactionDetail from "./pages/TransactionDetail";
 import PaymentList from "./pages/PaymentList";
 import PaymentForm from "./pages/PaymentForm";
+// Customer Portal
+import CustomerLogin from "./pages/customer/CustomerLogin";
+import CustomerDashboard from "./pages/customer/CustomerDashboard";
+import CustomerInvoices from "./pages/customer/CustomerInvoices";
+import CustomerInvoiceDetail from "./pages/customer/CustomerInvoiceDetail";
+import CustomerPayments from "./pages/customer/CustomerPayments";
 import "./App.css";
 
 function App() {
   return (
     <Routes>
+      {/* Admin Portal */}
       <Route path="/" element={<MainLayout />}>
         <Route index element={<Dashboard />} />
 
@@ -24,6 +32,7 @@ function App() {
         <Route path="products" element={<Products />} />
         <Route path="analytical-accounts" element={<AnalyticalAccounts />} />
         <Route path="budgets" element={<Budgets />} />
+        <Route path="auto-analytical" element={<AutoAnalyticalModels />} />
 
         {/* Transactions */}
         <Route
@@ -68,6 +77,13 @@ function App() {
         {/* Reports */}
         <Route path="budget-cockpit" element={<BudgetCockpit />} />
       </Route>
+
+      {/* Customer Portal */}
+      <Route path="/customer/login" element={<CustomerLogin />} />
+      <Route path="/customer/dashboard" element={<CustomerDashboard />} />
+      <Route path="/customer/invoices" element={<CustomerInvoices />} />
+      <Route path="/customer/invoices/:id" element={<CustomerInvoiceDetail />} />
+      <Route path="/customer/payments" element={<CustomerPayments />} />
     </Routes>
   );
 }

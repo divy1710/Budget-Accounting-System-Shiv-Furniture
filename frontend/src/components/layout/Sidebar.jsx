@@ -78,6 +78,19 @@ export default function Sidebar() {
           );
         })}
       </nav>
+
+      {/* Customer Portal Link */}
+      <div className="p-4 border-t border-gray-700">
+        <a
+          href="/customer/login"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
+        >
+          <Users size={16} />
+          Customer Portal
+        </a>
+      </div>
     </aside>
   );
 }
