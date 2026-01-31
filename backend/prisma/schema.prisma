@@ -79,9 +79,10 @@ model Contact {
     portalPassword String?
 
     // Relations
-    vendorTransactions   Transaction[] @relation("VendorTransactions")
-    customerTransactions Transaction[] @relation("CustomerTransactions")
+    vendorTransactions   Transaction[]         @relation("VendorTransactions")
+    customerTransactions Transaction[]         @relation("CustomerTransactions")
     payments             Payment[]
+    autoAnalyticalRules  AutoAnalyticalModel[]
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -89,10 +90,11 @@ model Contact {
 
 // Product Categories
 model Category {
-    id       Int       @id @default(autoincrement())
-    name     String    @unique
-    isActive Boolean   @default(true)
-    products Product[]
+    id                  Int                   @id @default(autoincrement())
+    name                String                @unique
+    isActive            Boolean               @default(true)
+    products            Product[]
+    autoAnalyticalRules AutoAnalyticalModel[]
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -159,18 +161,26 @@ model Budget {
 // Auto-assignment rules for Analytical Accounts
 model AutoAnalyticalModel {
     id          Int     @id @default(autoincrement())
-    name        String
+    name        String?
     description String?
+    status      String  @default("DRAFT") // DRAFT, CONFIRMED, CANCELLED
 
-    // Match criteria
-    productId Int?
-    product   Product? @relation(fields: [productId], references: [id])
+    // Match criteria - Partner Tag and Partner
+    partnerTag String? // Tag to match (B2B, MSME, Retailer, Local)
+    partnerId  Int?
+    partner    Contact? @relation(fields: [partnerId], references: [id])
+
+    // Match criteria - Product Category and Product
+    categoryId Int?
+    category   Category? @relation(fields: [categoryId], references: [id])
+    productId  Int?
+    product    Product?  @relation(fields: [productId], references: [id])
 
     // Target analytical account
     analyticalAccountId Int
     analyticalAccount   AnalyticalAccount @relation(fields: [analyticalAccountId], references: [id])
 
-    priority  Int      @default(0) // Higher = checked first
+    priority  Int      @default(0) // Higher = checked first (more matches = higher priority)
     isActive  Boolean  @default(true)
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt

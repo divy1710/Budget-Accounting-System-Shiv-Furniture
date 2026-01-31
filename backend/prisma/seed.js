@@ -290,22 +290,23 @@ async function main() {
   await prisma.autoAnalyticalModel.createMany({
     data: [
       {
-        name: "Wood → Woodwork",
-        productId: rawWood.id,
+        partnerTag: "B2B",
+        categoryId: furnitureCategory.id,
         analyticalAccountId: woodwork.id,
-        priority: 10,
+        status: "CONFIRMED",
+        priority: 2,
       },
       {
-        name: "Fabric → Upholstery",
-        productId: rawFabric.id,
-        analyticalAccountId: upholstery.id,
-        priority: 10,
+        categoryId: rawMaterialCategory.id,
+        analyticalAccountId: production.id,
+        status: "CONFIRMED",
+        priority: 1,
       },
       {
-        name: "Hardware → Finishing",
-        productId: hardware.id,
-        analyticalAccountId: finishing.id,
-        priority: 5,
+        partnerTag: "MSME",
+        analyticalAccountId: operations.id,
+        status: "DRAFT",
+        priority: 1,
       },
     ],
   });
