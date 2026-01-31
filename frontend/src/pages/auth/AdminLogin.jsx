@@ -31,7 +31,7 @@ export default function AdminLogin() {
             name: "Admin User",
             email: formData.email,
             role: "admin",
-          })
+          }),
         );
         navigate("/");
       } else {
@@ -64,11 +64,13 @@ export default function AdminLogin() {
             name: "Admin User",
             email: formData.email,
             role: "admin",
-          })
+          }),
         );
         navigate("/");
       } else {
-        setError("Invalid credentials. Try: admin@shivfurniture.com / admin123");
+        setError(
+          "Invalid credentials. Try: admin@shivfurniture.com / admin123",
+        );
       }
     } finally {
       setLoading(false);
@@ -198,9 +200,13 @@ export default function AdminLogin() {
 
         {/* Demo Credentials */}
         <div className="mt-6 bg-gray-800/50 rounded-xl p-4 border border-gray-700">
-          <p className="text-gray-400 text-sm text-center mb-2">Demo Credentials</p>
+          <p className="text-gray-400 text-sm text-center mb-2">
+            Demo Credentials
+          </p>
           <div className="text-center">
-            <code className="text-blue-400 text-sm">admin@shivfurniture.com</code>
+            <code className="text-blue-400 text-sm">
+              admin@shivfurniture.com
+            </code>
             <span className="text-gray-500 mx-2">/</span>
             <code className="text-blue-400 text-sm">admin123</code>
           </div>

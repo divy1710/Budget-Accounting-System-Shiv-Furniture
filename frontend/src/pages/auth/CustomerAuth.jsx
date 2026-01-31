@@ -33,16 +33,21 @@ export default function CustomerLogin() {
 
     try {
       // Check if customer exists
-      const response = await fetch("http://localhost:5000/api/contacts/customers");
+      const response = await fetch(
+        "http://localhost:5000/api/contacts/customers",
+      );
       const customers = await response.json();
 
       const customer = customers.find(
-        (c) => c.email?.toLowerCase() === formData.email.toLowerCase()
+        (c) => c.email?.toLowerCase() === formData.email.toLowerCase(),
       );
 
       if (customer) {
         // For demo: password check (in production, use proper auth)
-        if (customer.portalPassword === formData.password || formData.password === "customer123") {
+        if (
+          customer.portalPassword === formData.password ||
+          formData.password === "customer123"
+        ) {
           localStorage.setItem(
             "customerPortal",
             JSON.stringify({
@@ -50,7 +55,7 @@ export default function CustomerLogin() {
               name: customer.name,
               email: customer.email,
               phone: customer.phone,
-            })
+            }),
           );
           navigate("/customer/dashboard");
         } else {
@@ -101,7 +106,13 @@ export default function CustomerLogin() {
       if (response.ok) {
         setSuccess("Account created successfully! You can now login.");
         setIsLogin(true);
-        setFormData({ ...formData, name: "", phone: "", password: "", confirmPassword: "" });
+        setFormData({
+          ...formData,
+          name: "",
+          phone: "",
+          password: "",
+          confirmPassword: "",
+        });
       } else {
         const data = await response.json();
         setError(data.error || "Failed to create account");
@@ -234,7 +245,9 @@ export default function CustomerLogin() {
                       type="checkbox"
                       className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                     />
-                    <span className="ml-2 text-sm text-gray-600">Remember me</span>
+                    <span className="ml-2 text-sm text-gray-600">
+                      Remember me
+                    </span>
                   </label>
                   <a href="#" className="text-sm text-blue-600 hover:underline">
                     Forgot password?
@@ -360,7 +373,10 @@ export default function CustomerLogin() {
                       type="password"
                       value={formData.confirmPassword}
                       onChange={(e) =>
-                        setFormData({ ...formData, confirmPassword: e.target.value })
+                        setFormData({
+                          ...formData,
+                          confirmPassword: e.target.value,
+                        })
                       }
                       placeholder="Confirm your password"
                       required
@@ -420,7 +436,9 @@ export default function CustomerLogin() {
         <div className="mt-4 bg-white/10 rounded-xl p-4 border border-white/20">
           <p className="text-blue-100 text-sm text-center mb-2">Demo Login</p>
           <div className="text-center">
-            <p className="text-white text-sm">Use any customer email from contacts</p>
+            <p className="text-white text-sm">
+              Use any customer email from contacts
+            </p>
             <p className="text-blue-200 text-xs mt-1">Password: customer123</p>
           </div>
         </div>

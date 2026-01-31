@@ -1,6 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Bell, Search, LogOut, Settings, ChevronDown } from "lucide-react";
+import {
+  User,
+  Bell,
+  Search,
+  LogOut,
+  Settings,
+  ChevronDown,
+} from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
 export default function Header() {
@@ -69,7 +76,9 @@ export default function Header() {
             {showDropdown && (
               <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
                 <div className="px-4 py-3 border-b border-gray-100">
-                  <p className="text-sm font-medium text-gray-900">{userName}</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {userName}
+                  </p>
                   <p className="text-xs text-gray-500 truncate">{userEmail}</p>
                 </div>
                 <button
