@@ -9,6 +9,13 @@ import {
   Check,
   X,
   Clock,
+  Filter,
+  Users,
+  Package,
+  Grid3X3,
+  BarChart3,
+  Save,
+  CheckCircle,
 } from "lucide-react";
 import {
   autoAnalyticalApi,
@@ -18,11 +25,19 @@ import {
   categoriesApi,
 } from "../services/api";
 
-const PARTNER_TAGS = ["B2B", "MSME", "Retailer", "Local"];
+const PARTNER_TAGS = [
+  "Wholesale",
+  "Premium",
+  "B2B",
+  "MSME",
+  "Retailer",
+  "Local",
+  "VIP",
+];
 
 export default function AutoAnalyticalModels() {
   const navigate = useNavigate();
-  const [view, setView] = useState("list"); // list, form
+  const [view, setView] = useState("list");
   const [models, setModels] = useState([]);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -31,7 +46,9 @@ export default function AutoAnalyticalModels() {
   const [loading, setLoading] = useState(true);
   const [editingModel, setEditingModel] = useState(null);
   const [showArchived, setShowArchived] = useState(false);
-  const [statusFilter, setStatusFilter] = useState("all"); // all, DRAFT, CONFIRMED, CANCELLED
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [showTagDropdown, setShowTagDropdown] = useState(false);
   const [formData, setFormData] = useState({
     partnerTag: "",
     partnerId: "",
@@ -39,6 +56,8 @@ export default function AutoAnalyticalModels() {
     productId: "",
     analyticalAccountId: "",
     status: "DRAFT",
+    sequence: 10,
+    isActive: true,
   });
 
   useEffect(() => {
@@ -81,6 +100,7 @@ export default function AutoAnalyticalModels() {
 
   const handleNew = () => {
     setEditingModel(null);
+    setSelectedTags([]);
     setFormData({
       partnerTag: "",
       partnerId: "",
@@ -88,12 +108,17 @@ export default function AutoAnalyticalModels() {
       productId: "",
       analyticalAccountId: "",
       status: "DRAFT",
+      sequence: 10,
+      isActive: true,
     });
     setView("form");
   };
 
   const handleEdit = (model) => {
     setEditingModel(model);
+    setSelectedTags(
+      model.partnerTag ? model.partnerTag.split(",").filter(Boolean) : [],
+    );
     setFormData({
       partnerTag: model.partnerTag || "",
       partnerId: model.partnerId?.toString() || "",
@@ -101,6 +126,8 @@ export default function AutoAnalyticalModels() {
       productId: model.productId?.toString() || "",
       analyticalAccountId: model.analyticalAccountId?.toString() || "",
       status: model.status || "DRAFT",
+      sequence: model.sequence || 10,
+      isActive: model.isActive !== false,
     });
     setView("form");
   };
@@ -113,7 +140,7 @@ export default function AutoAnalyticalModels() {
 
     try {
       const data = {
-        partnerTag: formData.partnerTag || null,
+        partnerTag: selectedTags.length > 0 ? selectedTags.join(",") : null,
         partnerId: formData.partnerId ? parseInt(formData.partnerId) : null,
         categoryId: formData.categoryId ? parseInt(formData.categoryId) : null,
         productId: formData.productId ? parseInt(formData.productId) : null,
@@ -156,27 +183,15 @@ export default function AutoAnalyticalModels() {
     }
   };
 
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case "CONFIRMED":
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-            <Check size={12} /> Confirmed
-          </span>
-        );
-      case "CANCELLED":
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
-            <X size={12} /> Cancelled
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
-            <Clock size={12} /> Draft
-          </span>
-        );
+  const handleAddTag = (tag) => {
+    if (!selectedTags.includes(tag)) {
+      setSelectedTags([...selectedTags, tag]);
     }
+    setShowTagDropdown(false);
+  };
+
+  const handleRemoveTag = (tagToRemove) => {
+    setSelectedTags(selectedTags.filter((t) => t !== tagToRemove));
   };
 
   const getCriteriaCount = (model) => {
@@ -188,52 +203,145 @@ export default function AutoAnalyticalModels() {
     return count;
   };
 
+  // Styles
+  const containerStyle = {
+    maxWidth: "1000px",
+    margin: "0 auto",
+  };
+
+  const titleStyle = {
+    fontSize: "28px",
+    fontWeight: "700",
+    color: "#1F2937",
+    margin: "0 0 8px 0",
+  };
+
+  const subtitleStyle = {
+    fontSize: "14px",
+    color: "#6B7280",
+    margin: 0,
+  };
+
+  const cardStyle = {
+    backgroundColor: "white",
+    borderRadius: "16px",
+    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+    border: "1px solid #E5E7EB",
+    overflow: "hidden",
+  };
+
+  const inputStyle = {
+    width: "100%",
+    padding: "12px 16px",
+    backgroundColor: "#F9FAFB",
+    border: "1px solid #E5E7EB",
+    borderRadius: "8px",
+    fontSize: "14px",
+    color: "#1F2937",
+    outline: "none",
+    boxSizing: "border-box",
+  };
+
+  const selectStyle = {
+    ...inputStyle,
+    appearance: "none",
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+    backgroundRepeat: "no-repeat",
+    backgroundPosition: "right 12px center",
+    backgroundSize: "16px",
+    paddingRight: "40px",
+    cursor: "pointer",
+  };
+
+  const labelStyle = {
+    display: "block",
+    fontSize: "13px",
+    fontWeight: "500",
+    color: "#4F46E5",
+    marginBottom: "8px",
+  };
+
+  const buttonPrimaryStyle = {
+    padding: "12px 24px",
+    backgroundColor: "#4F46E5",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    fontSize: "14px",
+    fontWeight: "500",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+  };
+
+  const buttonSecondaryStyle = {
+    padding: "10px 20px",
+    backgroundColor: "white",
+    color: "#374151",
+    border: "1px solid #D1D5DB",
+    borderRadius: "8px",
+    fontSize: "14px",
+    fontWeight: "500",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+  };
+
   // List View
   if (view === "list") {
     return (
-      <div className="space-y-6">
+      <div style={containerStyle}>
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            marginBottom: "24px",
+          }}
+        >
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">
-              Auto Analytical Model
-            </h1>
-            <p className="text-gray-500 text-sm mt-1">
-              Auto-apply analytics based on matching criteria
+            <h1 style={titleStyle}>Auto Analytic Model</h1>
+            <p style={subtitleStyle}>
+              Define logic for automatic analytic account assignment on move
+              lines
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div style={{ display: "flex", gap: "12px" }}>
             <button
               onClick={() => setShowArchived(!showArchived)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
-                showArchived
-                  ? "bg-amber-100 text-amber-700 border-amber-300"
-                  : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
-              }`}
+              style={{
+                ...buttonSecondaryStyle,
+                backgroundColor: showArchived ? "#FEF3C7" : "white",
+              }}
             >
-              <Archive size={18} />
-              Archived
+              <Archive size={16} />
+              {showArchived ? "Show Active" : "Archived"}
             </button>
-            <button
-              onClick={handleNew}
-              className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-5 py-2.5 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg shadow-indigo-200"
-            >
-              <Plus size={18} /> New Model
+            <button onClick={handleNew} style={buttonPrimaryStyle}>
+              <Plus size={16} /> New Model
             </button>
           </div>
         </div>
 
         {/* Status Filter Tabs */}
-        <div className="flex items-center gap-2">
+        <div style={{ display: "flex", gap: "8px", marginBottom: "24px" }}>
           {["all", "DRAFT", "CONFIRMED", "CANCELLED"].map((status) => (
             <button
               key={status}
               onClick={() => setStatusFilter(status)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                statusFilter === status
-                  ? "bg-indigo-100 text-indigo-700"
-                  : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
-              }`}
+              style={{
+                padding: "10px 20px",
+                borderRadius: "8px",
+                fontSize: "14px",
+                fontWeight: "500",
+                cursor: "pointer",
+                border: statusFilter === status ? "none" : "1px solid #E5E7EB",
+                backgroundColor: statusFilter === status ? "#EEF2FF" : "white",
+                color: statusFilter === status ? "#4F46E5" : "#6B7280",
+              }}
             >
               {status === "all"
                 ? "All"
@@ -243,124 +351,267 @@ export default function AutoAnalyticalModels() {
         </div>
 
         {/* Main Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div style={cardStyle}>
           {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "200px",
+              }}
+            >
+              <div
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  border: "3px solid #E5E7EB",
+                  borderTopColor: "#4F46E5",
+                  borderRadius: "50%",
+                  animation: "spin 1s linear infinite",
+                }}
+              ></div>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100">
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <tr style={{ backgroundColor: "#F9FAFB" }}>
+                    <th
+                      style={{
+                        padding: "12px 24px",
+                        textAlign: "left",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#6B7280",
+                        textTransform: "uppercase",
+                      }}
+                    >
                       Status
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Partner Tag
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th
+                      style={{
+                        padding: "12px 24px",
+                        textAlign: "left",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#6B7280",
+                        textTransform: "uppercase",
+                      }}
+                    >
                       Partner
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th
+                      style={{
+                        padding: "12px 24px",
+                        textAlign: "left",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#6B7280",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Tags
+                    </th>
+                    <th
+                      style={{
+                        padding: "12px 24px",
+                        textAlign: "left",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#6B7280",
+                        textTransform: "uppercase",
+                      }}
+                    >
                       Category
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Product
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th
+                      style={{
+                        padding: "12px 24px",
+                        textAlign: "left",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#6B7280",
+                        textTransform: "uppercase",
+                      }}
+                    >
                       Analytic
                     </th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Priority
-                    </th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th
+                      style={{
+                        padding: "12px 24px",
+                        textAlign: "center",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#6B7280",
+                        textTransform: "uppercase",
+                      }}
+                    >
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody>
                   {models.map((model) => (
                     <tr
                       key={model.id}
-                      className="hover:bg-indigo-50/30 transition-colors"
+                      onClick={() => handleEdit(model)}
+                      style={{
+                        borderBottom: "1px solid #E5E7EB",
+                        cursor: "pointer",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.backgroundColor = "#F9FAFB")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.backgroundColor = "white")
+                      }
                     >
-                      <td className="px-6 py-4">
-                        {getStatusBadge(model.status)}
+                      <td style={{ padding: "16px 24px" }}>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            padding: "4px 12px",
+                            borderRadius: "20px",
+                            fontSize: "12px",
+                            fontWeight: "500",
+                            backgroundColor:
+                              model.status === "CONFIRMED"
+                                ? "#D1FAE5"
+                                : model.status === "CANCELLED"
+                                  ? "#FEE2E2"
+                                  : "#FEF3C7",
+                            color:
+                              model.status === "CONFIRMED"
+                                ? "#065F46"
+                                : model.status === "CANCELLED"
+                                  ? "#991B1B"
+                                  : "#92400E",
+                          }}
+                        >
+                          {model.status === "CONFIRMED" ? (
+                            <Check size={12} />
+                          ) : model.status === "CANCELLED" ? (
+                            <X size={12} />
+                          ) : (
+                            <Clock size={12} />
+                          )}
+                          {model.status.charAt(0) +
+                            model.status.slice(1).toLowerCase()}
+                        </span>
                       </td>
-                      <td className="px-6 py-4">
-                        {model.partnerTag ? (
-                          <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">
-                            {model.partnerTag}
-                          </span>
-                        ) : (
-                          <span className="text-gray-300">—</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-gray-700">
+                      <td style={{ padding: "16px 24px", color: "#374151" }}>
                         {model.partner?.name || (
-                          <span className="text-gray-300">—</span>
+                          <span style={{ color: "#9CA3AF" }}>—</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-gray-700">
+                      <td style={{ padding: "16px 24px" }}>
+                        {model.partnerTag ? (
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: "6px",
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            {model.partnerTag.split(",").map((tag, i) => (
+                              <span
+                                key={i}
+                                style={{
+                                  padding: "4px 10px",
+                                  backgroundColor: "#EEF2FF",
+                                  color: "#4F46E5",
+                                  borderRadius: "6px",
+                                  fontSize: "12px",
+                                  fontWeight: "500",
+                                }}
+                              >
+                                {tag.trim()}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span style={{ color: "#9CA3AF" }}>—</span>
+                        )}
+                      </td>
+                      <td style={{ padding: "16px 24px", color: "#374151" }}>
                         {model.category?.name || (
-                          <span className="text-gray-300">—</span>
+                          <span style={{ color: "#9CA3AF" }}>—</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-gray-700">
-                        {model.product?.name || (
-                          <span className="text-gray-300">—</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-teal-100 text-teal-700">
+                      <td style={{ padding: "16px 24px" }}>
+                        <span
+                          style={{
+                            padding: "4px 12px",
+                            backgroundColor: "#DBEAFE",
+                            color: "#1D4ED8",
+                            borderRadius: "6px",
+                            fontSize: "12px",
+                            fontWeight: "500",
+                          }}
+                        >
                           {model.analyticalAccount?.name}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-center">
-                        <span
-                          className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
-                            getCriteriaCount(model) >= 3
-                              ? "bg-green-100 text-green-700"
-                              : getCriteriaCount(model) >= 2
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-gray-100 text-gray-600"
-                          }`}
+                      <td style={{ padding: "16px 24px", textAlign: "center" }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(model);
+                          }}
+                          style={{
+                            padding: "8px",
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            borderRadius: "6px",
+                            color: "#6B7280",
+                          }}
                         >
-                          {getCriteriaCount(model)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center justify-center gap-1">
-                          <button
-                            onClick={() => handleEdit(model)}
-                            className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                            title="Edit"
-                          >
-                            <Edit size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleArchive(model)}
-                            className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                            title={model.isActive ? "Archive" : "Restore"}
-                          >
-                            {model.isActive ? (
-                              <Archive size={16} />
-                            ) : (
-                              <RotateCcw size={16} />
-                            )}
-                          </button>
-                        </div>
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleArchive(model);
+                          }}
+                          style={{
+                            padding: "8px",
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            borderRadius: "6px",
+                            color: "#6B7280",
+                            marginLeft: "4px",
+                          }}
+                        >
+                          {model.isActive ? (
+                            <Archive size={16} />
+                          ) : (
+                            <RotateCcw size={16} />
+                          )}
+                        </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
               {models.length === 0 && (
-                <div className="text-center py-16">
-                  <Settings size={48} className="mx-auto text-gray-300 mb-4" />
-                  <p className="text-gray-500 font-medium">No models found</p>
-                  <p className="text-gray-400 text-sm mt-1">
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "48px",
+                    color: "#6B7280",
+                  }}
+                >
+                  <Settings
+                    size={48}
+                    style={{ margin: "0 auto 16px", color: "#D1D5DB" }}
+                  />
+                  <p style={{ fontWeight: "500" }}>No models found</p>
+                  <p style={{ fontSize: "14px", color: "#9CA3AF" }}>
                     Create a model to auto-apply analytics
                   </p>
                 </div>
@@ -369,26 +620,30 @@ export default function AutoAnalyticalModels() {
           )}
         </div>
 
-        {/* Info Box */}
-        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-100">
-          <h3 className="font-semibold text-indigo-800 mb-3">How it works</h3>
-          <ul className="space-y-2 text-sm text-indigo-700">
-            <li>
-              • The model is applied if <strong>any one field</strong> matches
-              the transaction line.
-            </li>
-            <li>
-              • If multiple fields match, the model becomes{" "}
-              <strong>more specific</strong> and takes priority.
-            </li>
-            <li>
-              • Models with fewer matched fields are more generic, while more
-              matches make them stricter.
-            </li>
-            <li>
-              • This allows flexible yet prioritized automatic analytic model.
-            </li>
-          </ul>
+        {/* Footer */}
+        <div style={{ textAlign: "center", marginTop: "48px" }}>
+          <div
+            style={{
+              width: "40px",
+              height: "40px",
+              backgroundColor: "#4F46E5",
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 16px",
+            }}
+          >
+            <CheckCircle size={20} style={{ color: "white" }} />
+          </div>
+          <p
+            style={{ fontSize: "14px", color: "#6B7280", marginBottom: "4px" }}
+          >
+            Shiv Furniture ERP - Analytics Management Module
+          </p>
+          <p style={{ fontSize: "12px", color: "#9CA3AF" }}>
+            © 2024 Shiv Furniture. All rights reserved.
+          </p>
         </div>
       </div>
     );
@@ -396,166 +651,518 @@ export default function AutoAnalyticalModels() {
 
   // Form View
   return (
-    <div className="max-w-2xl mx-auto">
+    <div style={containerStyle}>
       {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
-        <button
-          onClick={() => setView("list")}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <svg
-            className="w-5 h-5 text-gray-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-        </button>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          marginBottom: "24px",
+        }}
+      >
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">
-            {editingModel ? "Edit Model" : "New Auto Analytical Model"}
-          </h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Define criteria to auto-apply analytical accounts
+          <h1 style={titleStyle}>Auto Analytic Model</h1>
+          <p style={subtitleStyle}>
+            Define logic for automatic analytic account assignment on move lines
           </p>
+        </div>
+        <div style={{ display: "flex", gap: "12px" }}>
+          <button onClick={handleSubmit} style={buttonPrimaryStyle}>
+            <Save size={16} /> Save Changes
+          </button>
+          <button onClick={() => setView("list")} style={buttonSecondaryStyle}>
+            Discard
+          </button>
         </div>
       </div>
 
-      {/* Form Card */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-6 space-y-6">
-          {/* Status Tabs */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-600 mr-2">
-              Status:
-            </span>
-            {["DRAFT", "CONFIRMED", "CANCELLED"].map((status) => (
-              <button
-                key={status}
-                onClick={() => setFormData({ ...formData, status })}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  formData.status === status
-                    ? status === "CONFIRMED"
-                      ? "bg-green-100 text-green-700"
-                      : status === "CANCELLED"
-                        ? "bg-red-100 text-red-700"
-                        : "bg-yellow-100 text-yellow-700"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
+      {/* Status Tabs */}
+      <div
+        style={{
+          ...cardStyle,
+          marginBottom: "24px",
+          padding: "8px",
+          display: "flex",
+          gap: "0",
+        }}
+      >
+        {["DRAFT", "CONFIRMED", "CANCELLED"].map((status) => (
+          <button
+            key={status}
+            onClick={() => setFormData({ ...formData, status })}
+            style={{
+              flex: 1,
+              padding: "14px 24px",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "500",
+              cursor: "pointer",
+              border: "none",
+              backgroundColor:
+                formData.status === status
+                  ? status === "DRAFT"
+                    ? "#EEF2FF"
+                    : status === "CONFIRMED"
+                      ? "#D1FAE5"
+                      : "#FEE2E2"
+                  : "transparent",
+              color:
+                formData.status === status
+                  ? status === "DRAFT"
+                    ? "#4F46E5"
+                    : status === "CONFIRMED"
+                      ? "#065F46"
+                      : "#991B1B"
+                  : "#6B7280",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+            }}
+          >
+            {status === "DRAFT" && <Edit size={16} />}
+            {status === "CONFIRMED" && <Check size={16} />}
+            {status === "CANCELLED" && <X size={16} />}
+            {status.charAt(0) + status.slice(1).toLowerCase()}
+          </button>
+        ))}
+      </div>
+
+      {/* Main Content */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 320px",
+          gap: "24px",
+        }}
+      >
+        {/* Left Column - Trigger Conditions */}
+        <div>
+          <div style={cardStyle}>
+            {/* Trigger Conditions Section */}
+            <div style={{ padding: "24px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  marginBottom: "24px",
+                }}
               >
-                {status.charAt(0) + status.slice(1).toLowerCase()}
-              </button>
-            ))}
-          </div>
-
-          {/* Matching Criteria */}
-          <div className="border-t border-gray-100 pt-6">
-            <h3 className="text-sm font-semibold text-gray-800 mb-4 uppercase tracking-wider">
-              Matching Criteria
-            </h3>
-
-            <div className="grid grid-cols-2 gap-6">
-              {/* Partner Tag */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Partner Tag
-                </label>
-                <select
-                  value={formData.partnerTag}
-                  onChange={(e) =>
-                    setFormData({ ...formData, partnerTag: e.target.value })
-                  }
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
+                <div
+                  style={{
+                    width: "28px",
+                    height: "28px",
+                    backgroundColor: "#EEF2FF",
+                    borderRadius: "6px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
                 >
-                  <option value="">Many to One ( from list )</option>
-                  {PARTNER_TAGS.map((tag) => (
-                    <option key={tag} value={tag}>
-                      {tag}
-                    </option>
-                  ))}
-                </select>
+                  <Filter size={16} style={{ color: "#4F46E5" }} />
+                </div>
+                <span
+                  style={{
+                    fontSize: "16px",
+                    fontWeight: "600",
+                    color: "#1F2937",
+                  }}
+                >
+                  Trigger Conditions
+                </span>
               </div>
 
-              {/* Partner */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Partner
-                </label>
-                <select
-                  value={formData.partnerId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, partnerId: e.target.value })
-                  }
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "20px",
+                }}
+              >
+                {/* Partner */}
+                <div>
+                  <label style={labelStyle}>Partner</label>
+                  <div style={{ position: "relative" }}>
+                    <select
+                      value={formData.partnerId}
+                      onChange={(e) =>
+                        setFormData({ ...formData, partnerId: e.target.value })
+                      }
+                      style={selectStyle}
+                    >
+                      <option value="">Select Partner</option>
+                      {contacts.map((contact) => (
+                        <option key={contact.id} value={contact.id}>
+                          {contact.name}
+                        </option>
+                      ))}
+                    </select>
+                    <Users
+                      size={16}
+                      style={{
+                        position: "absolute",
+                        right: "40px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        color: "#9CA3AF",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Partner Tag */}
+                <div>
+                  <label style={labelStyle}>Partner Tag</label>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: "8px",
+                      alignItems: "center",
+                    }}
+                  >
+                    {selectedTags.map((tag) => (
+                      <span
+                        key={tag}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "6px",
+                          padding: "8px 12px",
+                          backgroundColor: "#EEF2FF",
+                          color: "#4F46E5",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                        }}
+                      >
+                        {tag}
+                        <button
+                          onClick={() => handleRemoveTag(tag)}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            padding: 0,
+                            display: "flex",
+                            color: "#4F46E5",
+                          }}
+                        >
+                          <X size={14} />
+                        </button>
+                      </span>
+                    ))}
+                    <div style={{ position: "relative" }}>
+                      <button
+                        onClick={() => setShowTagDropdown(!showTagDropdown)}
+                        style={{
+                          padding: "8px 12px",
+                          backgroundColor: "white",
+                          border: "1px dashed #D1D5DB",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          color: "#6B7280",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "4px",
+                        }}
+                      >
+                        <Plus size={14} /> Add Tag
+                      </button>
+                      {showTagDropdown && (
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: "100%",
+                            left: 0,
+                            marginTop: "4px",
+                            backgroundColor: "white",
+                            border: "1px solid #E5E7EB",
+                            borderRadius: "8px",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                            zIndex: 10,
+                            minWidth: "150px",
+                          }}
+                        >
+                          {PARTNER_TAGS.filter(
+                            (t) => !selectedTags.includes(t),
+                          ).map((tag) => (
+                            <button
+                              key={tag}
+                              onClick={() => handleAddTag(tag)}
+                              style={{
+                                display: "block",
+                                width: "100%",
+                                padding: "10px 16px",
+                                textAlign: "left",
+                                background: "none",
+                                border: "none",
+                                cursor: "pointer",
+                                fontSize: "14px",
+                                color: "#374151",
+                              }}
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.backgroundColor =
+                                  "#F3F4F6")
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.backgroundColor =
+                                  "transparent")
+                              }
+                            >
+                              {tag}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Product */}
+                <div>
+                  <label style={labelStyle}>Product</label>
+                  <div style={{ position: "relative" }}>
+                    <select
+                      value={formData.productId}
+                      onChange={(e) =>
+                        setFormData({ ...formData, productId: e.target.value })
+                      }
+                      style={selectStyle}
+                    >
+                      <option value="">Select Product</option>
+                      {products.map((product) => (
+                        <option key={product.id} value={product.id}>
+                          {product.name}
+                        </option>
+                      ))}
+                    </select>
+                    <Package
+                      size={16}
+                      style={{
+                        position: "absolute",
+                        right: "40px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        color: "#9CA3AF",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Product Category */}
+                <div>
+                  <label style={labelStyle}>Product Category</label>
+                  <div style={{ position: "relative" }}>
+                    <select
+                      value={formData.categoryId}
+                      onChange={(e) =>
+                        setFormData({ ...formData, categoryId: e.target.value })
+                      }
+                      style={selectStyle}
+                    >
+                      <option value="">Select Category</option>
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </select>
+                    <Grid3X3
+                      size={16}
+                      style={{
+                        position: "absolute",
+                        right: "40px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        color: "#9CA3AF",
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Model Metadata Section */}
+            <div
+              style={{
+                padding: "24px",
+                borderTop: "1px solid #E5E7EB",
+                backgroundColor: "#FAFAFA",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  marginBottom: "20px",
+                }}
+              >
+                <div
+                  style={{
+                    width: "28px",
+                    height: "28px",
+                    backgroundColor: "#EEF2FF",
+                    borderRadius: "6px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
                 >
-                  <option value="">Many to One ( from list )</option>
-                  {contacts.map((contact) => (
-                    <option key={contact.id} value={contact.id}>
-                      {contact.name}
-                    </option>
-                  ))}
-                </select>
+                  <Settings size={16} style={{ color: "#4F46E5" }} />
+                </div>
+                <span
+                  style={{
+                    fontSize: "16px",
+                    fontWeight: "600",
+                    color: "#1F2937",
+                  }}
+                >
+                  Model Metadata
+                </span>
               </div>
 
-              {/* Product Category */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Product Category
-                </label>
-                <select
-                  value={formData.categoryId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, categoryId: e.target.value })
-                  }
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "20px",
+                }}
+              >
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
                 >
-                  <option value="">Many to One ( from list )</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Product */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Product
-                </label>
-                <select
-                  value={formData.productId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, productId: e.target.value })
-                  }
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
+                  <span style={{ fontSize: "13px", color: "#6B7280" }}>
+                    Created By
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "13px",
+                      color: "#1F2937",
+                      fontWeight: "500",
+                    }}
+                  >
+                    Admin User
+                  </span>
+                </div>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
                 >
-                  <option value="">Many to One ( from list )</option>
-                  {products.map((product) => (
-                    <option key={product.id} value={product.id}>
-                      {product.name}
-                    </option>
-                  ))}
-                </select>
+                  <span style={{ fontSize: "13px", color: "#6B7280" }}>
+                    Date Created
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "13px",
+                      color: "#1F2937",
+                      fontWeight: "500",
+                    }}
+                  >
+                    {editingModel
+                      ? new Date(editingModel.createdAt).toLocaleDateString(
+                          "en-US",
+                          { month: "short", day: "numeric", year: "numeric" },
+                        )
+                      : new Date().toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                  </span>
+                </div>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <span style={{ fontSize: "13px", color: "#6B7280" }}>
+                    Sequence
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "13px",
+                      color: "#1F2937",
+                      fontWeight: "500",
+                    }}
+                  >
+                    {formData.sequence}
+                  </span>
+                </div>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <span style={{ fontSize: "13px", color: "#6B7280" }}>
+                    Last Modified
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "13px",
+                      color: "#1F2937",
+                      fontWeight: "500",
+                    }}
+                  >
+                    {editingModel ? "2 hours ago" : "Just now"}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Auto Apply Section */}
-          <div className="border-t border-gray-100 pt-6">
-            <h3 className="text-sm font-semibold text-gray-800 mb-4 uppercase tracking-wider">
-              Auto Apply Analytical Model
-            </h3>
+        {/* Right Column - Analytic Result */}
+        <div>
+          {/* Analytic Result Card */}
+          <div
+            style={{
+              backgroundColor: "#4F46E5",
+              borderRadius: "16px",
+              padding: "24px",
+              marginBottom: "20px",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                marginBottom: "20px",
+              }}
+            >
+              <div
+                style={{
+                  width: "28px",
+                  height: "28px",
+                  backgroundColor: "rgba(255,255,255,0.2)",
+                  borderRadius: "6px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <BarChart3 size={16} style={{ color: "white" }} />
+              </div>
+              <span
+                style={{ fontSize: "16px", fontWeight: "600", color: "white" }}
+              >
+                Analytic Result
+              </span>
+            </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Analyticals to Apply? <span className="text-red-500">*</span>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "11px",
+                  fontWeight: "600",
+                  color: "rgba(255,255,255,0.7)",
+                  marginBottom: "8px",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                }}
+              >
+                Analytic to Apply
               </label>
               <select
                 value={formData.analyticalAccountId}
@@ -565,79 +1172,159 @@ export default function AutoAnalyticalModels() {
                     analyticalAccountId: e.target.value,
                   })
                 }
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 transition-all bg-teal-50"
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  backgroundColor: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  color: "#1F2937",
+                  outline: "none",
+                  boxSizing: "border-box",
+                  appearance: "none",
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "right 12px center",
+                  backgroundSize: "16px",
+                  paddingRight: "40px",
+                  cursor: "pointer",
+                }}
               >
-                <option value="">
-                  Many to One ( from analytical master list )
-                </option>
+                <option value="">Select Analytic Account</option>
                 {accounts.map((account) => (
                   <option key={account.id} value={account.id}>
                     {account.name}
                   </option>
                 ))}
               </select>
-              <p className="text-xs text-teal-600 mt-2">
-                Select the analytical account to apply when criteria matches
+            </div>
+
+            <div
+              style={{
+                marginTop: "20px",
+                padding: "16px",
+                backgroundColor: "rgba(255,255,255,0.1)",
+                borderRadius: "8px",
+              }}
+            >
+              <p
+                style={{
+                  fontSize: "13px",
+                  color: "rgba(255,255,255,0.9)",
+                  lineHeight: "1.6",
+                  margin: 0,
+                }}
+              >
+                When conditions are met, the system will automatically tag
+                transactions with the selected analytic account.
               </p>
             </div>
           </div>
 
-          {/* Priority Preview */}
-          {(formData.partnerTag ||
-            formData.partnerId ||
-            formData.categoryId ||
-            formData.productId) && (
-            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-indigo-600 font-medium">
-                    Priority Score
-                  </p>
-                  <p className="text-xs text-indigo-400 mt-0.5">
-                    Based on{" "}
-                    {
-                      [
-                        formData.partnerTag,
-                        formData.partnerId,
-                        formData.categoryId,
-                        formData.productId,
-                      ].filter(Boolean).length
-                    }{" "}
-                    matching criteria
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold text-indigo-700">
-                    {
-                      [
-                        formData.partnerTag,
-                        formData.partnerId,
-                        formData.categoryId,
-                        formData.productId,
-                      ].filter(Boolean).length
-                    }
-                  </p>
-                </div>
+          {/* Model Priority Card */}
+          <div style={cardStyle}>
+            <div style={{ padding: "20px" }}>
+              <h4
+                style={{
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  color: "#1F2937",
+                  marginBottom: "8px",
+                  marginTop: 0,
+                }}
+              >
+                Model Priority
+              </h4>
+              <p
+                style={{
+                  fontSize: "13px",
+                  color: "#6B7280",
+                  lineHeight: "1.5",
+                  marginBottom: "16px",
+                  marginTop: 0,
+                }}
+              >
+                If multiple models match, the one with the lowest sequence
+                number is applied first.
+              </p>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingTop: "16px",
+                  borderTop: "1px solid #E5E7EB",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: "600",
+                    color: "#6B7280",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  Active Status
+                </span>
+                <button
+                  onClick={() =>
+                    setFormData({ ...formData, isActive: !formData.isActive })
+                  }
+                  style={{
+                    width: "48px",
+                    height: "28px",
+                    borderRadius: "14px",
+                    backgroundColor: formData.isActive ? "#4F46E5" : "#D1D5DB",
+                    border: "none",
+                    cursor: "pointer",
+                    position: "relative",
+                    transition: "background-color 0.2s",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "24px",
+                      height: "24px",
+                      borderRadius: "50%",
+                      backgroundColor: "white",
+                      position: "absolute",
+                      top: "2px",
+                      left: formData.isActive ? "22px" : "2px",
+                      transition: "left 0.2s",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                    }}
+                  />
+                </button>
               </div>
             </div>
-          )}
+          </div>
         </div>
+      </div>
 
-        {/* Form Actions */}
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
-          <button
-            onClick={() => setView("list")}
-            className="px-6 py-2.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            className="px-8 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg shadow-indigo-200 font-medium"
-          >
-            {editingModel ? "Update" : "Confirm"}
-          </button>
+      {/* Footer */}
+      <div style={{ textAlign: "center", marginTop: "48px" }}>
+        <div
+          style={{
+            width: "40px",
+            height: "40px",
+            backgroundColor: "#4F46E5",
+            borderRadius: "50%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            margin: "0 auto 16px",
+          }}
+        >
+          <CheckCircle size={20} style={{ color: "white" }} />
         </div>
+        <p style={{ fontSize: "14px", color: "#6B7280", marginBottom: "4px" }}>
+          Shiv Furniture ERP - Analytics Management Module
+        </p>
+        <p style={{ fontSize: "12px", color: "#9CA3AF" }}>
+          © 2024 Shiv Furniture. All rights reserved.
+        </p>
       </div>
     </div>
   );

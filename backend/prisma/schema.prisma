@@ -79,6 +79,7 @@ model Contact {
     name     String
     email    String?
     phone    String?
+    jobTitle String?
     type     ContactType
     isActive Boolean     @default(true)
 

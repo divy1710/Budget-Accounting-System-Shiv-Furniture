@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import {
   Home,
   ArrowLeft,
@@ -9,8 +9,18 @@ import {
   Plus,
   Search,
   RotateCcw,
+  Info,
+  DollarSign,
+  Grid3X3,
+  Trash2,
+  Check,
+  ChevronRight,
 } from "lucide-react";
-import { productsApi, categoriesApi } from "../services/api";
+import {
+  productsApi,
+  categoriesApi,
+  analyticalAccountsApi,
+} from "../services/api";
 
 const formatCurrency = (amount) => {
   return new Intl.NumberFormat("en-IN", {
@@ -22,9 +32,10 @@ const formatCurrency = (amount) => {
 
 export default function Products() {
   const navigate = useNavigate();
-  const [view, setView] = useState("list"); // list, form
+  const [view, setView] = useState("list");
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [analyticalAccounts, setAnalyticalAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState(null);
   const [showArchived, setShowArchived] = useState(false);
@@ -36,11 +47,13 @@ export default function Products() {
     categoryId: "",
     salesPrice: "",
     purchasePrice: "",
+    costCenters: [],
   });
 
   useEffect(() => {
     fetchProducts();
     fetchCategories();
+    fetchAnalyticalAccounts();
   }, [showArchived]);
 
   const fetchProducts = async () => {
@@ -67,6 +80,15 @@ export default function Products() {
     }
   };
 
+  const fetchAnalyticalAccounts = async () => {
+    try {
+      const res = await analyticalAccountsApi.getAll();
+      setAnalyticalAccounts(res.data);
+    } catch (error) {
+      console.error("Failed to fetch analytical accounts:", error);
+    }
+  };
+
   const handleNew = () => {
     setEditingProduct(null);
     setFormData({
@@ -74,6 +96,7 @@ export default function Products() {
       categoryId: "",
       salesPrice: "",
       purchasePrice: "",
+      costCenters: [],
     });
     setView("form");
   };
@@ -85,6 +108,7 @@ export default function Products() {
       categoryId: product.categoryId?.toString() || "",
       salesPrice: product.salesPrice?.toString() || "",
       purchasePrice: product.purchasePrice?.toString() || "",
+      costCenters: product.costCenters || [],
     });
     setView("form");
   };
@@ -154,197 +178,461 @@ export default function Products() {
     }
   };
 
+  const handleAddCostCenter = () => {
+    setFormData({
+      ...formData,
+      costCenters: [...formData.costCenters, { name: "", allocation: "" }],
+    });
+  };
+
+  const handleRemoveCostCenter = (index) => {
+    const newCostCenters = formData.costCenters.filter((_, i) => i !== index);
+    setFormData({ ...formData, costCenters: newCostCenters });
+  };
+
+  const handleCostCenterChange = (index, field, value) => {
+    const newCostCenters = [...formData.costCenters];
+    newCostCenters[index][field] = value;
+    setFormData({ ...formData, costCenters: newCostCenters });
+  };
+
   const filteredProducts = products.filter(
     (p) =>
       p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.category?.name?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
+  // Styles
+  const containerStyle = {
+    maxWidth: "900px",
+    margin: "0 auto",
+  };
+
+  const breadcrumbStyle = {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    fontSize: "14px",
+    color: "#6B7280",
+    marginBottom: "16px",
+  };
+
+  const titleStyle = {
+    fontSize: "28px",
+    fontWeight: "700",
+    color: "#1F2937",
+    margin: "0 0 8px 0",
+  };
+
+  const subtitleStyle = {
+    fontSize: "14px",
+    color: "#6B7280",
+    margin: 0,
+  };
+
+  const cardStyle = {
+    backgroundColor: "white",
+    borderRadius: "16px",
+    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+    border: "1px solid #E5E7EB",
+    overflow: "hidden",
+    marginBottom: "24px",
+  };
+
+  const sectionStyle = {
+    padding: "24px",
+    borderBottom: "1px solid #E5E7EB",
+  };
+
+  const sectionTitleStyle = {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    fontSize: "16px",
+    fontWeight: "600",
+    color: "#1F2937",
+    marginBottom: "20px",
+  };
+
+  const labelStyle = {
+    display: "block",
+    fontSize: "13px",
+    fontWeight: "500",
+    color: "#374151",
+    marginBottom: "8px",
+  };
+
+  const inputStyle = {
+    width: "100%",
+    padding: "12px 16px",
+    backgroundColor: "#F9FAFB",
+    border: "1px solid #E5E7EB",
+    borderRadius: "8px",
+    fontSize: "14px",
+    color: "#1F2937",
+    outline: "none",
+    boxSizing: "border-box",
+  };
+
+  const selectStyle = {
+    ...inputStyle,
+    appearance: "none",
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+    backgroundRepeat: "no-repeat",
+    backgroundPosition: "right 12px center",
+    backgroundSize: "16px",
+    paddingRight: "40px",
+  };
+
+  const buttonPrimaryStyle = {
+    padding: "12px 24px",
+    backgroundColor: "#1F2937",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    fontSize: "14px",
+    fontWeight: "500",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+  };
+
+  const buttonSecondaryStyle = {
+    padding: "10px 20px",
+    backgroundColor: "white",
+    color: "#374151",
+    border: "1px solid #D1D5DB",
+    borderRadius: "8px",
+    fontSize: "14px",
+    fontWeight: "500",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+  };
+
   // List View
   if (view === "list") {
     return (
-      <div className="space-y-6">
+      <div style={containerStyle}>
+        {/* Breadcrumb */}
+        <div style={breadcrumbStyle}>
+          <Home size={14} />
+          <span>Home</span>
+          <ChevronRight size={14} />
+          <span>Inventory</span>
+          <ChevronRight size={14} />
+          <span style={{ color: "#1F2937", fontWeight: "500" }}>
+            Product Master
+          </span>
+        </div>
+
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            marginBottom: "24px",
+          }}
+        >
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">Product Master</h1>
-            <p className="text-gray-500 text-sm mt-1">
-              Manage your product catalog
+            <h1 style={titleStyle}>Product Master</h1>
+            <p style={subtitleStyle}>
+              Configure furniture items, pricing, and cost center allocations.
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div style={{ display: "flex", gap: "12px" }}>
             <button
               onClick={() => setShowArchived(!showArchived)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
-                showArchived
-                  ? "bg-amber-100 text-amber-700 border-amber-300"
-                  : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
-              }`}
+              style={{
+                ...buttonSecondaryStyle,
+                backgroundColor: showArchived ? "#FEF3C7" : "white",
+              }}
             >
-              <Archive size={18} />
-              {showArchived ? "Showing Archived" : "View Archived"}
+              <Archive size={16} />
+              {showArchived ? "Show Active" : "Archived"}
             </button>
-            <button
-              onClick={handleNew}
-              className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-5 py-2.5 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg shadow-purple-200"
-            >
-              <Plus size={18} /> Add Product
+            <button onClick={handleNew} style={buttonPrimaryStyle}>
+              <Plus size={16} /> Add Product
             </button>
           </div>
         </div>
 
         {/* Main Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div style={cardStyle}>
           {/* Search Bar */}
-          <div className="p-4 border-b border-gray-100 bg-gray-50/50">
-            <div className="relative max-w-md">
+          <div
+            style={{ padding: "16px 24px", borderBottom: "1px solid #E5E7EB" }}
+          >
+            <div style={{ position: "relative", maxWidth: "400px" }}>
               <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
                 size={18}
+                style={{
+                  position: "absolute",
+                  left: "12px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  color: "#9CA3AF",
+                }}
               />
               <input
                 type="text"
                 placeholder="Search products or categories..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
+                style={{ ...inputStyle, paddingLeft: "40px" }}
               />
             </div>
           </div>
 
           {/* Products Table */}
           {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600"></div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "200px",
+              }}
+            >
+              <div
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  border: "3px solid #E5E7EB",
+                  borderTopColor: "#4F46E5",
+                  borderRadius: "50%",
+                  animation: "spin 1s linear infinite",
+                }}
+              ></div>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100">
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <tr style={{ backgroundColor: "#F9FAFB" }}>
+                    <th
+                      style={{
+                        padding: "12px 24px",
+                        textAlign: "left",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#6B7280",
+                        textTransform: "uppercase",
+                      }}
+                    >
                       Product
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th
+                      style={{
+                        padding: "12px 24px",
+                        textAlign: "left",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#6B7280",
+                        textTransform: "uppercase",
+                      }}
+                    >
                       Category
                     </th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th
+                      style={{
+                        padding: "12px 24px",
+                        textAlign: "right",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#6B7280",
+                        textTransform: "uppercase",
+                      }}
+                    >
                       Sales Price
                     </th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th
+                      style={{
+                        padding: "12px 24px",
+                        textAlign: "right",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#6B7280",
+                        textTransform: "uppercase",
+                      }}
+                    >
                       Purchase Price
                     </th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Margin
-                    </th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th
+                      style={{
+                        padding: "12px 24px",
+                        textAlign: "center",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#6B7280",
+                        textTransform: "uppercase",
+                      }}
+                    >
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {filteredProducts.map((product) => {
-                    const margin =
-                      product.salesPrice && product.purchasePrice
-                        ? (
-                            ((product.salesPrice - product.purchasePrice) /
-                              product.salesPrice) *
-                            100
-                          ).toFixed(1)
-                        : 0;
-                    return (
-                      <tr
-                        key={product.id}
-                        className="hover:bg-purple-50/30 transition-colors"
-                      >
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-sm">
-                              <Package size={18} className="text-white" />
-                            </div>
-                            <div>
-                              <p className="font-semibold text-gray-800">
-                                {product.name}
-                              </p>
-                              <p className="text-xs text-gray-400">
-                                ID: #{product.id}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          {product.category ? (
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                              {product.category.name}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 text-sm">
-                              Uncategorized
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <span className="font-semibold text-green-600">
-                            {formatCurrency(product.salesPrice)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <span className="font-medium text-gray-600">
-                            {formatCurrency(product.purchasePrice)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold ${
-                              margin > 20
-                                ? "bg-green-100 text-green-700"
-                                : margin > 10
-                                  ? "bg-yellow-100 text-yellow-700"
-                                  : "bg-red-100 text-red-700"
-                            }`}
+                <tbody>
+                  {filteredProducts.map((product) => (
+                    <tr
+                      key={product.id}
+                      onClick={() => handleEdit(product)}
+                      style={{
+                        borderBottom: "1px solid #E5E7EB",
+                        cursor: "pointer",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.backgroundColor = "#F9FAFB")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.backgroundColor = "white")
+                      }
+                    >
+                      <td style={{ padding: "16px 24px" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "12px",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: "40px",
+                              height: "40px",
+                              backgroundColor: "#EEF2FF",
+                              borderRadius: "10px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
                           >
-                            {margin}%
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center justify-center gap-1">
-                            <button
-                              onClick={() => handleEdit(product)}
-                              className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-                              title="Edit"
-                            >
-                              <Edit size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleArchive(product)}
-                              className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                              title={product.isActive ? "Archive" : "Restore"}
-                            >
-                              {product.isActive ? (
-                                <Archive size={16} />
-                              ) : (
-                                <RotateCcw size={16} />
-                              )}
-                            </button>
+                            <Package size={18} style={{ color: "#4F46E5" }} />
                           </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                          <span style={{ fontWeight: "500", color: "#1F2937" }}>
+                            {product.name}
+                          </span>
+                        </div>
+                      </td>
+                      <td style={{ padding: "16px 24px" }}>
+                        {product.category ? (
+                          <span
+                            style={{
+                              padding: "4px 12px",
+                              borderRadius: "20px",
+                              fontSize: "12px",
+                              fontWeight: "500",
+                              backgroundColor: "#DBEAFE",
+                              color: "#2563EB",
+                            }}
+                          >
+                            {product.category.name}
+                          </span>
+                        ) : (
+                          <span style={{ color: "#9CA3AF", fontSize: "14px" }}>
+                            Uncategorized
+                          </span>
+                        )}
+                      </td>
+                      <td
+                        style={{
+                          padding: "16px 24px",
+                          textAlign: "right",
+                          fontWeight: "500",
+                          color: "#059669",
+                        }}
+                      >
+                        {formatCurrency(product.salesPrice)}
+                      </td>
+                      <td
+                        style={{
+                          padding: "16px 24px",
+                          textAlign: "right",
+                          color: "#6B7280",
+                        }}
+                      >
+                        {formatCurrency(product.purchasePrice)}
+                      </td>
+                      <td style={{ padding: "16px 24px", textAlign: "center" }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(product);
+                          }}
+                          style={{
+                            padding: "8px",
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            borderRadius: "6px",
+                            color: "#6B7280",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = "#EEF2FF";
+                            e.currentTarget.style.color = "#4F46E5";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
+                            e.currentTarget.style.color = "#6B7280";
+                          }}
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleArchive(product);
+                          }}
+                          style={{
+                            padding: "8px",
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            borderRadius: "6px",
+                            color: "#6B7280",
+                            marginLeft: "4px",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = "#FEF2F2";
+                            e.currentTarget.style.color = "#DC2626";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
+                            e.currentTarget.style.color = "#6B7280";
+                          }}
+                        >
+                          {product.isActive ? (
+                            <Archive size={16} />
+                          ) : (
+                            <RotateCcw size={16} />
+                          )}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
               {filteredProducts.length === 0 && (
-                <div className="text-center py-16">
-                  <Package size={48} className="mx-auto text-gray-300 mb-4" />
-                  <p className="text-gray-500 font-medium">
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "48px",
+                    color: "#6B7280",
+                  }}
+                >
+                  <Package
+                    size={48}
+                    style={{ margin: "0 auto 16px", color: "#D1D5DB" }}
+                  />
+                  <p style={{ fontWeight: "500" }}>
                     {showArchived
                       ? "No archived products"
                       : "No products found"}
-                  </p>
-                  <p className="text-gray-400 text-sm mt-1">
-                    {showArchived
-                      ? "Archived products will appear here"
-                      : "Create your first product to get started"}
                   </p>
                 </div>
               )}
@@ -352,38 +640,11 @@ export default function Products() {
           )}
         </div>
 
-        {/* Stats Footer */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl p-4 border border-gray-100">
-            <p className="text-sm text-gray-500">Total Products</p>
-            <p className="text-2xl font-bold text-gray-800">
-              {products.length}
-            </p>
-          </div>
-          <div className="bg-white rounded-xl p-4 border border-gray-100">
-            <p className="text-sm text-gray-500">Categories</p>
-            <p className="text-2xl font-bold text-gray-800">
-              {categories.length}
-            </p>
-          </div>
-          <div className="bg-white rounded-xl p-4 border border-gray-100">
-            <p className="text-sm text-gray-500">Avg. Margin</p>
-            <p className="text-2xl font-bold text-green-600">
-              {products.length > 0
-                ? (
-                    products.reduce((acc, p) => {
-                      const margin =
-                        p.salesPrice && p.purchasePrice
-                          ? ((p.salesPrice - p.purchasePrice) / p.salesPrice) *
-                            100
-                          : 0;
-                      return acc + margin;
-                    }, 0) / products.length
-                  ).toFixed(1)
-                : 0}
-              %
-            </p>
-          </div>
+        {/* Footer */}
+        <div style={{ textAlign: "center", marginTop: "32px" }}>
+          <p style={{ fontSize: "12px", color: "#9CA3AF" }}>
+            © 2024 Shiv Furniture ERP Systems. All rights reserved.
+          </p>
         </div>
       </div>
     );
@@ -391,151 +652,201 @@ export default function Products() {
 
   // Form View
   return (
-    <div className="max-w-2xl mx-auto">
+    <div style={containerStyle}>
+      {/* Breadcrumb */}
+      <div style={breadcrumbStyle}>
+        <Home size={14} />
+        <span>Home</span>
+        <ChevronRight size={14} />
+        <span>Inventory</span>
+        <ChevronRight size={14} />
+        <span style={{ color: "#1F2937", fontWeight: "500" }}>
+          Product Master
+        </span>
+      </div>
+
       {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
-        <button
-          onClick={() => setView("list")}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <ArrowLeft size={20} className="text-gray-600" />
-        </button>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          marginBottom: "24px",
+        }}
+      >
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">
-            {editingProduct ? "Edit Product" : "New Product"}
-          </h1>
-          <p className="text-gray-500 text-sm mt-1">
-            {editingProduct
-              ? "Update product information"
-              : "Add a new product to your catalog"}
+          <h1 style={titleStyle}>Product Master</h1>
+          <p style={subtitleStyle}>
+            Configure furniture items, pricing, and cost center allocations.
           </p>
+        </div>
+        <div style={{ display: "flex", gap: "12px" }}>
+          <button onClick={() => setView("list")} style={buttonSecondaryStyle}>
+            <ArrowLeft size={16} /> Back
+          </button>
+          <button
+            onClick={() => editingProduct && handleArchive(editingProduct)}
+            style={buttonSecondaryStyle}
+          >
+            <Archive size={16} /> Archive
+          </button>
+          <button onClick={handleSubmit} style={buttonPrimaryStyle}>
+            <Check size={16} /> Confirm
+          </button>
         </div>
       </div>
 
       {/* Form Card */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-6 space-y-6">
-          {/* Product Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Product Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
-              placeholder="Enter product name"
-            />
+      <div style={cardStyle}>
+        {/* Basic Information Section */}
+        <div style={sectionStyle}>
+          <div style={sectionTitleStyle}>
+            <div
+              style={{
+                width: "24px",
+                height: "24px",
+                backgroundColor: "#EEF2FF",
+                borderRadius: "6px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Info size={14} style={{ color: "#4F46E5" }} />
+            </div>
+            Basic Information
           </div>
-
-          {/* Category */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Category
-            </label>
-            {showCategoryInput ? (
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
-                  placeholder="Enter new category name"
-                  className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400"
-                  autoFocus
-                />
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "20px",
+            }}
+          >
+            <div>
+              <label style={labelStyle}>Product Name</label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                style={inputStyle}
+                placeholder="e.g. Ergonomic Office Chair - Blue"
+              />
+            </div>
+            <div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "8px",
+                }}
+              >
+                <label style={{ ...labelStyle, marginBottom: 0 }}>
+                  Category
+                </label>
                 <button
-                  onClick={handleCreateCategory}
-                  className="px-4 py-3 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors"
-                >
-                  Save
-                </button>
-                <button
-                  onClick={() => {
-                    setShowCategoryInput(false);
-                    setNewCategoryName("");
+                  type="button"
+                  onClick={() => setShowCategoryInput(true)}
+                  style={{
+                    fontSize: "13px",
+                    color: "#4F46E5",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    fontWeight: "500",
                   }}
-                  className="px-4 py-3 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition-colors"
                 >
-                  Cancel
+                  + Create New
                 </button>
               </div>
-            ) : (
-              <div className="relative">
+              {showCategoryInput ? (
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <input
+                    type="text"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="Enter new category name"
+                    style={{ ...inputStyle, flex: 1 }}
+                    autoFocus
+                  />
+                  <button
+                    onClick={handleCreateCategory}
+                    style={{ ...buttonPrimaryStyle, padding: "10px 16px" }}
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowCategoryInput(false);
+                      setNewCategoryName("");
+                    }}
+                    style={{ ...buttonSecondaryStyle, padding: "10px 16px" }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
                 <select
                   value={formData.categoryId}
-                  onChange={(e) => {
-                    if (e.target.value === "create") {
-                      setShowCategoryInput(true);
-                    } else {
-                      setFormData({ ...formData, categoryId: e.target.value });
-                    }
-                  }}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 appearance-none bg-white"
+                  onChange={(e) =>
+                    setFormData({ ...formData, categoryId: e.target.value })
+                  }
+                  style={selectStyle}
                 >
-                  <option value="">Select a category</option>
+                  <option value="">Select category</option>
                   {categories.map((cat) => (
                     <option key={cat.id} value={cat.id}>
                       {cat.name}
                     </option>
                   ))}
-                  <option value="create">+ Create New Category</option>
                 </select>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <svg
-                    className="w-4 h-4 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
-              </div>
-            )}
-            <p className="text-xs text-gray-400 mt-2">
-              💡 You can create a new category on the fly using "Create New
-              Category"
-            </p>
-          </div>
-
-          {/* Pricing */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Sales Price
-              </label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">
-                  ₹
-                </span>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.salesPrice}
-                  onChange={(e) =>
-                    setFormData({ ...formData, salesPrice: e.target.value })
-                  }
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-400 transition-all"
-                  placeholder="0.00"
-                />
-              </div>
+              )}
             </div>
+          </div>
+        </div>
+
+        {/* Pricing Details Section */}
+        <div style={sectionStyle}>
+          <div style={sectionTitleStyle}>
+            <div
+              style={{
+                width: "24px",
+                height: "24px",
+                backgroundColor: "#EEF2FF",
+                borderRadius: "6px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <DollarSign size={14} style={{ color: "#4F46E5" }} />
+            </div>
+            Pricing Details
+          </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "20px",
+            }}
+          >
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Purchase Price
-              </label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">
-                  ₹
+              <label style={labelStyle}>Purchase Price</label>
+              <div style={{ position: "relative" }}>
+                <span
+                  style={{
+                    position: "absolute",
+                    left: "16px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    color: "#6B7280",
+                    fontWeight: "500",
+                  }}
+                >
+                  $
                 </span>
                 <input
                   type="number"
@@ -545,60 +856,271 @@ export default function Products() {
                   onChange={(e) =>
                     setFormData({ ...formData, purchasePrice: e.target.value })
                   }
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400 transition-all"
+                  style={{ ...inputStyle, paddingLeft: "36px" }}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+            <div>
+              <label style={labelStyle}>Sales Price</label>
+              <div style={{ position: "relative" }}>
+                <span
+                  style={{
+                    position: "absolute",
+                    left: "16px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    color: "#6B7280",
+                    fontWeight: "500",
+                  }}
+                >
+                  $
+                </span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.salesPrice}
+                  onChange={(e) =>
+                    setFormData({ ...formData, salesPrice: e.target.value })
+                  }
+                  style={{ ...inputStyle, paddingLeft: "36px" }}
                   placeholder="0.00"
                 />
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Margin Preview */}
-          {formData.salesPrice && formData.purchasePrice && (
-            <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-4 border border-purple-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-purple-600 font-medium">
-                    Profit Margin
-                  </p>
-                  <p className="text-xs text-purple-400 mt-0.5">
-                    Profit:{" "}
-                    {formatCurrency(
-                      parseFloat(formData.salesPrice) -
-                        parseFloat(formData.purchasePrice),
-                    )}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold text-purple-700">
-                    {(
-                      ((parseFloat(formData.salesPrice) -
-                        parseFloat(formData.purchasePrice)) /
-                        parseFloat(formData.salesPrice)) *
-                      100
-                    ).toFixed(1)}
-                    %
-                  </p>
-                </div>
+        {/* Associated Analyticals Section */}
+        <div style={{ ...sectionStyle, borderBottom: "none" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "20px",
+            }}
+          >
+            <div style={sectionTitleStyle}>
+              <div
+                style={{
+                  width: "24px",
+                  height: "24px",
+                  backgroundColor: "#EEF2FF",
+                  borderRadius: "6px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Grid3X3 size={14} style={{ color: "#4F46E5" }} />
               </div>
+              Associated Analyticals
+            </div>
+            <button
+              type="button"
+              onClick={handleAddCostCenter}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "8px 16px",
+                backgroundColor: "#EEF2FF",
+                color: "#4F46E5",
+                border: "none",
+                borderRadius: "8px",
+                fontSize: "14px",
+                fontWeight: "500",
+                cursor: "pointer",
+              }}
+            >
+              <Plus size={16} /> Add Cost Center
+            </button>
+          </div>
+
+          {formData.costCenters.length > 0 && (
+            <div
+              style={{
+                border: "1px solid #E5E7EB",
+                borderRadius: "12px",
+                overflow: "hidden",
+              }}
+            >
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ backgroundColor: "#F9FAFB" }}>
+                    <th
+                      style={{
+                        padding: "12px 20px",
+                        textAlign: "left",
+                        fontSize: "11px",
+                        fontWeight: "600",
+                        color: "#6B7280",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      Cost Center Name
+                    </th>
+                    <th
+                      style={{
+                        padding: "12px 20px",
+                        textAlign: "center",
+                        fontSize: "11px",
+                        fontWeight: "600",
+                        color: "#6B7280",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      Allocation %
+                    </th>
+                    <th
+                      style={{
+                        padding: "12px 20px",
+                        textAlign: "center",
+                        fontSize: "11px",
+                        fontWeight: "600",
+                        color: "#6B7280",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {formData.costCenters.map((cc, index) => (
+                    <tr key={index} style={{ borderTop: "1px solid #E5E7EB" }}>
+                      <td style={{ padding: "12px 20px" }}>
+                        <select
+                          value={cc.name}
+                          onChange={(e) =>
+                            handleCostCenterChange(
+                              index,
+                              "name",
+                              e.target.value,
+                            )
+                          }
+                          style={{ ...selectStyle, backgroundColor: "white" }}
+                        >
+                          <option value="">Select cost center</option>
+                          {analyticalAccounts.map((acc) => (
+                            <option key={acc.id} value={acc.name}>
+                              {acc.name}
+                            </option>
+                          ))}
+                          <option value="Main Warehouse Logistics">
+                            Main Warehouse Logistics
+                          </option>
+                          <option value="Retail Showroom A">
+                            Retail Showroom A
+                          </option>
+                          <option value="Manufacturing Unit">
+                            Manufacturing Unit
+                          </option>
+                        </select>
+                      </td>
+                      <td style={{ padding: "12px 20px", textAlign: "center" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "8px",
+                          }}
+                        >
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={cc.allocation}
+                            onChange={(e) =>
+                              handleCostCenterChange(
+                                index,
+                                "allocation",
+                                e.target.value,
+                              )
+                            }
+                            style={{
+                              ...inputStyle,
+                              width: "80px",
+                              textAlign: "center",
+                              backgroundColor: "white",
+                            }}
+                            placeholder="0"
+                          />
+                          <span style={{ color: "#6B7280" }}>%</span>
+                        </div>
+                      </td>
+                      <td style={{ padding: "12px 20px", textAlign: "center" }}>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCostCenter(index)}
+                          style={{
+                            padding: "8px",
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            color: "#4F46E5",
+                            borderRadius: "6px",
+                          }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.backgroundColor = "#EEF2FF")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.backgroundColor =
+                              "transparent")
+                          }
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
+      </div>
 
-        {/* Form Actions */}
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
-          <button
-            onClick={() => setView("list")}
-            className="px-6 py-2.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            className="px-8 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg shadow-purple-200 font-medium"
-          >
-            {editingProduct ? "Update Product" : "Create Product"}
-          </button>
-        </div>
+      {/* New Product Master Entry Button */}
+      <button
+        onClick={handleNew}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          padding: "14px 24px",
+          backgroundColor: "white",
+          color: "#4F46E5",
+          border: "2px dashed #C7D2FE",
+          borderRadius: "12px",
+          fontSize: "14px",
+          fontWeight: "500",
+          cursor: "pointer",
+          marginBottom: "32px",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = "#EEF2FF";
+          e.currentTarget.style.borderColor = "#4F46E5";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = "white";
+          e.currentTarget.style.borderColor = "#C7D2FE";
+        }}
+      >
+        <Plus size={18} /> New Product Master Entry
+      </button>
+
+      {/* Footer */}
+      <div style={{ textAlign: "center" }}>
+        <p style={{ fontSize: "12px", color: "#9CA3AF" }}>
+          © 2024 Shiv Furniture ERP Systems. All rights reserved.
+        </p>
       </div>
     </div>
   );

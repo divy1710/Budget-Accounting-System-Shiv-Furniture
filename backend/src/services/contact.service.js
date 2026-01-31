@@ -37,14 +37,58 @@ const getById = async (id) => {
 
 // Create contact
 const create = async (data) => {
-  return prisma.contact.create({ data });
+  // Sanitize and prepare data
+  const sanitizedData = {
+    name: data.name,
+    type: data.type || "CUSTOMER",
+    email: data.email || null,
+    phone: data.phone || null,
+    jobTitle: data.jobTitle || null,
+    street: data.street || null,
+    city: data.city || null,
+    state: data.state || null,
+    country: data.country || null,
+    pincode: data.pincode || null,
+    imageUrl: data.imageUrl || null,
+    tags: data.tags || null,
+  };
+
+  console.log("Creating contact with data:", sanitizedData);
+
+  try {
+    const result = await prisma.contact.create({ data: sanitizedData });
+    console.log("Contact created successfully:", result.id);
+    return result;
+  } catch (error) {
+    console.error("Prisma create error:", error.message);
+    console.error("Error code:", error.code);
+    throw error;
+  }
 };
 
 // Update contact
 const update = async (id, data) => {
+  // Sanitize data - convert empty strings to null
+  const sanitizedData = {};
+  if (data.name !== undefined) sanitizedData.name = data.name;
+  if (data.type !== undefined) sanitizedData.type = data.type;
+  if (data.email !== undefined) sanitizedData.email = data.email || null;
+  if (data.phone !== undefined) sanitizedData.phone = data.phone || null;
+  if (data.jobTitle !== undefined)
+    sanitizedData.jobTitle = data.jobTitle || null;
+  if (data.street !== undefined) sanitizedData.street = data.street || null;
+  if (data.city !== undefined) sanitizedData.city = data.city || null;
+  if (data.state !== undefined) sanitizedData.state = data.state || null;
+  if (data.country !== undefined) sanitizedData.country = data.country || null;
+  if (data.pincode !== undefined) sanitizedData.pincode = data.pincode || null;
+  if (data.imageUrl !== undefined)
+    sanitizedData.imageUrl = data.imageUrl || null;
+  if (data.tags !== undefined) sanitizedData.tags = data.tags || null;
+  if (data.isActive !== undefined) sanitizedData.isActive = data.isActive;
+
   return prisma.contact.update({
     where: { id: parseInt(id) },
-    data,
+    data: sanitizedData,
   });
 };
 

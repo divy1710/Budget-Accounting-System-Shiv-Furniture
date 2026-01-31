@@ -10,6 +10,9 @@ import {
   Eye,
   X,
   Link,
+  ChevronLeft,
+  ChevronRight,
+  Save,
 } from "lucide-react";
 import { budgetsApi, analyticalAccountsApi } from "../services/api";
 
@@ -37,37 +40,85 @@ const formatDateShort = (dateStr) => {
   });
 };
 
-// Mini Pie Chart Component
-const MiniPieChart = ({ achieved, total }) => {
-  const percent = total > 0 ? (achieved / total) * 100 : 0;
-  const radius = 12;
+const formatPeriod = (startDate, endDate) => {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const startMonth = start.toLocaleDateString("en-US", { month: "short" });
+  const endMonth = end.toLocaleDateString("en-US", { month: "short" });
+  const startYear = start.getFullYear();
+  const endYear = end.getFullYear();
+
+  if (startYear === endYear) {
+    return `${startMonth} - ${endMonth} ${endYear}`;
+  }
+  return `${startMonth} ${startYear} - ${endMonth} ${endYear}`;
+};
+
+const generateBudgetId = (id) => {
+  const year = new Date().getFullYear();
+  return `BDG-${year}-${String(id).padStart(3, "0")}`;
+};
+
+// Circular Progress Component matching the UI
+const CircularProgress = ({ percent }) => {
+  const radius = 20;
   const circumference = 2 * Math.PI * radius;
-  const strokeDasharray = `${(percent / 100) * circumference} ${circumference}`;
+  const strokeDashoffset = circumference - (percent / 100) * circumference;
+
+  // Color based on percentage
+  let color = "#3B82F6"; // blue default
+  if (percent >= 100)
+    color = "#10B981"; // green for completed
+  else if (percent >= 50)
+    color = "#3B82F6"; // blue
+  else if (percent >= 25)
+    color = "#F59E0B"; // yellow/amber
+  else color = "#6B7280"; // gray for low
 
   return (
-    <div className="relative inline-flex items-center justify-center">
-      <svg width="32" height="32" className="transform -rotate-90">
-        {/* Background circle (Balance - red) */}
+    <div
+      style={{
+        position: "relative",
+        width: "48px",
+        height: "48px",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <svg width="48" height="48" style={{ transform: "rotate(-90deg)" }}>
+        {/* Background circle */}
         <circle
-          cx="16"
-          cy="16"
+          cx="24"
+          cy="24"
           r={radius}
           fill="none"
-          stroke="#ef4444"
+          stroke="#E5E7EB"
           strokeWidth="4"
         />
-        {/* Achieved circle (green) */}
+        {/* Progress circle */}
         <circle
-          cx="16"
-          cy="16"
+          cx="24"
+          cy="24"
           r={radius}
           fill="none"
-          stroke="#22c55e"
+          stroke={color}
           strokeWidth="4"
-          strokeDasharray={strokeDasharray}
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
           strokeLinecap="round"
         />
       </svg>
+      <span
+        style={{
+          position: "absolute",
+          fontSize: "11px",
+          fontWeight: "600",
+          color: "#1F2937",
+        }}
+      >
+        {Math.round(percent)}%
+      </span>
     </div>
   );
 };
@@ -245,6 +296,8 @@ export default function Budgets() {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // View modes: 'list' | 'form' | 'view'
   const [viewMode, setViewMode] = useState("list");
@@ -481,284 +534,569 @@ export default function Budgets() {
     };
   };
 
-  // Status button styles
-  const getStatusButtonStyle = (status, isActive) => {
-    const baseStyle =
-      "px-4 py-2 text-sm font-medium rounded-lg border transition-colors";
-    if (isActive) {
-      switch (status) {
-        case "DRAFT":
-          return `${baseStyle} bg-blue-600 text-white border-blue-600`;
-        case "CONFIRMED":
-          return `${baseStyle} bg-green-600 text-white border-green-600`;
-        case "REVISED":
-          return `${baseStyle} bg-orange-500 text-white border-orange-500`;
-        case "ARCHIVED":
-          return `${baseStyle} bg-gray-500 text-white border-gray-500`;
-        default:
-          return `${baseStyle} bg-gray-200 text-gray-700 border-gray-200`;
-      }
-    }
-    return `${baseStyle} bg-white text-gray-600 border-gray-300 hover:bg-gray-50`;
+  // Styles
+  const containerStyle = {
+    maxWidth: "1100px",
+    margin: "0 auto",
   };
+
+  const titleStyle = {
+    fontSize: "28px",
+    fontWeight: "700",
+    color: "#1F2937",
+    margin: "0 0 8px 0",
+  };
+
+  const subtitleStyle = {
+    fontSize: "14px",
+    color: "#6B7280",
+    margin: 0,
+  };
+
+  const cardStyle = {
+    backgroundColor: "white",
+    borderRadius: "16px",
+    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+    border: "1px solid #E5E7EB",
+    overflow: "hidden",
+  };
+
+  const buttonPrimaryStyle = {
+    padding: "12px 24px",
+    backgroundColor: "#4F46E5",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    fontSize: "14px",
+    fontWeight: "500",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+  };
+
+  const getStatusStyle = (status) => {
+    switch (status) {
+      case "CONFIRMED":
+        return {
+          backgroundColor: "#D1FAE5",
+          color: "#065F46",
+          label: "ACTIVE",
+        };
+      case "REVISED":
+        return {
+          backgroundColor: "#FEF3C7",
+          color: "#92400E",
+          label: "IN PROGRESS",
+        };
+      case "DRAFT":
+        return { backgroundColor: "#F3F4F6", color: "#374151", label: "DRAFT" };
+      case "ARCHIVED":
+        return {
+          backgroundColor: "#DBEAFE",
+          color: "#1E40AF",
+          label: "COMPLETED",
+        };
+      default:
+        return { backgroundColor: "#F3F4F6", color: "#374151", label: status };
+    }
+  };
+
+  // Pagination
+  const totalPages = Math.ceil(budgets.length / itemsPerPage);
+  const paginatedBudgets = budgets.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  );
 
   // List View
   const renderListView = () => (
-    <div className="space-y-6">
-      {/* Header with New Button */}
-      <div className="bg-white rounded-xl shadow-sm p-4">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold text-gray-800">Budget</h1>
-          <span className="text-sm text-gray-500">List View</span>
+    <div style={containerStyle}>
+      {/* Header */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          marginBottom: "32px",
+        }}
+      >
+        <div>
+          <h1 style={titleStyle}>Budget Master List</h1>
+          <p style={subtitleStyle}>
+            Monitor and manage operational and capital expenditure budgets.
+          </p>
         </div>
-
-        {/* Action Button */}
-        <button
-          onClick={handleNew}
-          className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-200 font-medium"
-        >
-          New
+        <button onClick={handleNew} style={buttonPrimaryStyle}>
+          <Plus size={16} /> New Budget
         </button>
       </div>
 
-      {/* Budget List Table */}
-      <div className="bg-white rounded-xl shadow-sm">
+      {/* Main Card */}
+      <div style={cardStyle}>
         {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "300px",
+            }}
+          >
+            <div
+              style={{
+                width: "32px",
+                height: "32px",
+                border: "3px solid #E5E7EB",
+                borderTopColor: "#4F46E5",
+                borderRadius: "50%",
+                animation: "spin 1s linear infinite",
+              }}
+            ></div>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-amber-600">
-                    Budget Name
-                  </th>
-                  <th className="px-6 py-4 text-center text-sm font-medium text-gray-600">
-                    Start Date
-                  </th>
-                  <th className="px-6 py-4 text-center text-sm font-medium text-gray-600">
-                    End Date
-                  </th>
-                  <th className="px-6 py-4 text-center text-sm font-medium text-gray-600">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-center text-sm font-medium text-gray-600">
-                    Pie Chart
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {budgets.map((budget) => {
-                  const totalBudgeted = budget.lines.reduce(
-                    (sum, l) => sum + Number(l.budgetedAmount),
-                    0,
-                  );
-                  const totalAchieved = budget.lines.reduce(
-                    (sum, l) => sum + Number(l.achievedAmount || 0),
-                    0,
-                  );
-
-                  return (
-                    <tr
-                      key={budget.id}
-                      className="hover:bg-gray-50 cursor-pointer border-b border-gray-100"
-                      onClick={() => handleView(budget)}
+          <>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid #E5E7EB" }}>
+                    <th
+                      style={{
+                        padding: "16px 24px",
+                        textAlign: "left",
+                        fontSize: "11px",
+                        fontWeight: "600",
+                        color: "#6B7280",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
                     >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="font-medium text-amber-600 hover:underline">
-                          {budget.name}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center text-gray-600">
-                        {formatDate(budget.startDate)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center text-gray-600">
-                        {formatDate(budget.endDate)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <span
-                          className={`font-medium ${
-                            budget.status === "CONFIRMED"
-                              ? "text-green-600"
-                              : budget.status === "DRAFT"
-                                ? "text-blue-600"
-                                : budget.status === "REVISED"
-                                  ? "text-orange-600"
-                                  : "text-gray-500"
-                          }`}
-                        >
-                          {budget.status === "CONFIRMED"
-                            ? "Confirm"
-                            : budget.status}
-                        </span>
-                      </td>
-                      <td
-                        className="px-6 py-4 whitespace-nowrap text-center"
-                        onClick={(e) => e.stopPropagation()}
+                      Budget Name
+                    </th>
+                    <th
+                      style={{
+                        padding: "16px 24px",
+                        textAlign: "left",
+                        fontSize: "11px",
+                        fontWeight: "600",
+                        color: "#6B7280",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      Period
+                    </th>
+                    <th
+                      style={{
+                        padding: "16px 24px",
+                        textAlign: "left",
+                        fontSize: "11px",
+                        fontWeight: "600",
+                        color: "#6B7280",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      Status
+                    </th>
+                    <th
+                      style={{
+                        padding: "16px 24px",
+                        textAlign: "center",
+                        fontSize: "11px",
+                        fontWeight: "600",
+                        color: "#6B7280",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      Achieved vs Balance
+                    </th>
+                    <th
+                      style={{
+                        padding: "16px 24px",
+                        textAlign: "center",
+                        fontSize: "11px",
+                        fontWeight: "600",
+                        color: "#6B7280",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedBudgets.map((budget) => {
+                    const totalBudgeted = budget.lines.reduce(
+                      (sum, l) => sum + Number(l.budgetedAmount),
+                      0,
+                    );
+                    const totalAchieved = budget.lines.reduce(
+                      (sum, l) => sum + Number(l.achievedAmount || 0),
+                      0,
+                    );
+                    const percent =
+                      totalBudgeted > 0
+                        ? (totalAchieved / totalBudgeted) * 100
+                        : 0;
+                    const statusInfo = getStatusStyle(budget.status);
+
+                    return (
+                      <tr
+                        key={budget.id}
+                        style={{ borderBottom: "1px solid #F3F4F6" }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.backgroundColor = "#FAFAFA")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.backgroundColor = "white")
+                        }
                       >
-                        {budget.status === "CONFIRMED" && (
-                          <button
-                            onClick={() => setPieChartBudget(budget)}
-                            className="hover:scale-110 transition-transform"
-                            title="View Chart"
+                        <td style={{ padding: "20px 24px" }}>
+                          <div>
+                            <p
+                              style={{
+                                fontSize: "15px",
+                                fontWeight: "600",
+                                color: "#1F2937",
+                                margin: "0 0 4px 0",
+                              }}
+                            >
+                              {budget.name}
+                            </p>
+                            <p
+                              style={{
+                                fontSize: "12px",
+                                color: "#9CA3AF",
+                                margin: 0,
+                              }}
+                            >
+                              ID: {generateBudgetId(budget.id)}
+                            </p>
+                          </div>
+                        </td>
+                        <td style={{ padding: "20px 24px" }}>
+                          <span style={{ fontSize: "14px", color: "#4B5563" }}>
+                            {formatPeriod(budget.startDate, budget.endDate)}
+                          </span>
+                        </td>
+                        <td style={{ padding: "20px 24px" }}>
+                          <span
+                            style={{
+                              display: "inline-block",
+                              padding: "6px 14px",
+                              borderRadius: "6px",
+                              fontSize: "11px",
+                              fontWeight: "600",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.03em",
+                              backgroundColor: statusInfo.backgroundColor,
+                              color: statusInfo.color,
+                            }}
                           >
-                            <MiniPieChart
-                              achieved={totalAchieved}
-                              total={totalBudgeted}
-                            />
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            {budgets.length === 0 && (
-              <div className="text-center py-12 text-gray-500">
-                <div className="text-lg mb-2">No budgets found</div>
-                <button
-                  onClick={handleNew}
-                  className="text-blue-600 hover:underline"
+                            {statusInfo.label}
+                          </span>
+                        </td>
+                        <td
+                          style={{ padding: "20px 24px", textAlign: "center" }}
+                        >
+                          <CircularProgress percent={percent} />
+                        </td>
+                        <td style={{ padding: "20px 24px" }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "center",
+                              gap: "8px",
+                            }}
+                          >
+                            <button
+                              onClick={() => handleView(budget)}
+                              style={{
+                                padding: "8px",
+                                background: "none",
+                                border: "none",
+                                cursor: "pointer",
+                                borderRadius: "6px",
+                                color: "#6B7280",
+                              }}
+                              title="View"
+                            >
+                              <Eye size={18} />
+                            </button>
+                            <button
+                              onClick={() => handleEdit(budget)}
+                              style={{
+                                padding: "8px",
+                                background: "none",
+                                border: "none",
+                                cursor: "pointer",
+                                borderRadius: "6px",
+                                color: "#6B7280",
+                              }}
+                              title="Edit"
+                            >
+                              <Edit size={18} />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(budget.id)}
+                              style={{
+                                padding: "8px",
+                                background: "none",
+                                border: "none",
+                                cursor: "pointer",
+                                borderRadius: "6px",
+                                color: "#6B7280",
+                              }}
+                              title="Delete"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {budgets.length > 0 && (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "16px 24px",
+                  borderTop: "1px solid #E5E7EB",
+                }}
+              >
+                <span style={{ fontSize: "13px", color: "#6B7280" }}>
+                  Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+                  {Math.min(currentPage * itemsPerPage, budgets.length)} of{" "}
+                  {budgets.length} entries
+                </span>
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
                 >
-                  Create your first budget
-                </button>
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    style={{
+                      padding: "8px",
+                      background: "none",
+                      border: "1px solid #E5E7EB",
+                      borderRadius: "6px",
+                      cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                      opacity: currentPage === 1 ? 0.5 : 1,
+                    }}
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  {[...Array(totalPages)].map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setCurrentPage(i + 1)}
+                      style={{
+                        padding: "8px 14px",
+                        border: "none",
+                        borderRadius: "6px",
+                        fontSize: "13px",
+                        fontWeight: "500",
+                        cursor: "pointer",
+                        backgroundColor:
+                          currentPage === i + 1 ? "#4F46E5" : "transparent",
+                        color: currentPage === i + 1 ? "white" : "#6B7280",
+                      }}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() =>
+                      setCurrentPage(Math.min(totalPages, currentPage + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                    style={{
+                      padding: "8px",
+                      background: "none",
+                      border: "1px solid #E5E7EB",
+                      borderRadius: "6px",
+                      cursor:
+                        currentPage === totalPages ? "not-allowed" : "pointer",
+                      opacity: currentPage === totalPages ? 0.5 : 1,
+                    }}
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
               </div>
             )}
+          </>
+        )}
+
+        {budgets.length === 0 && !loading && (
+          <div
+            style={{ textAlign: "center", padding: "64px", color: "#6B7280" }}
+          >
+            <Archive
+              size={48}
+              style={{ margin: "0 auto 16px", color: "#D1D5DB" }}
+            />
+            <p style={{ fontWeight: "500", marginBottom: "8px" }}>
+              No budgets found
+            </p>
+            <p style={{ fontSize: "14px", color: "#9CA3AF" }}>
+              Create your first budget to start tracking
+            </p>
           </div>
         )}
       </div>
 
-      {/* Helper text */}
-      <div className="text-sm text-amber-600 italic">
-        Click line to open form View
+      {/* Footer */}
+      <div style={{ textAlign: "center", marginTop: "48px" }}>
+        <p style={{ fontSize: "13px", color: "#9CA3AF" }}>
+          © 2023 Shiv Furniture Enterprise Resource Planning. All Rights
+          Reserved.
+        </p>
       </div>
     </div>
   );
 
   // Form View (Create/Edit)
   const renderFormView = () => (
-    <div className="space-y-6">
+    <div style={containerStyle}>
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => {
-            resetForm();
-            setViewMode("list");
-          }}
-          className="p-2 hover:bg-gray-100 rounded-lg"
-        >
-          <ArrowLeft size={20} />
-        </button>
-        <h1 className="text-2xl font-bold text-gray-800">Budget</h1>
-        <span className="text-sm text-red-400">
-          {editingBudget?.revisedFrom
-            ? "Form View of Revised Budget"
-            : "Form View of Original Budget"}
-        </span>
-      </div>
-
-      {/* Form */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        {/* Action Buttons Row */}
-        <div className="flex items-center justify-between mb-6 pb-4 border-b">
-          <div className="flex gap-2">
-            <button
-              onClick={() => {
-                resetForm();
-                setViewMode("form");
-              }}
-              className="px-4 py-2 text-sm font-medium rounded-lg border bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
-            >
-              New
-            </button>
-            <button
-              disabled
-              className="px-4 py-2 text-sm font-medium rounded-lg border bg-green-600 text-white border-green-600 cursor-not-allowed opacity-50"
-            >
-              Confirm
-            </button>
-            <button
-              disabled
-              className="px-4 py-2 text-sm font-medium rounded-lg border bg-white text-gray-400 border-gray-200 cursor-not-allowed"
-            >
-              Revise
-            </button>
-            <button
-              disabled
-              className="px-4 py-2 text-sm font-medium rounded-lg border bg-white text-gray-400 border-gray-200 cursor-not-allowed"
-            >
-              Archived
-            </button>
-          </div>
-          <div className="flex gap-2">
-            <span className={getStatusButtonStyle("DRAFT", true)}>Draft</span>
-            <span className={getStatusButtonStyle("CONFIRMED", false)}>
-              Confirm
-            </span>
-            <span className={getStatusButtonStyle("REVISED", false)}>
-              Revised
-            </span>
-            <span className={getStatusButtonStyle("", false)}>Cancelled</span>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          marginBottom: "24px",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <button
+            onClick={() => {
+              resetForm();
+              setViewMode("list");
+            }}
+            style={{
+              padding: "10px",
+              backgroundColor: "white",
+              border: "1px solid #E5E7EB",
+              borderRadius: "8px",
+              cursor: "pointer",
+            }}
+          >
+            <ArrowLeft size={18} />
+          </button>
+          <div>
+            <h1 style={titleStyle}>
+              {editingBudget ? "Edit Budget" : "New Budget"}
+            </h1>
+            <p style={subtitleStyle}>
+              {editingBudget
+                ? "Update budget information"
+                : "Create a new operational or capital budget"}
+            </p>
           </div>
         </div>
+        <div style={{ display: "flex", gap: "12px" }}>
+          <button onClick={handleSubmit} style={buttonPrimaryStyle}>
+            <Save size={16} /> Save Budget
+          </button>
+          <button
+            onClick={() => {
+              resetForm();
+              setViewMode("list");
+            }}
+            style={{
+              padding: "12px 24px",
+              backgroundColor: "white",
+              color: "#374151",
+              border: "1px solid #D1D5DB",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "500",
+              cursor: "pointer",
+            }}
+          >
+            Discard
+          </button>
+        </div>
+      </div>
 
-        <form onSubmit={handleSubmit}>
-          {/* Budget Header Fields */}
-          <div className="grid grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-amber-600 mb-1">
-                Budget Name
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                placeholder="e.g., January 2026"
-                className="w-full px-4 py-2 border-b border-gray-300 focus:outline-none focus:border-blue-500 bg-transparent"
-              />
-            </div>
-            <div>
-              {editingBudget?.revisedFrom ? (
-                <div>
-                  <label className="block text-sm font-medium text-gray-500 mb-1">
-                    Revision of
-                  </label>
-                  <div className="text-green-600 underline cursor-pointer">
-                    {editingBudget.revisedFrom.name}
-                  </div>
-                  <div className="text-xs text-green-500">
-                    (Original budget clickable link)
-                  </div>
-                </div>
-              ) : editingBudget?.revisedTo?.length > 0 ? (
-                <div>
-                  <label className="block text-sm font-medium text-gray-500 mb-1">
-                    Revised with
-                  </label>
-                  <div className="text-gray-600">
-                    {editingBudget.revisedTo[0]?.name}
-                  </div>
-                  <div className="text-xs text-gray-400">
-                    (If revised then revised budget clickable link)
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-amber-600 mb-1">
-                Budget Period
-              </label>
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500">Start</span>
+      {/* Form Card */}
+      <div style={cardStyle}>
+        <div style={{ padding: "24px" }}>
+          {/* Budget Details */}
+          <div style={{ marginBottom: "24px" }}>
+            <h3
+              style={{
+                fontSize: "16px",
+                fontWeight: "600",
+                color: "#1F2937",
+                marginBottom: "16px",
+              }}
+            >
+              Budget Details
+            </h3>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr 1fr",
+                gap: "20px",
+              }}
+            >
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#4F46E5",
+                    marginBottom: "8px",
+                  }}
+                >
+                  Budget Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  placeholder="e.g., Q3 Office Supplies"
+                  style={{
+                    width: "100%",
+                    padding: "12px 16px",
+                    backgroundColor: "#F9FAFB",
+                    border: "1px solid #E5E7EB",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    color: "#1F2937",
+                    outline: "none",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#4F46E5",
+                    marginBottom: "8px",
+                  }}
+                >
+                  Start Date *
+                </label>
                 <input
                   type="date"
                   required
@@ -766,9 +1104,31 @@ export default function Budgets() {
                   onChange={(e) =>
                     setFormData({ ...formData, startDate: e.target.value })
                   }
-                  className="px-4 py-2 border-b border-gray-300 focus:outline-none focus:border-blue-500 bg-transparent"
+                  style={{
+                    width: "100%",
+                    padding: "12px 16px",
+                    backgroundColor: "#F9FAFB",
+                    border: "1px solid #E5E7EB",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    color: "#1F2937",
+                    outline: "none",
+                    boxSizing: "border-box",
+                  }}
                 />
-                <span className="text-red-400 mx-2">To</span>
+              </div>
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#4F46E5",
+                    marginBottom: "8px",
+                  }}
+                >
+                  End Date *
+                </label>
                 <input
                   type="date"
                   required
@@ -776,156 +1136,258 @@ export default function Budgets() {
                   onChange={(e) =>
                     setFormData({ ...formData, endDate: e.target.value })
                   }
-                  className="px-4 py-2 border-b border-gray-300 focus:outline-none focus:border-blue-500 bg-transparent"
+                  style={{
+                    width: "100%",
+                    padding: "12px 16px",
+                    backgroundColor: "#F9FAFB",
+                    border: "1px solid #E5E7EB",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    color: "#1F2937",
+                    outline: "none",
+                    boxSizing: "border-box",
+                  }}
                 />
               </div>
             </div>
           </div>
 
           {/* Budget Lines */}
-          <div className="border-t pt-6">
-            <div className="flex items-center justify-between mb-4">
+          <div style={{ borderTop: "1px solid #E5E7EB", paddingTop: "24px" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "16px",
+              }}
+            >
+              <h3
+                style={{
+                  fontSize: "16px",
+                  fontWeight: "600",
+                  color: "#1F2937",
+                  margin: 0,
+                }}
+              >
+                Budget Lines
+              </h3>
               <button
                 type="button"
                 onClick={addLine}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"
+                style={{
+                  padding: "10px 16px",
+                  backgroundColor: "#EEF2FF",
+                  color: "#4F46E5",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "13px",
+                  fontWeight: "500",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
               >
-                <Plus size={16} /> Add Line
+                <Plus size={14} /> Add Line
               </button>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="border-b border-gray-200">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-amber-600">
-                      Analytic Name
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-purple-600">
-                      Type
-                    </th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-yellow-600">
-                      Budgeted Amount
-                    </th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-cyan-600">
-                      Achieved Amount
-                    </th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">
-                      Achieved %
-                    </th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-pink-600">
-                      Amount to Achieve
-                    </th>
-                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-500 w-16"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {formData.lines.map((line, index) => (
-                    <tr key={index}>
-                      <td className="px-4 py-3">
-                        <select
-                          required
-                          value={line.analyticalAccountId}
-                          onChange={(e) =>
-                            updateLine(
-                              index,
-                              "analyticalAccountId",
-                              e.target.value,
-                            )
-                          }
-                          className="w-full px-3 py-2 border-b border-gray-300 focus:outline-none focus:border-blue-500 bg-transparent"
-                        >
-                          <option value="">Select Account</option>
-                          {accounts.map((a) => (
-                            <option key={a.id} value={a.id}>
-                              {a.name}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-4 py-3">
-                        <select
-                          value={line.type}
-                          onChange={(e) =>
-                            updateLine(index, "type", e.target.value)
-                          }
-                          className={`w-full px-3 py-2 border-b border-gray-300 focus:outline-none focus:border-blue-500 bg-transparent ${
-                            line.type === "INCOME"
-                              ? "text-green-600"
-                              : "text-gray-600"
-                          }`}
-                        >
-                          <option value="INCOME">Income</option>
-                          <option value="EXPENSE">Expense</option>
-                        </select>
-                      </td>
-                      <td className="px-4 py-3">
-                        <input
-                          type="number"
-                          required
-                          step="0.01"
-                          value={line.budgetedAmount}
-                          onChange={(e) =>
-                            updateLine(index, "budgetedAmount", e.target.value)
-                          }
-                          placeholder="0/-"
-                          className="w-full px-3 py-2 border-b border-gray-300 text-right focus:outline-none focus:border-blue-500 bg-transparent"
-                        />
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <span className="text-yellow-600">Monetery</span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <span className="text-cyan-600">Compute</span>
-                        <span className="ml-2 text-gray-400">View</span>
-                      </td>
-                      <td className="px-4 py-3 text-right text-gray-400">—</td>
-                      <td className="px-4 py-3 text-center">
-                        <button
-                          type="button"
-                          onClick={() => removeLine(index)}
-                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
-                        >
-                          <X size={16} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {formData.lines.length === 0 && (
-                    <tr>
-                      <td
-                        colSpan="7"
-                        className="px-4 py-8 text-center text-gray-500"
+            {formData.lines.length === 0 ? (
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "40px",
+                  backgroundColor: "#F9FAFB",
+                  borderRadius: "12px",
+                  border: "2px dashed #E5E7EB",
+                }}
+              >
+                <p style={{ color: "#6B7280", marginBottom: "12px" }}>
+                  No budget lines added yet
+                </p>
+                <button
+                  type="button"
+                  onClick={addLine}
+                  style={{
+                    padding: "10px 20px",
+                    backgroundColor: "#4F46E5",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Add First Line
+                </button>
+              </div>
+            ) : (
+              <div
+                style={{
+                  border: "1px solid #E5E7EB",
+                  borderRadius: "12px",
+                  overflow: "hidden",
+                }}
+              >
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr style={{ backgroundColor: "#F9FAFB" }}>
+                      <th
+                        style={{
+                          padding: "12px 16px",
+                          textAlign: "left",
+                          fontSize: "12px",
+                          fontWeight: "600",
+                          color: "#6B7280",
+                        }}
                       >
-                        No lines added. Click "Add Line" to add budget entries.
-                      </td>
+                        Analytical Account
+                      </th>
+                      <th
+                        style={{
+                          padding: "12px 16px",
+                          textAlign: "left",
+                          fontSize: "12px",
+                          fontWeight: "600",
+                          color: "#6B7280",
+                        }}
+                      >
+                        Type
+                      </th>
+                      <th
+                        style={{
+                          padding: "12px 16px",
+                          textAlign: "left",
+                          fontSize: "12px",
+                          fontWeight: "600",
+                          color: "#6B7280",
+                        }}
+                      >
+                        Budgeted Amount
+                      </th>
+                      <th
+                        style={{
+                          padding: "12px 16px",
+                          textAlign: "center",
+                          fontSize: "12px",
+                          fontWeight: "600",
+                          color: "#6B7280",
+                        }}
+                      >
+                        Actions
+                      </th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {formData.lines.map((line, index) => (
+                      <tr
+                        key={index}
+                        style={{ borderTop: "1px solid #E5E7EB" }}
+                      >
+                        <td style={{ padding: "12px 16px" }}>
+                          <select
+                            value={line.analyticalAccountId}
+                            onChange={(e) =>
+                              updateLine(
+                                index,
+                                "analyticalAccountId",
+                                e.target.value,
+                              )
+                            }
+                            style={{
+                              width: "100%",
+                              padding: "10px 12px",
+                              backgroundColor: "white",
+                              border: "1px solid #E5E7EB",
+                              borderRadius: "6px",
+                              fontSize: "14px",
+                            }}
+                          >
+                            <option value="">Select Account</option>
+                            {accounts
+                              .filter((a) => a.isActive)
+                              .map((a) => (
+                                <option key={a.id} value={a.id}>
+                                  {a.name}
+                                </option>
+                              ))}
+                          </select>
+                        </td>
+                        <td style={{ padding: "12px 16px" }}>
+                          <select
+                            value={line.type}
+                            onChange={(e) =>
+                              updateLine(index, "type", e.target.value)
+                            }
+                            style={{
+                              width: "100%",
+                              padding: "10px 12px",
+                              backgroundColor: "white",
+                              border: "1px solid #E5E7EB",
+                              borderRadius: "6px",
+                              fontSize: "14px",
+                            }}
+                          >
+                            <option value="EXPENSE">Expense</option>
+                            <option value="INCOME">Income</option>
+                          </select>
+                        </td>
+                        <td style={{ padding: "12px 16px" }}>
+                          <input
+                            type="number"
+                            value={line.budgetedAmount}
+                            onChange={(e) =>
+                              updateLine(
+                                index,
+                                "budgetedAmount",
+                                e.target.value,
+                              )
+                            }
+                            placeholder="0.00"
+                            style={{
+                              width: "100%",
+                              padding: "10px 12px",
+                              backgroundColor: "white",
+                              border: "1px solid #E5E7EB",
+                              borderRadius: "6px",
+                              fontSize: "14px",
+                            }}
+                          />
+                        </td>
+                        <td
+                          style={{ padding: "12px 16px", textAlign: "center" }}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => removeLine(index)}
+                            style={{
+                              padding: "8px",
+                              background: "none",
+                              border: "none",
+                              cursor: "pointer",
+                              color: "#EF4444",
+                            }}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
+        </div>
+      </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-6 border-t mt-6">
-            <button
-              type="button"
-              onClick={() => {
-                resetForm();
-                setViewMode("list");
-              }}
-              className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              {editingBudget ? "Update Budget" : "Create Budget"}
-            </button>
-          </div>
-        </form>
+      {/* Footer */}
+      <div style={{ textAlign: "center", marginTop: "48px" }}>
+        <p style={{ fontSize: "13px", color: "#9CA3AF" }}>
+          © 2023 Shiv Furniture Enterprise Resource Planning. All Rights
+          Reserved.
+        </p>
       </div>
     </div>
   );
@@ -936,351 +1398,568 @@ export default function Budgets() {
 
     const isConfirmed = selectedBudget.status === "CONFIRMED";
     const totals = calculateTotals(selectedBudget.lines, isConfirmed);
+    const statusInfo = getStatusStyle(selectedBudget.status);
 
     return (
-      <div className="space-y-6">
+      <div style={containerStyle}>
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => setViewMode("list")}
-            className="p-2 hover:bg-gray-100 rounded-lg"
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            marginBottom: "24px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+            <button
+              onClick={() => setViewMode("list")}
+              style={{
+                padding: "10px",
+                backgroundColor: "white",
+                border: "1px solid #E5E7EB",
+                borderRadius: "8px",
+                cursor: "pointer",
+              }}
+            >
+              <ArrowLeft size={18} />
+            </button>
+            <div>
+              <h1 style={titleStyle}>{selectedBudget.name}</h1>
+              <p style={subtitleStyle}>
+                ID: {generateBudgetId(selectedBudget.id)} •{" "}
+                {formatPeriod(selectedBudget.startDate, selectedBudget.endDate)}
+              </p>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: "12px" }}>
+            {selectedBudget.status === "DRAFT" && (
+              <>
+                <button
+                  onClick={() => handleConfirm(selectedBudget.id)}
+                  style={{ ...buttonPrimaryStyle, backgroundColor: "#059669" }}
+                >
+                  <Check size={16} /> Confirm
+                </button>
+                <button
+                  onClick={() => handleEdit(selectedBudget)}
+                  style={{
+                    padding: "12px 24px",
+                    backgroundColor: "white",
+                    color: "#374151",
+                    border: "1px solid #D1D5DB",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
+                  <Edit size={16} /> Edit
+                </button>
+              </>
+            )}
+            {selectedBudget.status === "CONFIRMED" && (
+              <>
+                <button
+                  onClick={() => handleRevise(selectedBudget.id)}
+                  style={{ ...buttonPrimaryStyle, backgroundColor: "#F59E0B" }}
+                >
+                  <RefreshCw size={16} /> Revise
+                </button>
+                <button
+                  onClick={() => handleArchive(selectedBudget.id)}
+                  style={{
+                    padding: "12px 24px",
+                    backgroundColor: "white",
+                    color: "#374151",
+                    border: "1px solid #D1D5DB",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
+                  <Archive size={16} /> Archive
+                </button>
+              </>
+            )}
+            <button
+              onClick={() => handleDelete(selectedBudget.id)}
+              style={{
+                padding: "12px",
+                backgroundColor: "#FEE2E2",
+                color: "#DC2626",
+                border: "none",
+                borderRadius: "8px",
+                cursor: "pointer",
+              }}
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* Status Badge */}
+        <div style={{ marginBottom: "24px" }}>
+          <span
+            style={{
+              display: "inline-block",
+              padding: "8px 16px",
+              borderRadius: "8px",
+              fontSize: "12px",
+              fontWeight: "600",
+              textTransform: "uppercase",
+              backgroundColor: statusInfo.backgroundColor,
+              color: statusInfo.color,
+            }}
           >
-            <ArrowLeft size={20} />
-          </button>
-          <h1 className="text-2xl font-bold text-gray-800">Budget</h1>
-          <span className="text-sm text-red-400">
-            {selectedBudget.revisedFrom
-              ? "Form View of Revised Budget"
-              : "Form View of Original Budget"}
+            {statusInfo.label}
           </span>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          {/* Action Buttons Row */}
-          <div className="flex items-center justify-between mb-6 pb-4 border-b">
-            <div className="flex gap-2">
-              <button
-                onClick={handleNew}
-                className="px-4 py-2 text-sm font-medium rounded-lg border bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
-              >
-                New
-              </button>
-              {selectedBudget.status === "DRAFT" && (
-                <button
-                  onClick={() => handleConfirm(selectedBudget.id)}
-                  className="px-4 py-2 text-sm font-medium rounded-lg border bg-green-600 text-white border-green-600 hover:bg-green-700"
-                >
-                  Confirm
-                </button>
-              )}
-              {selectedBudget.status === "CONFIRMED" && (
-                <>
-                  <button className="px-4 py-2 text-sm font-medium rounded-lg border bg-green-100 text-green-700 border-green-200 cursor-default">
-                    Confirm
-                  </button>
-                  <button
-                    onClick={() => handleRevise(selectedBudget.id)}
-                    className="px-4 py-2 text-sm font-medium rounded-lg border bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
-                  >
-                    Revise
-                  </button>
-                  <button
-                    onClick={() => handleArchive(selectedBudget.id)}
-                    className="px-4 py-2 text-sm font-medium rounded-lg border bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
-                  >
-                    Archived
-                  </button>
-                </>
-              )}
-              {selectedBudget.status === "REVISED" && (
-                <button className="px-4 py-2 text-sm font-medium rounded-lg border bg-orange-100 text-orange-700 border-orange-200 cursor-default">
-                  Revised
-                </button>
-              )}
-              {selectedBudget.status === "ARCHIVED" && (
-                <button className="px-4 py-2 text-sm font-medium rounded-lg border bg-gray-100 text-gray-600 border-gray-200 cursor-default">
-                  Archived
-                </button>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <span
-                className={getStatusButtonStyle(
-                  "DRAFT",
-                  selectedBudget.status === "DRAFT",
-                )}
-              >
-                Draft
-              </span>
-              <span
-                className={getStatusButtonStyle(
-                  "CONFIRMED",
-                  selectedBudget.status === "CONFIRMED",
-                )}
-              >
-                Confirm
-              </span>
-              <span
-                className={getStatusButtonStyle(
-                  "REVISED",
-                  selectedBudget.status === "REVISED",
-                )}
-              >
-                Revised
-              </span>
-              <span className={getStatusButtonStyle("", false)}>Cancelled</span>
-            </div>
-          </div>
-
-          {/* Budget Header Fields */}
-          <div className="grid grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-amber-600 mb-1">
-                Budget Name
-              </label>
-              <div className="text-gray-800 py-2">{selectedBudget.name}</div>
-            </div>
-            <div>
-              {selectedBudget.revisedFrom ? (
-                <div>
-                  <label className="block text-sm font-medium text-gray-500 mb-1">
-                    Revision of
-                  </label>
-                  <button
-                    onClick={() =>
-                      navigateToBudget(selectedBudget.revisedFrom.id)
-                    }
-                    className="text-green-600 underline hover:text-green-700 flex items-center gap-1"
-                  >
-                    <Link size={14} />
-                    {selectedBudget.revisedFrom.name}
-                  </button>
-                  <div className="text-xs text-green-500">
-                    (Original budget clickable link)
-                  </div>
-                </div>
-              ) : selectedBudget.revisedTo?.length > 0 ? (
-                <div>
-                  <label className="block text-sm font-medium text-gray-500 mb-1">
-                    Revised with
-                  </label>
-                  <button
-                    onClick={() =>
-                      navigateToBudget(selectedBudget.revisedTo[0].id)
-                    }
-                    className="text-gray-600 underline hover:text-gray-700 flex items-center gap-1"
-                  >
-                    <Link size={14} />
-                    {selectedBudget.revisedTo[0].name}
-                  </button>
-                  <div className="text-xs text-gray-400">
-                    (If revised then revised budget clickable link)
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-amber-600 mb-1">
-                Budget Period
-              </label>
-              <div className="flex items-center gap-2 text-gray-600">
-                <span>Start</span>
-                <span className="font-medium">
-                  {formatDate(selectedBudget.startDate)}
-                </span>
-                <span className="text-red-400 mx-2">To</span>
-                <span className="font-medium">
-                  {formatDate(selectedBudget.endDate)}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Budget Lines Table */}
-          <div className="border-t pt-6">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="border-b border-gray-200">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-amber-600">
-                      Analytic Name
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-purple-600">
-                      Type
-                    </th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-yellow-600">
-                      Budgeted Amount
-                    </th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-cyan-600">
-                      Achieved Amount
-                    </th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">
-                      Achieved %
-                    </th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-pink-600">
-                      Amount to Achieve
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {selectedBudget.lines.map((line) => {
-                    const budgeted = Number(line.budgetedAmount) || 0;
-                    const achieved = isConfirmed
-                      ? Number(line.achievedAmount) || 0
-                      : 0;
-                    const percent =
-                      budgeted > 0 ? (achieved / budgeted) * 100 : 0;
-                    const toAchieve = budgeted - achieved;
-
-                    return (
-                      <tr key={line.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-gray-800">
-                          {line.analyticalAccount.name}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={
-                              line.type === "INCOME"
-                                ? "text-green-600"
-                                : "text-gray-600"
-                            }
-                          >
-                            {line.type === "INCOME" ? "Income" : "Expense"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-right text-gray-800">
-                          {formatCurrency(budgeted).replace("₹", "")}/-
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          {isConfirmed ? (
-                            <div className="flex items-center justify-end gap-2">
-                              <span className="text-cyan-600">
-                                {formatCurrency(achieved).replace("₹", "")}/-
-                              </span>
-                              <button
-                                onClick={() => setTransactionLine(line)}
-                                className="text-gray-500 hover:text-blue-600"
-                              >
-                                View
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-end gap-2">
-                              <span className="text-yellow-600">Monetery</span>
-                              <span className="text-cyan-600">Compute</span>
-                              <span className="text-gray-400">View</span>
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          {isConfirmed ? (
-                            <span className="text-gray-600">
-                              {percent.toFixed(2)} %
-                            </span>
-                          ) : (
-                            <span className="text-gray-400">View</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          {isConfirmed ? (
-                            <span className="text-pink-600">
-                              {formatCurrency(toAchieve).replace("₹", "")}/-
-                            </span>
-                          ) : (
-                            <span className="text-gray-400">—</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-                {isConfirmed && (
-                  <tfoot className="border-t border-gray-200 font-semibold">
-                    <tr>
-                      <td className="px-4 py-3" colSpan="2">
-                        TOTAL
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        {formatCurrency(totals.totalBudgeted).replace("₹", "")}
-                        /-
-                      </td>
-                      <td className="px-4 py-3 text-right text-cyan-600">
-                        {formatCurrency(totals.totalAchieved).replace("₹", "")}
-                        /-
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        {totals.totalPercent.toFixed(2)} %
-                      </td>
-                      <td className="px-4 py-3 text-right text-pink-600">
-                        {formatCurrency(totals.totalToAchieve).replace("₹", "")}
-                        /-
-                      </td>
-                    </tr>
-                  </tfoot>
-                )}
-              </table>
-            </div>
-          </div>
-
-          {/* Edit/Delete buttons for DRAFT */}
-          {selectedBudget.status === "DRAFT" && (
-            <div className="flex gap-3 pt-6 border-t mt-6">
-              <button
-                onClick={() => handleEdit(selectedBudget)}
-                className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                <Edit size={16} /> Edit
-              </button>
-              <button
-                onClick={() => handleDelete(selectedBudget.id)}
-                className="flex items-center gap-2 px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50"
-              >
-                <Trash2 size={16} /> Delete
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Summary Cards - only for confirmed */}
+        {/* Summary Cards */}
         {isConfirmed && (
-          <div className="grid grid-cols-4 gap-4">
-            <div className="bg-white rounded-xl shadow-sm p-4">
-              <div className="text-sm text-gray-500 mb-1">Total Budgeted</div>
-              <div className="text-2xl font-bold text-gray-900">
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(4, 1fr)",
+              gap: "16px",
+              marginBottom: "24px",
+            }}
+          >
+            <div style={{ ...cardStyle, padding: "20px" }}>
+              <p
+                style={{
+                  fontSize: "12px",
+                  color: "#6B7280",
+                  marginBottom: "8px",
+                }}
+              >
+                Total Budgeted
+              </p>
+              <p
+                style={{
+                  fontSize: "24px",
+                  fontWeight: "700",
+                  color: "#1F2937",
+                  margin: 0,
+                }}
+              >
                 {formatCurrency(totals.totalBudgeted)}
-              </div>
+              </p>
             </div>
-            <div className="bg-white rounded-xl shadow-sm p-4">
-              <div className="text-sm text-gray-500 mb-1">Total Achieved</div>
-              <div className="text-2xl font-bold text-cyan-600">
+            <div style={{ ...cardStyle, padding: "20px" }}>
+              <p
+                style={{
+                  fontSize: "12px",
+                  color: "#6B7280",
+                  marginBottom: "8px",
+                }}
+              >
+                Total Achieved
+              </p>
+              <p
+                style={{
+                  fontSize: "24px",
+                  fontWeight: "700",
+                  color: "#059669",
+                  margin: 0,
+                }}
+              >
                 {formatCurrency(totals.totalAchieved)}
-              </div>
+              </p>
             </div>
-            <div className="bg-white rounded-xl shadow-sm p-4">
-              <div className="text-sm text-gray-500 mb-1">Achievement %</div>
-              <div className="text-2xl font-bold text-blue-600">
+            <div style={{ ...cardStyle, padding: "20px" }}>
+              <p
+                style={{
+                  fontSize: "12px",
+                  color: "#6B7280",
+                  marginBottom: "8px",
+                }}
+              >
+                Achievement %
+              </p>
+              <p
+                style={{
+                  fontSize: "24px",
+                  fontWeight: "700",
+                  color: "#4F46E5",
+                  margin: 0,
+                }}
+              >
                 {totals.totalPercent.toFixed(1)}%
-              </div>
+              </p>
             </div>
-            <div className="bg-white rounded-xl shadow-sm p-4">
-              <div className="text-sm text-gray-500 mb-1">
-                Remaining to Achieve
-              </div>
-              <div className="text-2xl font-bold text-pink-600">
+            <div style={{ ...cardStyle, padding: "20px" }}>
+              <p
+                style={{
+                  fontSize: "12px",
+                  color: "#6B7280",
+                  marginBottom: "8px",
+                }}
+              >
+                Remaining
+              </p>
+              <p
+                style={{
+                  fontSize: "24px",
+                  fontWeight: "700",
+                  color: "#DC2626",
+                  margin: 0,
+                }}
+              >
                 {formatCurrency(totals.totalToAchieve)}
-              </div>
+              </p>
             </div>
           </div>
         )}
+
+        {/* Budget Lines Table */}
+        <div style={cardStyle}>
+          <div
+            style={{ padding: "20px 24px", borderBottom: "1px solid #E5E7EB" }}
+          >
+            <h3
+              style={{
+                fontSize: "16px",
+                fontWeight: "600",
+                color: "#1F2937",
+                margin: 0,
+              }}
+            >
+              Budget Lines
+            </h3>
+          </div>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ backgroundColor: "#F9FAFB" }}>
+                  <th
+                    style={{
+                      padding: "14px 24px",
+                      textAlign: "left",
+                      fontSize: "11px",
+                      fontWeight: "600",
+                      color: "#6B7280",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    Analytical Account
+                  </th>
+                  <th
+                    style={{
+                      padding: "14px 24px",
+                      textAlign: "left",
+                      fontSize: "11px",
+                      fontWeight: "600",
+                      color: "#6B7280",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    Type
+                  </th>
+                  <th
+                    style={{
+                      padding: "14px 24px",
+                      textAlign: "right",
+                      fontSize: "11px",
+                      fontWeight: "600",
+                      color: "#6B7280",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    Budgeted
+                  </th>
+                  {isConfirmed && (
+                    <>
+                      <th
+                        style={{
+                          padding: "14px 24px",
+                          textAlign: "right",
+                          fontSize: "11px",
+                          fontWeight: "600",
+                          color: "#6B7280",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        Achieved
+                      </th>
+                      <th
+                        style={{
+                          padding: "14px 24px",
+                          textAlign: "right",
+                          fontSize: "11px",
+                          fontWeight: "600",
+                          color: "#6B7280",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        %
+                      </th>
+                      <th
+                        style={{
+                          padding: "14px 24px",
+                          textAlign: "right",
+                          fontSize: "11px",
+                          fontWeight: "600",
+                          color: "#6B7280",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        Remaining
+                      </th>
+                    </>
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {selectedBudget.lines.map((line) => {
+                  const percent =
+                    line.budgetedAmount > 0
+                      ? ((line.achievedAmount || 0) / line.budgetedAmount) * 100
+                      : 0;
+                  const remaining =
+                    line.budgetedAmount - (line.achievedAmount || 0);
+                  return (
+                    <tr
+                      key={line.id}
+                      style={{ borderBottom: "1px solid #F3F4F6" }}
+                    >
+                      <td
+                        style={{
+                          padding: "16px 24px",
+                          fontWeight: "500",
+                          color: "#1F2937",
+                        }}
+                      >
+                        {line.analyticalAccount?.name}
+                      </td>
+                      <td style={{ padding: "16px 24px" }}>
+                        <span
+                          style={{
+                            padding: "4px 10px",
+                            borderRadius: "6px",
+                            fontSize: "12px",
+                            fontWeight: "500",
+                            backgroundColor:
+                              line.type === "INCOME" ? "#D1FAE5" : "#FEE2E2",
+                            color:
+                              line.type === "INCOME" ? "#065F46" : "#991B1B",
+                          }}
+                        >
+                          {line.type}
+                        </span>
+                      </td>
+                      <td
+                        style={{
+                          padding: "16px 24px",
+                          textAlign: "right",
+                          fontWeight: "600",
+                          color: "#1F2937",
+                        }}
+                      >
+                        {formatCurrency(line.budgetedAmount)}
+                      </td>
+                      {isConfirmed && (
+                        <>
+                          <td
+                            style={{
+                              padding: "16px 24px",
+                              textAlign: "right",
+                              color: "#059669",
+                              fontWeight: "500",
+                            }}
+                          >
+                            {formatCurrency(line.achievedAmount || 0)}
+                          </td>
+                          <td
+                            style={{ padding: "16px 24px", textAlign: "right" }}
+                          >
+                            <span
+                              style={{
+                                padding: "4px 10px",
+                                borderRadius: "6px",
+                                fontSize: "12px",
+                                fontWeight: "500",
+                                backgroundColor:
+                                  percent >= 100
+                                    ? "#D1FAE5"
+                                    : percent >= 50
+                                      ? "#DBEAFE"
+                                      : "#FEF3C7",
+                                color:
+                                  percent >= 100
+                                    ? "#065F46"
+                                    : percent >= 50
+                                      ? "#1E40AF"
+                                      : "#92400E",
+                              }}
+                            >
+                              {percent.toFixed(1)}%
+                            </span>
+                          </td>
+                          <td
+                            style={{
+                              padding: "16px 24px",
+                              textAlign: "right",
+                              color: remaining > 0 ? "#DC2626" : "#059669",
+                              fontWeight: "500",
+                            }}
+                          >
+                            {formatCurrency(remaining)}
+                          </td>
+                        </>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+              {isConfirmed && (
+                <tfoot>
+                  <tr style={{ backgroundColor: "#F9FAFB", fontWeight: "600" }}>
+                    <td style={{ padding: "16px 24px" }} colSpan="2">
+                      TOTAL
+                    </td>
+                    <td style={{ padding: "16px 24px", textAlign: "right" }}>
+                      {formatCurrency(totals.totalBudgeted)}
+                    </td>
+                    <td
+                      style={{
+                        padding: "16px 24px",
+                        textAlign: "right",
+                        color: "#059669",
+                      }}
+                    >
+                      {formatCurrency(totals.totalAchieved)}
+                    </td>
+                    <td style={{ padding: "16px 24px", textAlign: "right" }}>
+                      <span
+                        style={{
+                          padding: "4px 10px",
+                          borderRadius: "6px",
+                          fontSize: "12px",
+                          fontWeight: "500",
+                          backgroundColor: "#EEF2FF",
+                          color: "#4F46E5",
+                        }}
+                      >
+                        {totals.totalPercent.toFixed(1)}%
+                      </span>
+                    </td>
+                    <td
+                      style={{
+                        padding: "16px 24px",
+                        textAlign: "right",
+                        color: "#DC2626",
+                      }}
+                    >
+                      {formatCurrency(totals.totalToAchieve)}
+                    </td>
+                  </tr>
+                </tfoot>
+              )}
+            </table>
+          </div>
+        </div>
+
+        {/* Linked Budgets */}
+        {(selectedBudget.revisedFrom ||
+          selectedBudget.revisedTo?.length > 0) && (
+          <div
+            style={{ ...cardStyle, marginTop: "24px", padding: "20px 24px" }}
+          >
+            <h3
+              style={{
+                fontSize: "14px",
+                fontWeight: "600",
+                color: "#1F2937",
+                marginBottom: "12px",
+              }}
+            >
+              Linked Budgets
+            </h3>
+            {selectedBudget.revisedFrom && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  marginBottom: "8px",
+                }}
+              >
+                <Link size={14} style={{ color: "#6B7280" }} />
+                <span style={{ fontSize: "13px", color: "#6B7280" }}>
+                  Revised from:
+                </span>
+                <button
+                  onClick={() =>
+                    navigateToBudget(selectedBudget.revisedFrom.id)
+                  }
+                  style={{
+                    fontSize: "13px",
+                    color: "#4F46E5",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    textDecoration: "underline",
+                  }}
+                >
+                  {selectedBudget.revisedFrom.name}
+                </button>
+              </div>
+            )}
+            {selectedBudget.revisedTo?.map((b) => (
+              <div
+                key={b.id}
+                style={{ display: "flex", alignItems: "center", gap: "8px" }}
+              >
+                <Link size={14} style={{ color: "#6B7280" }} />
+                <span style={{ fontSize: "13px", color: "#6B7280" }}>
+                  Revised to:
+                </span>
+                <button
+                  onClick={() => navigateToBudget(b.id)}
+                  style={{
+                    fontSize: "13px",
+                    color: "#4F46E5",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    textDecoration: "underline",
+                  }}
+                >
+                  {b.name}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Footer */}
+        <div style={{ textAlign: "center", marginTop: "48px" }}>
+          <p style={{ fontSize: "13px", color: "#9CA3AF" }}>
+            © 2023 Shiv Furniture Enterprise Resource Planning. All Rights
+            Reserved.
+          </p>
+        </div>
       </div>
     );
   };
 
   return (
-    <div className="p-6">
+    <div
+      style={{
+        padding: "24px",
+        backgroundColor: "#F9FAFB",
+        minHeight: "100vh",
+      }}
+    >
       {viewMode === "list" && renderListView()}
       {viewMode === "form" && renderFormView()}
       {viewMode === "view" && renderDetailView()}
