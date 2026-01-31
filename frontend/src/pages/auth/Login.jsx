@@ -164,27 +164,6 @@ export default function Login() {
             </span>
           </div>
         </div>
-
-        {/* Demo Credentials */}
-        <div className="mt-6 bg-gray-800/50 rounded-lg p-4 border border-gray-700">
-          <p className="text-gray-400 text-xs text-center mb-2">
-            Demo Credentials
-          </p>
-          <div className="text-center space-y-2">
-            <div>
-              <span className="text-gray-500 text-xs">Admin: </span>
-              <code className="text-blue-400 text-sm">admin</code>
-              <span className="text-gray-500 mx-1">/</span>
-              <code className="text-blue-400 text-sm">Admin@123</code>
-            </div>
-            <div>
-              <span className="text-gray-500 text-xs">Portal: </span>
-              <code className="text-green-400 text-sm">johndoe</code>
-              <span className="text-gray-500 mx-1">/</span>
-              <code className="text-green-400 text-sm">Portal@123</code>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

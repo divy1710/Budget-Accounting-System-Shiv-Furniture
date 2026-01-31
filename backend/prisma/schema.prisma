@@ -10,8 +10,6 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-// ===================== ENUMS =====================
-
 enum ContactType {
     CUSTOMER
     VENDOR

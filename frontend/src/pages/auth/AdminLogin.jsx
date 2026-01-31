@@ -198,20 +198,6 @@ export default function AdminLogin() {
           </div>
         </div>
 
-        {/* Demo Credentials */}
-        <div className="mt-6 bg-gray-800/50 rounded-xl p-4 border border-gray-700">
-          <p className="text-gray-400 text-sm text-center mb-2">
-            Demo Credentials
-          </p>
-          <div className="text-center">
-            <code className="text-blue-400 text-sm">
-              admin@shivfurniture.com
-            </code>
-            <span className="text-gray-500 mx-2">/</span>
-            <code className="text-blue-400 text-sm">admin123</code>
-          </div>
-        </div>
-
         {/* Footer */}
         <p className="text-center text-gray-500 text-sm mt-6">
           © 2026 Shiv Furniture. All rights reserved.

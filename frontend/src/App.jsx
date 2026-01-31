@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import MainLayout from "./components/layout/MainLayout";
+import LandingPage from "./pages/LandingPage";
 import Dashboard from "./pages/Dashboard";
 import Contacts from "./pages/Contacts";
 import Products from "./pages/Products";
@@ -26,6 +27,9 @@ import "./App.css";
 function App() {
   return (
     <Routes>
+      {/* Landing Page */}
+      <Route path="/welcome" element={<LandingPage />} />
+
       {/* Auth Routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
