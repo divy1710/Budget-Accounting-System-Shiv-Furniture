@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { transactionsApi, paymentsApi } from "../../services/api";
+import { transactionsApi, razorpayApi } from "../../services/api";
 
 export default function CustomerInvoices() {
   const navigate = useNavigate();
@@ -95,68 +95,75 @@ export default function CustomerInvoices() {
     }
   };
 
-  const initiateRazorpayPayment = (invoice, amountDue) => {
-    const options = {
-      key: "rzp_test_1234567890", // Replace with your Razorpay Key ID
-      amount: Math.round(amountDue * 100), // Amount in paise
-      currency: "INR",
-      name: "Shiv Furniture",
-      description: `Payment for Invoice ${invoice.transactionNumber}`,
-      image: "/logo.png", // Your logo URL
-      order_id: "", // This would come from backend in production
-      handler: async function (response) {
-        // Payment successful
-        console.log("Payment successful:", response);
+  const initiateRazorpayPayment = async (invoice, amountDue) => {
+    try {
+      // Create order on backend
+      const orderResponse = await razorpayApi.createOrder({
+        invoiceId: invoice.id,
+        amount: amountDue,
+      });
 
-        try {
-          // Create payment record in the system
-          const paymentData = {
-            paymentType: "RECEIVE",
-            partnerId: customer.id,
-            amount: amountDue,
-            paymentDate: new Date().toISOString().split("T")[0],
-            reference: response.razorpay_payment_id || "RAZORPAY",
-            notes: `Online payment for invoice ${invoice.transactionNumber}`,
-            transactionId: invoice.id,
-          };
+      const { orderId, keyId } = orderResponse.data;
 
-          // Create and confirm payment
-          const paymentRes = await paymentsApi.create(paymentData);
-          await paymentsApi.confirm(paymentRes.data.id);
+      const options = {
+        key: keyId,
+        amount: Math.round(amountDue * 100), // Amount in paise
+        currency: "INR",
+        name: "Shiv Furniture",
+        description: `Payment for Invoice ${invoice.transactionNumber}`,
+        image: "/logo.png",
+        order_id: orderId,
+        handler: async function (response) {
+          // Payment successful - verify on backend
+          console.log("Payment successful:", response);
 
-          // Refresh invoices
-          await fetchInvoices();
+          try {
+            // Verify payment and create record on backend
+            const verifyResponse = await razorpayApi.verifyPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              invoiceId: invoice.id,
+              amount: amountDue,
+              customerId: customer.id,
+            });
 
-          alert("Payment successful! Thank you for your payment.");
-        } catch (error) {
-          console.error("Error recording payment:", error);
-          alert(
-            "Payment received but there was an error recording it. Please contact support.",
-          );
-        }
+            if (verifyResponse.data.success) {
+              // Refresh invoices
+              await fetchInvoices();
+              alert("Payment successful! Thank you for your payment.");
+            } else {
+              alert("Payment verification failed. Please contact support.");
+            }
+          } catch (error) {
+            console.error("Error verifying payment:", error);
+            alert(
+              "Payment received but verification failed. Please contact support with your payment ID: " +
+                response.razorpay_payment_id,
+            );
+          }
 
-        setPayingInvoiceId(null);
-      },
-      prefill: {
-        name: customer?.name || "",
-        email: customer?.email || "",
-        contact: customer?.phone || "",
-      },
-      notes: {
-        invoice_number: invoice.transactionNumber,
-        customer_id: customer?.id,
-      },
-      theme: {
-        color: "#3B82F6",
-      },
-      modal: {
-        ondismiss: function () {
           setPayingInvoiceId(null);
         },
-      },
-    };
+        prefill: {
+          name: customer?.name || "",
+          email: customer?.email || "",
+          contact: customer?.phone || "",
+        },
+        notes: {
+          invoice_number: invoice.transactionNumber,
+          customer_id: customer?.id?.toString() || "",
+        },
+        theme: {
+          color: "#3B82F6",
+        },
+        modal: {
+          ondismiss: function () {
+            setPayingInvoiceId(null);
+          },
+        },
+      };
 
-    try {
       const rzp = new window.Razorpay(options);
       rzp.on("payment.failed", function (response) {
         console.error("Payment failed:", response.error);
@@ -165,7 +172,7 @@ export default function CustomerInvoices() {
       });
       rzp.open();
     } catch (error) {
-      console.error("Error opening Razorpay:", error);
+      console.error("Error initiating Razorpay payment:", error);
       alert("Error initiating payment. Please try again.");
       setPayingInvoiceId(null);
     }

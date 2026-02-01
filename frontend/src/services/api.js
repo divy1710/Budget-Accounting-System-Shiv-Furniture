@@ -110,4 +110,13 @@ export const dashboardApi = {
     api.get("/dashboard/recent-activities", { params: { limit } }),
 };
 
+// Razorpay API
+export const razorpayApi = {
+  getKeyId: () => api.get("/razorpay/key"),
+  createOrder: (data) => api.post("/razorpay/create-order", data),
+  verifyPayment: (data) => api.post("/razorpay/verify-payment", data),
+  getPaymentStatus: (paymentId) => api.get(`/razorpay/payment/${paymentId}`),
+  initiateRefund: (data) => api.post("/razorpay/refund", data),
+};
+
 export default api;

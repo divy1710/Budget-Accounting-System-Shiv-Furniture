@@ -13,6 +13,7 @@ const dashboardRoutes = require("./dashboard.routes");
 const authRoutes = require("./authRoutes");
 const userRoutes = require("./userRoutes");
 const uploadRoutes = require("./upload.routes");
+const razorpayRoutes = require("./razorpay.routes");
 
 // Health check
 router.get("/health", (req, res) => {
@@ -34,5 +35,6 @@ router.use("/auto-analytical", autoAnalyticalRoutes);
 router.use("/transactions", transactionRoutes);
 router.use("/payments", paymentRoutes);
 router.use("/dashboard", dashboardRoutes);
+router.use("/razorpay", razorpayRoutes);
 
 module.exports = router;
