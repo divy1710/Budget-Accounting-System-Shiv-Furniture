@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   User,
-  Search,
   LogOut,
   Settings,
   ChevronDown,
@@ -168,22 +167,6 @@ export default function Header() {
     transition: "all 0.2s",
   };
 
-  const searchContainerStyle = {
-    position: "relative",
-    width: "280px",
-  };
-
-  const searchInputStyle = {
-    width: "100%",
-    padding: "10px 16px 10px 40px",
-    backgroundColor: "#F3F4F6",
-    border: "none",
-    borderRadius: "8px",
-    fontSize: "14px",
-    color: "#374151",
-    outline: "none",
-  };
-
   const userButtonStyle = {
     display: "flex",
     alignItems: "center",
@@ -272,27 +255,8 @@ export default function Header() {
         </nav>
       </div>
 
-      {/* Right Section - Search & User */}
+      {/* Right Section - User */}
       <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
-        {/* Search Bar */}
-        <div style={searchContainerStyle}>
-          <Search
-            size={18}
-            style={{
-              position: "absolute",
-              left: "12px",
-              top: "50%",
-              transform: "translateY(-50%)",
-              color: "#9CA3AF",
-            }}
-          />
-          <input
-            type="text"
-            placeholder="Search data..."
-            style={searchInputStyle}
-          />
-        </div>
-
         {/* User Dropdown */}
         <div style={{ position: "relative" }} ref={userDropdownRef}>
           <button

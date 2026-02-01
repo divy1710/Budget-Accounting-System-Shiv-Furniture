@@ -7,6 +7,26 @@ import {
   analyticalAccountsApi,
   paymentsApi,
 } from "../services/api";
+import {
+  FileText,
+  Download,
+  Printer,
+  CreditCard,
+  Plus,
+  Trash2,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+  Home,
+  ArrowLeft,
+  Check,
+  X,
+  Edit,
+  Package,
+  Globe,
+  Mail,
+  AlertCircle,
+} from "lucide-react";
 
 function CustomerInvoices() {
   const navigate = useNavigate();
@@ -16,18 +36,600 @@ function CustomerInvoices() {
   const [products, setProducts] = useState([]);
   const [analyticalAccounts, setAnalyticalAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState("list"); // list, form, detail
+  const [view, setView] = useState("list");
   const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [activeTab, setActiveTab] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const [formData, setFormData] = useState({
     customerId: "",
     reference: "",
     transactionDate: new Date().toISOString().split("T")[0],
     dueDate: "",
-    lines: [
-      { productId: "", analyticalAccountId: "", quantity: 1, unitPrice: 0 },
-    ],
+    lines: [{ productId: "", analyticalAccountId: "", quantity: 1, unitPrice: 0 }],
   });
+
+  // Styles
+  const styles = {
+    pageContainer: {
+      minHeight: "100vh",
+      backgroundColor: "#F9FAFB",
+    },
+    contentWrapper: {
+      maxWidth: "900px",
+      margin: "0 auto",
+      padding: "32px 24px",
+    },
+    // Detail View - Invoice Header
+    invoiceHeader: {
+      marginBottom: "24px",
+    },
+    invoiceTitle: {
+      display: "flex",
+      alignItems: "center",
+      gap: "12px",
+      marginBottom: "8px",
+    },
+    invoiceTitleText: {
+      fontSize: "32px",
+      fontWeight: "700",
+      color: "#111827",
+      margin: 0,
+    },
+    statusBadge: {
+      padding: "4px 12px",
+      borderRadius: "6px",
+      fontSize: "12px",
+      fontWeight: "600",
+      textTransform: "uppercase",
+    },
+    invoiceSubtitle: {
+      fontSize: "14px",
+      color: "#6B7280",
+    },
+    headerActions: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginTop: "16px",
+    },
+    actionButtons: {
+      display: "flex",
+      gap: "12px",
+    },
+    pdfButton: {
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+      padding: "10px 20px",
+      backgroundColor: "white",
+      color: "#374151",
+      border: "1px solid #D1D5DB",
+      borderRadius: "8px",
+      fontSize: "14px",
+      fontWeight: "500",
+      cursor: "pointer",
+    },
+    printButton: {
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+      padding: "10px 20px",
+      backgroundColor: "white",
+      color: "#374151",
+      border: "1px solid #D1D5DB",
+      borderRadius: "8px",
+      fontSize: "14px",
+      fontWeight: "500",
+      cursor: "pointer",
+    },
+    // Amount Due Banner
+    amountDueBanner: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: "20px 24px",
+      backgroundColor: "#EEF2FF",
+      borderRadius: "12px",
+      marginBottom: "24px",
+    },
+    amountDueLeft: {
+      display: "flex",
+      alignItems: "center",
+      gap: "16px",
+    },
+    amountDueIcon: {
+      width: "48px",
+      height: "48px",
+      borderRadius: "50%",
+      backgroundColor: "#4F46E5",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    amountDueInfo: {
+      display: "flex",
+      flexDirection: "column",
+    },
+    amountDueTitle: {
+      fontSize: "18px",
+      fontWeight: "600",
+      color: "#111827",
+      margin: 0,
+    },
+    amountDueSubtitle: {
+      fontSize: "14px",
+      color: "#6B7280",
+      margin: 0,
+    },
+    payNowBtn: {
+      padding: "12px 32px",
+      backgroundColor: "#4F46E5",
+      color: "white",
+      border: "none",
+      borderRadius: "8px",
+      fontSize: "14px",
+      fontWeight: "600",
+      cursor: "pointer",
+    },
+    // Invoice Paper
+    invoicePaper: {
+      backgroundColor: "white",
+      borderRadius: "16px",
+      boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+      border: "1px solid #E5E7EB",
+      overflow: "hidden",
+    },
+    invoicePaperContent: {
+      padding: "40px",
+    },
+    // Company Header
+    companyHeader: {
+      display: "flex",
+      justifyContent: "space-between",
+      marginBottom: "32px",
+      paddingBottom: "32px",
+      borderBottom: "1px solid #E5E7EB",
+    },
+    companyInfo: {
+      display: "flex",
+      flexDirection: "column",
+    },
+    companyName: {
+      fontSize: "24px",
+      fontWeight: "700",
+      color: "#4F46E5",
+      margin: "0 0 12px 0",
+    },
+    companyAddress: {
+      fontSize: "14px",
+      color: "#6B7280",
+      lineHeight: "1.6",
+      margin: 0,
+    },
+    invoiceToSection: {
+      textAlign: "right",
+    },
+    invoiceToLabel: {
+      fontSize: "12px",
+      fontWeight: "600",
+      color: "#6B7280",
+      textTransform: "uppercase",
+      marginBottom: "8px",
+    },
+    invoiceToName: {
+      fontSize: "18px",
+      fontWeight: "600",
+      color: "#111827",
+      margin: "0 0 8px 0",
+    },
+    invoiceToAddress: {
+      fontSize: "14px",
+      color: "#6B7280",
+      lineHeight: "1.6",
+      margin: 0,
+    },
+    // Invoice Meta
+    invoiceMeta: {
+      display: "grid",
+      gridTemplateColumns: "repeat(4, 1fr)",
+      gap: "24px",
+      padding: "20px 0",
+      borderBottom: "1px solid #E5E7EB",
+      marginBottom: "24px",
+    },
+    metaItem: {
+      display: "flex",
+      flexDirection: "column",
+      gap: "4px",
+    },
+    metaLabel: {
+      fontSize: "12px",
+      fontWeight: "600",
+      color: "#4F46E5",
+      textTransform: "uppercase",
+    },
+    metaValue: {
+      fontSize: "14px",
+      fontWeight: "500",
+      color: "#111827",
+    },
+    // Line Items Table
+    lineItemsTable: {
+      width: "100%",
+      borderCollapse: "collapse",
+      marginBottom: "24px",
+    },
+    tableTh: {
+      padding: "12px 16px",
+      fontSize: "12px",
+      fontWeight: "600",
+      color: "#6B7280",
+      textTransform: "uppercase",
+      borderBottom: "2px solid #E5E7EB",
+      textAlign: "left",
+    },
+    tableTd: {
+      padding: "16px",
+      fontSize: "14px",
+      color: "#374151",
+      borderBottom: "1px solid #E5E7EB",
+    },
+    productName: {
+      fontWeight: "500",
+      color: "#111827",
+      marginBottom: "2px",
+    },
+    productDescription: {
+      fontSize: "13px",
+      color: "#6B7280",
+    },
+    // Totals Section
+    totalsSection: {
+      display: "flex",
+      justifyContent: "flex-end",
+      marginTop: "24px",
+    },
+    totalsBox: {
+      minWidth: "280px",
+    },
+    totalsRow: {
+      display: "flex",
+      justifyContent: "space-between",
+      padding: "8px 0",
+    },
+    totalsLabel: {
+      fontSize: "14px",
+      color: "#6B7280",
+    },
+    totalsValue: {
+      fontSize: "14px",
+      fontWeight: "500",
+      color: "#111827",
+    },
+    discountValue: {
+      fontSize: "14px",
+      fontWeight: "500",
+      color: "#10B981",
+    },
+    totalRow: {
+      display: "flex",
+      justifyContent: "space-between",
+      padding: "16px 0",
+      borderTop: "2px solid #E5E7EB",
+      marginTop: "8px",
+    },
+    totalLabel: {
+      fontSize: "16px",
+      fontWeight: "600",
+      color: "#111827",
+    },
+    totalValue: {
+      fontSize: "24px",
+      fontWeight: "700",
+      color: "#4F46E5",
+    },
+    // Terms Section
+    termsSection: {
+      borderTop: "1px solid #E5E7EB",
+      paddingTop: "24px",
+      marginTop: "32px",
+    },
+    termsTitle: {
+      fontSize: "14px",
+      fontWeight: "600",
+      color: "#111827",
+      marginBottom: "12px",
+    },
+    termsText: {
+      fontSize: "13px",
+      color: "#6B7280",
+      lineHeight: "1.6",
+    },
+    // Footer
+    invoiceFooter: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: "20px 40px",
+      backgroundColor: "#F9FAFB",
+      borderTop: "1px solid #E5E7EB",
+    },
+    footerLinks: {
+      display: "flex",
+      gap: "24px",
+    },
+    footerLink: {
+      display: "flex",
+      alignItems: "center",
+      gap: "6px",
+      fontSize: "13px",
+      color: "#6B7280",
+    },
+    thankYouText: {
+      fontSize: "14px",
+      fontStyle: "italic",
+      color: "#4F46E5",
+    },
+    // List View Styles
+    listHeader: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: "24px",
+    },
+    pageTitle: {
+      fontSize: "28px",
+      fontWeight: "700",
+      color: "#111827",
+      margin: 0,
+    },
+    pageSubtitle: {
+      fontSize: "14px",
+      color: "#6B7280",
+      marginTop: "4px",
+    },
+    newInvoiceBtn: {
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+      padding: "12px 24px",
+      backgroundColor: "#4F46E5",
+      color: "white",
+      border: "none",
+      borderRadius: "8px",
+      fontSize: "14px",
+      fontWeight: "500",
+      cursor: "pointer",
+    },
+    tabsContainer: {
+      display: "flex",
+      gap: "8px",
+      marginBottom: "24px",
+      borderBottom: "1px solid #E5E7EB",
+    },
+    tab: {
+      padding: "12px 20px",
+      fontSize: "14px",
+      fontWeight: "500",
+      cursor: "pointer",
+      border: "none",
+      backgroundColor: "transparent",
+      color: "#6B7280",
+      borderBottom: "2px solid transparent",
+      marginBottom: "-1px",
+    },
+    activeTab: {
+      color: "#4F46E5",
+      borderBottomColor: "#4F46E5",
+    },
+    tableContainer: {
+      backgroundColor: "white",
+      borderRadius: "16px",
+      boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+      overflow: "hidden",
+    },
+    listTable: {
+      width: "100%",
+      borderCollapse: "collapse",
+    },
+    listTh: {
+      padding: "16px 20px",
+      textAlign: "left",
+      fontSize: "12px",
+      fontWeight: "600",
+      color: "#6B7280",
+      textTransform: "uppercase",
+      borderBottom: "1px solid #E5E7EB",
+      backgroundColor: "#F9FAFB",
+    },
+    listTd: {
+      padding: "16px 20px",
+      fontSize: "14px",
+      color: "#374151",
+      borderBottom: "1px solid #E5E7EB",
+    },
+    invoiceLink: {
+      color: "#4F46E5",
+      fontWeight: "500",
+      cursor: "pointer",
+    },
+    listStatusBadge: {
+      display: "inline-flex",
+      alignItems: "center",
+      padding: "4px 12px",
+      borderRadius: "20px",
+      fontSize: "12px",
+      fontWeight: "500",
+    },
+    actionBtn: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "4px",
+      padding: "6px 12px",
+      borderRadius: "6px",
+      fontSize: "12px",
+      fontWeight: "500",
+      cursor: "pointer",
+      border: "1px solid",
+      backgroundColor: "transparent",
+      marginRight: "8px",
+    },
+    pagination: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: "16px 20px",
+      borderTop: "1px solid #E5E7EB",
+    },
+    paginationText: {
+      fontSize: "14px",
+      color: "#6B7280",
+    },
+    paginationButtons: {
+      display: "flex",
+      gap: "8px",
+    },
+    paginationBtn: {
+      display: "flex",
+      alignItems: "center",
+      gap: "4px",
+      padding: "8px 16px",
+      fontSize: "14px",
+      fontWeight: "500",
+      border: "1px solid #E5E7EB",
+      borderRadius: "8px",
+      backgroundColor: "white",
+      color: "#374151",
+      cursor: "pointer",
+    },
+    // Form Styles
+    card: {
+      backgroundColor: "white",
+      borderRadius: "16px",
+      boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+      overflow: "hidden",
+      marginBottom: "24px",
+    },
+    cardHeader: {
+      padding: "20px 24px",
+      borderBottom: "1px solid #E5E7EB",
+    },
+    cardTitle: {
+      fontSize: "16px",
+      fontWeight: "600",
+      color: "#111827",
+      margin: 0,
+    },
+    cardBody: {
+      padding: "24px",
+    },
+    formRow: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: "24px",
+      marginBottom: "24px",
+    },
+    formGroup: {
+      display: "flex",
+      flexDirection: "column",
+      gap: "8px",
+    },
+    label: {
+      fontSize: "14px",
+      fontWeight: "500",
+      color: "#374151",
+    },
+    input: {
+      padding: "12px 16px",
+      fontSize: "14px",
+      border: "1px solid #D1D5DB",
+      borderRadius: "8px",
+      outline: "none",
+    },
+    select: {
+      padding: "12px 16px",
+      fontSize: "14px",
+      border: "1px solid #D1D5DB",
+      borderRadius: "8px",
+      outline: "none",
+      backgroundColor: "white",
+    },
+    primaryBtn: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "8px",
+      padding: "12px 24px",
+      backgroundColor: "#4F46E5",
+      color: "white",
+      border: "none",
+      borderRadius: "8px",
+      fontSize: "14px",
+      fontWeight: "500",
+      cursor: "pointer",
+    },
+    secondaryBtn: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "8px",
+      padding: "12px 24px",
+      backgroundColor: "white",
+      color: "#374151",
+      border: "1px solid #D1D5DB",
+      borderRadius: "8px",
+      fontSize: "14px",
+      fontWeight: "500",
+      cursor: "pointer",
+    },
+    successBtn: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "8px",
+      padding: "12px 24px",
+      backgroundColor: "#10B981",
+      color: "white",
+      border: "none",
+      borderRadius: "8px",
+      fontSize: "14px",
+      fontWeight: "500",
+      cursor: "pointer",
+    },
+    dangerBtn: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "8px",
+      padding: "12px 24px",
+      backgroundColor: "#EF4444",
+      color: "white",
+      border: "none",
+      borderRadius: "8px",
+      fontSize: "14px",
+      fontWeight: "500",
+      cursor: "pointer",
+    },
+    footer: {
+      marginTop: "48px",
+      paddingTop: "24px",
+      borderTop: "1px solid #E5E7EB",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    footerText: {
+      fontSize: "14px",
+      color: "#9CA3AF",
+    },
+    footerLinksBottom: {
+      display: "flex",
+      gap: "24px",
+    },
+    footerLinkBottom: {
+      fontSize: "14px",
+      color: "#6B7280",
+      cursor: "pointer",
+    },
+  };
 
   useEffect(() => {
     fetchData();
@@ -46,13 +648,12 @@ function CustomerInvoices() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [invoicesRes, customersRes, productsRes, analyticalRes] =
-        await Promise.all([
-          transactionsApi.getAll({ type: "CUSTOMER_INVOICE" }),
-          contactsApi.getCustomers(),
-          productsApi.getAll(),
-          analyticalAccountsApi.getAll(),
-        ]);
+      const [invoicesRes, customersRes, productsRes, analyticalRes] = await Promise.all([
+        transactionsApi.getAll({ type: "CUSTOMER_INVOICE" }),
+        contactsApi.getCustomers(),
+        productsApi.getAll(),
+        analyticalAccountsApi.getAll(),
+      ]);
       setInvoices(invoicesRes.data);
       setCustomers(customersRes.data);
       setProducts(productsRes.data);
@@ -71,9 +672,7 @@ function CustomerInvoices() {
       reference: "",
       transactionDate: new Date().toISOString().split("T")[0],
       dueDate: "",
-      lines: [
-        { productId: "", analyticalAccountId: "", quantity: 1, unitPrice: 0 },
-      ],
+      lines: [{ productId: "", analyticalAccountId: "", quantity: 1, unitPrice: 0 }],
     });
     setView("form");
   };
@@ -93,12 +692,8 @@ function CustomerInvoices() {
     setFormData({
       customerId: invoice.customerId || "",
       reference: invoice.reference || "",
-      transactionDate: new Date(invoice.transactionDate)
-        .toISOString()
-        .split("T")[0],
-      dueDate: invoice.dueDate
-        ? new Date(invoice.dueDate).toISOString().split("T")[0]
-        : "",
+      transactionDate: new Date(invoice.transactionDate).toISOString().split("T")[0],
+      dueDate: invoice.dueDate ? new Date(invoice.dueDate).toISOString().split("T")[0] : "",
       lines: invoice.lines.map((line) => ({
         productId: line.productId,
         analyticalAccountId: line.analyticalAccountId || "",
@@ -112,10 +707,7 @@ function CustomerInvoices() {
   const handleAddLine = () => {
     setFormData({
       ...formData,
-      lines: [
-        ...formData.lines,
-        { productId: "", analyticalAccountId: "", quantity: 1, unitPrice: 0 },
-      ],
+      lines: [...formData.lines, { productId: "", analyticalAccountId: "", quantity: 1, unitPrice: 0 }],
     });
   };
 
@@ -133,7 +725,7 @@ function CustomerInvoices() {
     if (field === "productId") {
       const product = products.find((p) => p.id === parseInt(value));
       if (product) {
-        newLines[index].unitPrice = Number(product.salePrice);
+        newLines[index].unitPrice = Number(product.salesPrice) || Number(product.salePrice) || Number(product.price) || 0;
       }
     }
 
@@ -141,14 +733,21 @@ function CustomerInvoices() {
   };
 
   const calculateLineTotal = (line) => {
-    return line.quantity * line.unitPrice;
+    const qty = Number(line.quantity) || 0;
+    const price = Number(line.unitPrice) || 0;
+    return qty * price;
+  };
+
+  const calculateSubtotal = () => {
+    return formData.lines.reduce((sum, line) => sum + calculateLineTotal(line), 0);
+  };
+
+  const calculateTax = () => {
+    return calculateSubtotal() * 0.18;
   };
 
   const calculateTotal = () => {
-    return formData.lines.reduce(
-      (sum, line) => sum + calculateLineTotal(line),
-      0,
-    );
+    return calculateSubtotal() + calculateTax();
   };
 
   const handleSubmit = async (e) => {
@@ -162,12 +761,10 @@ function CustomerInvoices() {
         dueDate: formData.dueDate || null,
         lines: formData.lines.map((line) => ({
           productId: parseInt(line.productId),
-          analyticalAccountId: line.analyticalAccountId
-            ? parseInt(line.analyticalAccountId)
-            : null,
+          analyticalAccountId: line.analyticalAccountId ? parseInt(line.analyticalAccountId) : null,
           quantity: parseFloat(line.quantity),
           unitPrice: parseFloat(line.unitPrice),
-          gstRate: 0,
+          gstRate: 18,
         })),
       };
 
@@ -187,7 +784,6 @@ function CustomerInvoices() {
 
   const handleConfirm = async () => {
     if (!selectedInvoice) return;
-
     try {
       await transactionsApi.confirm(selectedInvoice.id);
       await fetchData();
@@ -201,8 +797,7 @@ function CustomerInvoices() {
 
   const handleCancel = async () => {
     if (!selectedInvoice) return;
-    if (!window.confirm("Are you sure you want to cancel this invoice?"))
-      return;
+    if (!window.confirm("Are you sure you want to cancel this invoice?")) return;
 
     try {
       await transactionsApi.cancel(selectedInvoice.id);
@@ -217,7 +812,6 @@ function CustomerInvoices() {
 
   const handlePay = async () => {
     if (!selectedInvoice) return;
-
     try {
       const res = await paymentsApi.createFromTransaction(selectedInvoice.id);
       navigate(`/invoice-payments?id=${res.data.id}`);
@@ -229,8 +823,7 @@ function CustomerInvoices() {
 
   const handleDelete = async () => {
     if (!selectedInvoice) return;
-    if (!window.confirm("Are you sure you want to delete this invoice?"))
-      return;
+    if (!window.confirm("Are you sure you want to delete this invoice?")) return;
 
     try {
       await transactionsApi.delete(selectedInvoice.id);
@@ -243,837 +836,706 @@ function CustomerInvoices() {
   };
 
   const formatCurrency = (amount) => {
+    const safeAmount = Number(amount) || 0;
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
-      minimumFractionDigits: 0,
-    }).format(amount);
+      minimumFractionDigits: 2,
+    }).format(safeAmount);
   };
 
-  // Calculate payment amounts
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "-";
+    return new Date(dateStr).toLocaleDateString("en-IN", {
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+    });
+  };
+
   const calculatePaymentInfo = () => {
-    if (!selectedInvoice) return { paidCash: 0, paidBank: 0, amountDue: 0 };
-
-    const total = Number(selectedInvoice.totalAmount);
-    const paidAmount = Number(selectedInvoice.paidAmount || 0);
-    const amountDue = total - paidAmount;
-
+    if (!selectedInvoice) return { paidAmount: 0, amountDue: 0 };
+    const total = Number(selectedInvoice.totalAmount) || 0;
+    const paidAmount = Number(selectedInvoice.paidAmount) || 0;
     return {
-      paidCash: 0,
-      paidBank: paidAmount,
-      amountDue: amountDue,
+      paidAmount,
+      amountDue: total - paidAmount,
     };
+  };
+
+  const getFilteredInvoices = () => {
+    switch (activeTab) {
+      case "confirmed":
+        return invoices.filter((i) => i.status === "CONFIRMED");
+      case "draft":
+        return invoices.filter((i) => i.status === "DRAFT");
+      case "paid":
+        return invoices.filter((i) => i.paymentStatus === "PAID");
+      case "unpaid":
+        return invoices.filter((i) => i.status === "CONFIRMED" && i.paymentStatus !== "PAID");
+      default:
+        return invoices;
+    }
+  };
+
+  const filteredInvoices = getFilteredInvoices();
+  const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedInvoices = filteredInvoices.slice(startIndex, startIndex + itemsPerPage);
+
+  const getStatusBadgeStyle = (status) => {
+    switch (status) {
+      case "CONFIRMED":
+        return { backgroundColor: "#D1FAE5", color: "#065F46" };
+      case "DRAFT":
+        return { backgroundColor: "#FEF3C7", color: "#92400E" };
+      case "CANCELLED":
+        return { backgroundColor: "#FEE2E2", color: "#991B1B" };
+      default:
+        return { backgroundColor: "#F3F4F6", color: "#374151" };
+    }
+  };
+
+  const getPaymentBadgeStyle = (paymentStatus) => {
+    switch (paymentStatus) {
+      case "PAID":
+        return { backgroundColor: "#D1FAE5", color: "#065F46" };
+      case "PARTIALLY_PAID":
+        return { backgroundColor: "#FEF3C7", color: "#92400E" };
+      default:
+        return { backgroundColor: "#FEE2E2", color: "#991B1B" };
+    }
   };
 
   // List View
   const renderListView = () => (
-    <div className="space-y-6">
-      {/* Top Action Bar */}
-      <div className="flex justify-between items-center bg-gray-900 rounded-lg p-4 border border-gray-700">
-        <div className="flex items-center gap-3">
+    <div style={styles.pageContainer}>
+      <div style={{ ...styles.contentWrapper, maxWidth: "1200px" }}>
+        {/* Header */}
+        <div style={styles.listHeader}>
+          <div>
+            <h1 style={styles.pageTitle}>Customer Invoices</h1>
+            <p style={styles.pageSubtitle}>Manage and track your customer billing</p>
+          </div>
           <button
+            style={styles.newInvoiceBtn}
             onClick={handleNewInvoice}
-            className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-500/20 transition-all"
+            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#4338CA")}
+            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#4F46E5")}
           >
-            + New
+            <Plus size={16} />
+            New Invoice
           </button>
         </div>
-        <div className="flex gap-3">
-          <button
-            onClick={() => navigate("/")}
-            className="px-5 py-2.5 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-600 border border-gray-600 transition-all"
-          >
-            🏠 Home
-          </button>
-          <button
-            onClick={() => setView("list")}
-            className="px-5 py-2.5 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-600 border border-gray-600 transition-all"
-          >
-            ← Back
-          </button>
+
+        {/* Tabs */}
+        <div style={styles.tabsContainer}>
+          {[
+            { key: "all", label: "All Invoices" },
+            { key: "confirmed", label: "Confirmed" },
+            { key: "draft", label: "Draft" },
+            { key: "paid", label: "Paid" },
+            { key: "unpaid", label: "Unpaid" },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              style={{
+                ...styles.tab,
+                ...(activeTab === tab.key ? styles.activeTab : {}),
+              }}
+              onClick={() => {
+                setActiveTab(tab.key);
+                setCurrentPage(1);
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Table */}
+        <div style={styles.tableContainer}>
+          {loading ? (
+            <div style={{ padding: "48px", textAlign: "center", color: "#6B7280" }}>Loading...</div>
+          ) : (
+            <>
+              <table style={styles.listTable}>
+                <thead>
+                  <tr>
+                    <th style={styles.listTh}>Invoice No.</th>
+                    <th style={styles.listTh}>Customer</th>
+                    <th style={styles.listTh}>Date</th>
+                    <th style={styles.listTh}>Due Date</th>
+                    <th style={{ ...styles.listTh, textAlign: "right" }}>Amount</th>
+                    <th style={{ ...styles.listTh, textAlign: "center" }}>Status</th>
+                    <th style={{ ...styles.listTh, textAlign: "center" }}>Payment</th>
+                    <th style={styles.listTh}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedInvoices.map((invoice) => (
+                    <tr
+                      key={invoice.id}
+                      onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#F9FAFB")}
+                      onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                    >
+                      <td style={styles.listTd}>
+                        <span style={styles.invoiceLink} onClick={() => handleViewInvoice(invoice)}>
+                          {invoice.transactionNumber}
+                        </span>
+                      </td>
+                      <td style={styles.listTd}>{invoice.customer?.name || "-"}</td>
+                      <td style={styles.listTd}>{formatDate(invoice.transactionDate)}</td>
+                      <td style={styles.listTd}>{formatDate(invoice.dueDate)}</td>
+                      <td style={{ ...styles.listTd, textAlign: "right", fontWeight: "600" }}>
+                        {formatCurrency(invoice.totalAmount)}
+                      </td>
+                      <td style={{ ...styles.listTd, textAlign: "center" }}>
+                        <span style={{ ...styles.listStatusBadge, ...getStatusBadgeStyle(invoice.status) }}>
+                          {invoice.status}
+                        </span>
+                      </td>
+                      <td style={{ ...styles.listTd, textAlign: "center" }}>
+                        {invoice.status === "CONFIRMED" && (
+                          <span style={{ ...styles.listStatusBadge, ...getPaymentBadgeStyle(invoice.paymentStatus) }}>
+                            {invoice.paymentStatus === "PAID"
+                              ? "Paid"
+                              : invoice.paymentStatus === "PARTIALLY_PAID"
+                              ? "Partial"
+                              : "Not Paid"}
+                          </span>
+                        )}
+                      </td>
+                      <td style={styles.listTd}>
+                        <button
+                          style={{ ...styles.actionBtn, borderColor: "#D1D5DB", color: "#374151" }}
+                          onClick={() => handleViewInvoice(invoice)}
+                        >
+                          <Eye size={14} />
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {paginatedInvoices.length === 0 && (
+                    <tr>
+                      <td colSpan="8" style={{ ...styles.listTd, textAlign: "center", padding: "48px", color: "#9CA3AF" }}>
+                        No invoices found. Click "New Invoice" to create one.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+
+              {filteredInvoices.length > 0 && (
+                <div style={styles.pagination}>
+                  <span style={styles.paginationText}>
+                    Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredInvoices.length)} of{" "}
+                    {filteredInvoices.length} invoices
+                  </span>
+                  <div style={styles.paginationButtons}>
+                    <button
+                      style={{ ...styles.paginationBtn, opacity: currentPage === 1 ? 0.5 : 1 }}
+                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft size={16} />
+                      Previous
+                    </button>
+                    <button
+                      style={{ ...styles.paginationBtn, opacity: currentPage === totalPages ? 0.5 : 1 }}
+                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div style={styles.footer}>
+          <span style={styles.footerText}>© 2023 Shiv Furniture Portal. All rights reserved.</span>
+          <div style={styles.footerLinksBottom}>
+            <span style={styles.footerLinkBottom}>Privacy Policy</span>
+            <span style={styles.footerLinkBottom}>Terms of Service</span>
+            <span style={styles.footerLinkBottom}>Support</span>
+          </div>
         </div>
       </div>
-
-      {loading ? (
-        <div className="text-white text-center py-8">Loading...</div>
-      ) : (
-        <div className="border-2 border-gray-600 rounded-xl overflow-hidden shadow-xl">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gradient-to-r from-gray-700 to-gray-600">
-                <th className="px-4 py-3 text-left text-white font-bold border-r border-gray-600">
-                  Invoice No.
-                </th>
-                <th className="px-4 py-3 text-left text-white font-bold border-r border-gray-600">
-                  Customer Name
-                </th>
-                <th className="px-4 py-3 text-left text-white font-bold border-r border-gray-600">
-                  Reference
-                </th>
-                <th className="px-4 py-3 text-left text-white font-bold border-r border-gray-600">
-                  Invoice Date
-                </th>
-                <th className="px-4 py-3 text-left text-white font-bold border-r border-gray-600">
-                  Due Date
-                </th>
-                <th className="px-4 py-3 text-right text-white font-bold border-r border-gray-600">
-                  Total
-                </th>
-                <th className="px-4 py-3 text-center text-white font-bold border-r border-gray-600">
-                  Status
-                </th>
-                <th className="px-4 py-3 text-center text-white font-bold">
-                  Payment
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {invoices.map((invoice, index) => (
-                <tr
-                  key={invoice.id}
-                  onClick={() => handleViewInvoice(invoice)}
-                  className={`border-t-2 border-gray-600 hover:bg-gray-700/50 cursor-pointer transition-colors ${
-                    index % 2 === 0 ? "bg-gray-800" : "bg-gray-800/50"
-                  }`}
-                >
-                  <td className="px-4 py-3 text-white font-medium border-r border-gray-700">
-                    {invoice.transactionNumber}
-                  </td>
-                  <td className="px-4 py-3 text-white border-r border-gray-700">
-                    {invoice.customer?.name || "-"}
-                  </td>
-                  <td className="px-4 py-3 text-pink-400 border-r border-gray-700">
-                    {invoice.reference || "-"}
-                  </td>
-                  <td className="px-4 py-3 text-white border-r border-gray-700">
-                    {new Date(invoice.transactionDate).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-3 text-white border-r border-gray-700">
-                    {invoice.dueDate
-                      ? new Date(invoice.dueDate).toLocaleDateString()
-                      : "-"}
-                  </td>
-                  <td className="px-4 py-3 text-right text-yellow-400 font-bold border-r border-gray-700">
-                    {formatCurrency(invoice.totalAmount)}
-                  </td>
-                  <td className="px-4 py-3 text-center border-r border-gray-700">
-                    <span
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border-2 ${
-                        invoice.status === "DRAFT"
-                          ? "bg-yellow-600/20 text-yellow-400 border-yellow-500"
-                          : invoice.status === "CONFIRMED"
-                            ? "bg-green-600/20 text-green-400 border-green-500"
-                            : "bg-red-600/20 text-red-400 border-red-500"
-                      }`}
-                    >
-                      {invoice.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {invoice.status === "CONFIRMED" && (
-                      <span
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium border-2 ${
-                          invoice.paymentStatus === "PAID"
-                            ? "bg-green-600/20 text-green-400 border-green-500"
-                            : invoice.paymentStatus === "PARTIALLY_PAID"
-                              ? "bg-yellow-600/20 text-yellow-400 border-yellow-500"
-                              : "bg-red-600/20 text-red-400 border-red-500"
-                        }`}
-                      >
-                        {invoice.paymentStatus === "PAID"
-                          ? "Paid"
-                          : invoice.paymentStatus === "PARTIALLY_PAID"
-                            ? "Partial"
-                            : "Not Paid"}
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {invoices.length === 0 && (
-                <tr>
-                  <td
-                    colSpan="8"
-                    className="px-4 py-12 text-center text-gray-400 bg-gray-800"
-                  >
-                    No customer invoices found. Click "+ New" to create one.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
     </div>
   );
 
   // Form View
   const renderFormView = () => (
-    <div className="space-y-6">
-      {/* Top Action Bar */}
-      <div className="flex justify-between items-center bg-gray-900 rounded-lg p-4 border border-gray-700">
-        <h1 className="text-2xl font-bold text-white">
-          {selectedInvoice
-            ? `✏️ Edit: ${selectedInvoice.transactionNumber}`
-            : "📄 New Customer Invoice"}
-        </h1>
-        <div className="flex gap-3">
-          <button
-            onClick={() => navigate("/")}
-            className="px-5 py-2.5 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-600 border border-gray-600 transition-all"
-          >
-            🏠 Home
-          </button>
-          <button
-            onClick={() => setView("list")}
-            className="px-5 py-2.5 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-600 border border-gray-600 transition-all"
-          >
-            ← Back
-          </button>
-        </div>
-      </div>
-
-      <form
-        onSubmit={handleSubmit}
-        className="bg-gradient-to-b from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-2xl"
-      >
-        {/* Header Info */}
-        <div className="p-6 border-b border-gray-700">
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="block text-gray-400 text-sm font-medium uppercase tracking-wide">
-                Customer Name
-              </label>
-              <select
-                value={formData.customerId}
-                onChange={(e) =>
-                  setFormData({ ...formData, customerId: e.target.value })
-                }
-                className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border-2 border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
-                required
-              >
-                <option value="">Select Customer</option>
-                {customers.map((customer) => (
-                  <option key={customer.id} value={customer.id}>
-                    {customer.name}
-                  </option>
-                ))}
-              </select>
-              <span className="text-xs text-gray-500">
-                from Contact Master - Many to one
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="block text-gray-400 text-sm font-medium uppercase tracking-wide">
-                  Invoice Date
-                </label>
-                <input
-                  type="date"
-                  value={formData.transactionDate}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      transactionDate: e.target.value,
-                    })
-                  }
-                  className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border-2 border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="block text-gray-400 text-sm font-medium uppercase tracking-wide">
-                  Due Date
-                </label>
-                <input
-                  type="date"
-                  value={formData.dueDate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, dueDate: e.target.value })
-                  }
-                  className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border-2 border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
-                />
-              </div>
-            </div>
+    <div style={styles.pageContainer}>
+      <div style={{ ...styles.contentWrapper, maxWidth: "1000px" }}>
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+          <div>
+            <h1 style={styles.pageTitle}>{selectedInvoice ? "Edit Invoice" : "Create Invoice"}</h1>
+            <p style={styles.pageSubtitle}>{selectedInvoice?.transactionNumber || "New Customer Invoice"}</p>
           </div>
-
-          <div className="mt-6 space-y-2">
-            <label className="block text-gray-400 text-sm font-medium uppercase tracking-wide">
-              Reference
-            </label>
-            <input
-              type="text"
-              value={formData.reference}
-              onChange={(e) =>
-                setFormData({ ...formData, reference: e.target.value })
-              }
-              placeholder="Alpha numeric (text)"
-              className="w-full px-4 py-3 bg-gray-800 text-pink-400 rounded-lg border-2 border-gray-600 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-500/20 transition-all"
-            />
-          </div>
-        </div>
-
-        {/* Lines Table */}
-        <div className="p-6">
-          <div className="border-2 border-gray-600 rounded-xl overflow-hidden shadow-xl">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-gradient-to-r from-gray-700 to-gray-600">
-                  <th className="px-4 py-3 text-left text-white font-bold w-16 border-r border-gray-600">
-                    Sr. No.
-                  </th>
-                  <th className="px-4 py-3 text-left text-white font-bold border-r border-gray-600">
-                    Product
-                  </th>
-                  <th className="px-4 py-3 text-left text-cyan-400 font-bold border-r border-gray-600">
-                    Budget Analytics
-                  </th>
-                  <th className="px-4 py-3 text-center text-cyan-400 font-bold w-28 border-r border-gray-600">
-                    <div>1</div>
-                    <div className="text-xs">Qty</div>
-                  </th>
-                  <th className="px-4 py-3 text-right text-cyan-400 font-bold w-36 border-r border-gray-600">
-                    <div>2</div>
-                    <div className="text-xs">Unit Price</div>
-                  </th>
-                  <th className="px-4 py-3 text-right text-cyan-400 font-bold w-40">
-                    <div>3</div>
-                    <div className="text-xs">Total</div>
-                  </th>
-                  <th className="px-4 py-3 w-16"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {formData.lines.map((line, index) => (
-                  <tr
-                    key={index}
-                    className={`border-t-2 border-gray-600 ${index % 2 === 0 ? "bg-gray-800" : "bg-gray-800/50"}`}
-                  >
-                    <td className="px-4 py-3 text-white font-medium border-r border-gray-700">
-                      {index + 1}
-                    </td>
-                    <td className="px-4 py-3 border-r border-gray-700">
-                      <select
-                        value={line.productId}
-                        onChange={(e) =>
-                          handleLineChange(index, "productId", e.target.value)
-                        }
-                        className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none"
-                        required
-                      >
-                        <option value="">Select Product</option>
-                        {products.map((product) => (
-                          <option key={product.id} value={product.id}>
-                            {product.name}
-                          </option>
-                        ))}
-                      </select>
-                      <span className="text-xs text-gray-500">
-                        (from Product Master - Many to one)
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 border-r border-gray-700">
-                      <select
-                        value={line.analyticalAccountId}
-                        onChange={(e) =>
-                          handleLineChange(
-                            index,
-                            "analyticalAccountId",
-                            e.target.value,
-                          )
-                        }
-                        className="w-full px-3 py-2 bg-gray-700 text-cyan-400 rounded-lg border border-gray-600 focus:border-cyan-500 focus:outline-none"
-                      >
-                        <option value="">Auto / Select</option>
-                        {analyticalAccounts.map((acc) => (
-                          <option key={acc.id} value={acc.id}>
-                            {acc.name}
-                          </option>
-                        ))}
-                      </select>
-                      <span className="text-xs text-gray-500">
-                        (from Analytical Master - Many to One)
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 border-r border-gray-700">
-                      <input
-                        type="number"
-                        value={line.quantity}
-                        onChange={(e) =>
-                          handleLineChange(index, "quantity", e.target.value)
-                        }
-                        className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 text-center focus:border-blue-500 focus:outline-none"
-                        min="1"
-                        required
-                      />
-                      <div className="text-xs text-gray-500 text-center">
-                        Number
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 border-r border-gray-700">
-                      <input
-                        type="number"
-                        value={line.unitPrice}
-                        onChange={(e) =>
-                          handleLineChange(index, "unitPrice", e.target.value)
-                        }
-                        className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 text-right focus:border-blue-500 focus:outline-none"
-                        min="0"
-                        step="0.01"
-                        required
-                      />
-                      <div className="text-xs text-gray-500 text-right">
-                        Monetary
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-right border-r border-gray-700">
-                      <span className="text-yellow-400 font-bold">
-                        {formatCurrency(calculateLineTotal(line))}
-                      </span>
-                      <div className="text-xs text-gray-500">
-                        ( {line.quantity} qty × {formatCurrency(line.unitPrice)}{" "}
-                        )
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveLine(index)}
-                        className="w-8 h-8 rounded-full bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white transition-all text-lg font-bold"
-                      >
-                        ×
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="border-t-2 border-gray-500 bg-gradient-to-r from-gray-700 to-gray-600">
-                  <td colSpan="5" className="px-4 py-4">
-                    <button
-                      type="button"
-                      onClick={handleAddLine}
-                      className="px-4 py-2 bg-blue-600/20 text-blue-400 rounded-lg hover:bg-blue-600 hover:text-white transition-all font-medium border border-blue-500/50"
-                    >
-                      + Add New Line
-                    </button>
-                  </td>
-                  <td className="px-4 py-4 text-right" colSpan="2">
-                    <div className="text-gray-400 text-sm mb-1">Total</div>
-                    <span className="text-yellow-400 font-bold text-xl bg-gray-800 px-4 py-2 rounded-lg border border-yellow-500">
-                      {formatCurrency(calculateTotal())}
-                    </span>
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-4 p-6 border-t border-gray-700">
-          <button
-            type="submit"
-            className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg font-medium hover:from-green-700 hover:to-green-800 shadow-lg shadow-green-500/20 transition-all"
-          >
-            {selectedInvoice ? "✓ Update Invoice" : "💾 Save Draft"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setView("list")}
-            className="px-6 py-3 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-600 border border-gray-600 transition-all"
-          >
-            Cancel
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-
-  // Detail View
-  const renderDetailView = () => {
-    if (!selectedInvoice) return null;
-
-    const paymentInfo = calculatePaymentInfo();
-    const canPay =
-      selectedInvoice.status === "CONFIRMED" && paymentInfo.amountDue > 0;
-
-    return (
-      <div className="space-y-6">
-        {/* Top Action Bar */}
-        <div className="flex justify-between items-center bg-gray-900 rounded-lg p-4 border border-gray-700">
-          <div className="flex items-center gap-3">
+          <div style={{ display: "flex", gap: "12px" }}>
             <button
-              onClick={handleNewInvoice}
-              className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-500/20 transition-all"
-            >
-              + New
-            </button>
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={() => navigate("/")}
-              className="px-5 py-2.5 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-600 border border-gray-600 transition-all"
-            >
-              🏠 Home
-            </button>
-            <button
+              style={styles.secondaryBtn}
               onClick={() => setView("list")}
-              className="px-5 py-2.5 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-600 border border-gray-600 transition-all"
             >
-              ← Back
+              <ArrowLeft size={16} />
+              Back
             </button>
           </div>
         </div>
 
-        <div className="bg-gradient-to-b from-gray-900 to-gray-800 rounded-xl border border-gray-700 shadow-2xl">
-          {/* Header Section */}
-          <div className="p-6 border-b border-gray-700">
-            <div className="flex justify-between items-start">
-              <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <span className="text-gray-400 text-sm uppercase tracking-wide">
-                    Customer Invoice No.
-                  </span>
-                  <span className="text-2xl font-bold text-white bg-gray-800 px-4 py-1 rounded-lg border border-gray-600">
-                    {selectedInvoice.transactionNumber}
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    ( auto generate Invoice Number + 1 of last Invoice No. )
-                  </span>
+        <form onSubmit={handleSubmit}>
+          {/* Customer Details */}
+          <div style={styles.card}>
+            <div style={styles.cardHeader}>
+              <h3 style={styles.cardTitle}>Customer Details</h3>
+            </div>
+            <div style={styles.cardBody}>
+              <div style={styles.formRow}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Customer</label>
+                  <select
+                    style={styles.select}
+                    value={formData.customerId}
+                    onChange={(e) => setFormData({ ...formData, customerId: e.target.value })}
+                    required
+                  >
+                    <option value="">Select Customer</option>
+                    {customers.map((customer) => (
+                      <option key={customer.id} value={customer.id}>
+                        {customer.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="flex items-center gap-3">
-                    <span className="text-gray-400 text-sm">Customer Name</span>
-                    <span className="text-pink-400 font-medium px-3 py-1 bg-gray-800 rounded border border-gray-600">
-                      {selectedInvoice.customer?.name || "-"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-gray-400 text-sm">Reference</span>
-                    <span className="text-pink-400 font-medium px-3 py-1 bg-gray-800 rounded border border-gray-600">
-                      {selectedInvoice.reference || "-"}
-                    </span>
-                  </div>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Reference</label>
+                  <input
+                    type="text"
+                    style={styles.input}
+                    value={formData.reference}
+                    onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
+                    placeholder="PO Number, etc."
+                  />
                 </div>
               </div>
-              <div className="text-right space-y-3">
-                <div className="flex items-center gap-3 bg-gray-800 px-4 py-2 rounded-lg border border-gray-600">
-                  <span className="text-pink-400 text-sm">Invoice Date</span>
-                  <span className="text-white font-medium">
-                    {new Date(
-                      selectedInvoice.transactionDate,
-                    ).toLocaleDateString()}
-                  </span>
+              <div style={styles.formRow}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Invoice Date</label>
+                  <input
+                    type="date"
+                    style={styles.input}
+                    value={formData.transactionDate}
+                    onChange={(e) => setFormData({ ...formData, transactionDate: e.target.value })}
+                    required
+                  />
                 </div>
-                <div className="flex items-center gap-3 bg-gray-800 px-4 py-2 rounded-lg border border-gray-600">
-                  <span className="text-gray-400 text-sm">Due Date</span>
-                  <span className="text-white font-medium">
-                    {selectedInvoice.dueDate
-                      ? new Date(selectedInvoice.dueDate).toLocaleDateString()
-                      : "-"}
-                  </span>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Due Date</label>
+                  <input
+                    type="date"
+                    style={styles.input}
+                    value={formData.dueDate}
+                    onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                  />
                 </div>
-                {selectedInvoice.status === "CONFIRMED" && (
-                  <div className="flex gap-2 justify-end">
-                    <span
-                      className={`px-4 py-2 rounded-lg text-sm font-medium border-2 ${
-                        selectedInvoice.paymentStatus === "PAID"
-                          ? "bg-green-600/20 text-green-400 border-green-500"
-                          : selectedInvoice.paymentStatus === "PARTIALLY_PAID"
-                            ? "bg-yellow-600/20 text-yellow-400 border-yellow-500"
-                            : "bg-red-600/20 text-red-400 border-red-500"
-                      }`}
-                    >
-                      {selectedInvoice.paymentStatus === "PAID"
-                        ? "Paid"
-                        : selectedInvoice.paymentStatus === "PARTIALLY_PAID"
-                          ? "Partial"
-                          : "Not Paid"}
-                    </span>
-                  </div>
-                )}
               </div>
             </div>
           </div>
 
-          {/* Action Buttons Bar */}
-          <div className="flex items-center gap-3 p-4 bg-gray-800/50 border-b border-gray-700">
-            {selectedInvoice.status === "DRAFT" && (
-              <>
-                <button
-                  onClick={handleConfirm}
-                  className="px-4 py-2 bg-gradient-to-r from-pink-600 to-pink-700 text-white rounded-lg text-sm font-medium hover:from-pink-700 hover:to-pink-800 shadow-lg shadow-pink-500/20 transition-all flex items-center gap-2 border border-pink-500"
-                >
-                  Confirm
-                </button>
-                <button
-                  onClick={() => window.print()}
-                  className="px-4 py-2 bg-gray-700 text-white rounded-lg text-sm font-medium hover:bg-gray-600 border border-gray-600 transition-all"
-                >
-                  Print
-                </button>
-                <button
-                  onClick={() => alert("Send feature coming soon")}
-                  className="px-4 py-2 bg-gray-700 text-white rounded-lg text-sm font-medium hover:bg-gray-600 border border-gray-600 transition-all"
-                >
-                  Send
-                </button>
-                <button
-                  onClick={handleCancel}
-                  className="px-4 py-2 bg-gray-700 text-white rounded-lg text-sm font-medium hover:bg-gray-600 border border-gray-600 transition-all"
-                >
-                  Cancel
-                </button>
-              </>
-            )}
-            {canPay && (
+          {/* Line Items */}
+          <div style={styles.card}>
+            <div style={{ ...styles.cardHeader, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h3 style={styles.cardTitle}>Line Items</h3>
               <button
-                onClick={handlePay}
-                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg text-sm font-medium hover:from-purple-700 hover:to-purple-800 shadow-lg shadow-purple-500/20 transition-all flex items-center gap-2 border border-purple-500"
+                type="button"
+                style={styles.primaryBtn}
+                onClick={handleAddLine}
               >
-                Pay
+                <Plus size={16} />
+                Add Item
               </button>
-            )}
-
-            {/* Status Indicators */}
-            <div className="flex gap-2 ml-auto">
-              <span
-                className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
-                  selectedInvoice.status === "DRAFT"
-                    ? "bg-yellow-600/20 text-yellow-400 border-yellow-500 shadow-lg shadow-yellow-500/10"
-                    : "bg-gray-800 text-gray-500 border-gray-700"
-                }`}
-              >
-                Draft
-              </span>
-              <span
-                className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
-                  selectedInvoice.status === "CONFIRMED"
-                    ? "bg-green-600/20 text-green-400 border-green-500 shadow-lg shadow-green-500/10"
-                    : "bg-gray-800 text-gray-500 border-gray-700"
-                }`}
-              >
-                Confirm
-              </span>
-              <span
-                className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
-                  selectedInvoice.status === "CANCELLED"
-                    ? "bg-red-600/20 text-red-400 border-red-500 shadow-lg shadow-red-500/10"
-                    : "bg-gray-800 text-gray-500 border-gray-700"
-                }`}
-              >
-                Cancelled
-              </span>
             </div>
-          </div>
-
-          {/* Lines Table */}
-          <div className="m-6">
-            <div className="border-2 border-gray-600 rounded-xl overflow-hidden shadow-xl">
-              <table className="w-full">
+            <div style={{ padding: "0" }}>
+              <table style={styles.lineItemsTable}>
                 <thead>
-                  <tr className="bg-gradient-to-r from-gray-700 to-gray-600">
-                    <th className="px-4 py-3 text-left text-white font-bold w-16 border-r border-gray-600">
-                      Sr. No.
-                    </th>
-                    <th className="px-4 py-3 text-left text-white font-bold border-r border-gray-600">
-                      Product
-                    </th>
-                    <th className="px-4 py-3 text-left text-cyan-400 font-bold border-r border-gray-600">
-                      Budget Analytics
-                    </th>
-                    <th className="px-4 py-3 text-center text-cyan-400 font-bold w-28 border-r border-gray-600">
-                      <div>1</div>
-                      <div className="text-xs">Qty</div>
-                    </th>
-                    <th className="px-4 py-3 text-right text-cyan-400 font-bold w-36 border-r border-gray-600">
-                      <div>2</div>
-                      <div className="text-xs">Unit Price</div>
-                    </th>
-                    <th className="px-4 py-3 text-right text-cyan-400 font-bold w-40">
-                      <div>3</div>
-                      <div className="text-xs">Total</div>
-                    </th>
+                  <tr>
+                    <th style={styles.tableTh}>Product</th>
+                    <th style={{ ...styles.tableTh, width: "100px", textAlign: "center" }}>Qty</th>
+                    <th style={{ ...styles.tableTh, width: "140px", textAlign: "right" }}>Unit Price</th>
+                    <th style={{ ...styles.tableTh, width: "140px", textAlign: "right" }}>Amount</th>
+                    <th style={{ ...styles.tableTh, width: "60px" }}></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {selectedInvoice.lines.map((line, index) => (
-                    <tr
-                      key={line.id}
-                      className={`border-t-2 border-gray-600 transition-colors ${
-                        index % 2 === 0 ? "bg-gray-800" : "bg-gray-800/50"
-                      } hover:bg-gray-700/50`}
-                    >
-                      <td className="px-4 py-3 text-white font-medium border-r border-gray-700">
-                        {index + 1}
+                  {formData.lines.map((line, index) => (
+                    <tr key={index}>
+                      <td style={styles.tableTd}>
+                        <select
+                          style={{ ...styles.select, width: "100%" }}
+                          value={line.productId}
+                          onChange={(e) => handleLineChange(index, "productId", e.target.value)}
+                          required
+                        >
+                          <option value="">Select Product</option>
+                          {products.map((product) => (
+                            <option key={product.id} value={product.id}>
+                              {product.name}
+                            </option>
+                          ))}
+                        </select>
                       </td>
-                      <td className="px-4 py-3 text-white border-r border-gray-700">
-                        {line.product?.name || "-"}
+                      <td style={{ ...styles.tableTd, textAlign: "center" }}>
+                        <input
+                          type="number"
+                          style={{ ...styles.input, width: "80px", textAlign: "center" }}
+                          value={line.quantity}
+                          onChange={(e) => handleLineChange(index, "quantity", e.target.value)}
+                          min="1"
+                          required
+                        />
                       </td>
-                      <td className="px-4 py-3 text-cyan-400 border-r border-gray-700">
-                        {line.analyticalAccount?.name || "-"}
+                      <td style={{ ...styles.tableTd, textAlign: "right" }}>
+                        <input
+                          type="number"
+                          style={{ ...styles.input, width: "120px", textAlign: "right" }}
+                          value={line.unitPrice}
+                          onChange={(e) => handleLineChange(index, "unitPrice", e.target.value)}
+                          min="0"
+                          step="0.01"
+                          required
+                        />
                       </td>
-                      <td className="px-4 py-3 text-center text-white font-medium border-r border-gray-700">
-                        {Number(line.quantity)}
+                      <td style={{ ...styles.tableTd, textAlign: "right", fontWeight: "600" }}>
+                        {formatCurrency(calculateLineTotal(line))}
                       </td>
-                      <td className="px-4 py-3 text-right text-white border-r border-gray-700">
-                        {formatCurrency(line.unitPrice)}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <span className="text-yellow-400 font-bold text-lg">
-                          {formatCurrency(line.lineTotal)}
-                        </span>
-                        <div className="text-xs text-gray-400 mt-1">
-                          ( {line.quantity} qty ×{" "}
-                          {formatCurrency(line.unitPrice)} )
-                        </div>
+                      <td style={styles.tableTd}>
+                        <button
+                          type="button"
+                          style={{ ...styles.dangerBtn, padding: "8px", backgroundColor: "#FEE2E2", color: "#EF4444" }}
+                          onClick={() => handleRemoveLine(index)}
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
-                <tfoot>
-                  <tr className="border-t-2 border-gray-500 bg-gradient-to-r from-gray-700 to-gray-600">
-                    <td
-                      colSpan="5"
-                      className="px-4 py-4 text-right font-bold text-white text-lg"
-                    >
-                      Total
-                    </td>
-                    <td className="px-4 py-4 text-right">
-                      <span className="text-yellow-400 font-bold text-xl bg-gray-800 px-4 py-2 rounded-lg border border-yellow-500">
-                        {formatCurrency(selectedInvoice.totalAmount)}
-                      </span>
-                    </td>
-                  </tr>
-                </tfoot>
               </table>
+            </div>
+
+            {/* Totals */}
+            <div style={{ padding: "24px", borderTop: "1px solid #E5E7EB" }}>
+              <div style={styles.totalsSection}>
+                <div style={styles.totalsBox}>
+                  <div style={styles.totalsRow}>
+                    <span style={styles.totalsLabel}>Subtotal</span>
+                    <span style={styles.totalsValue}>{formatCurrency(calculateSubtotal())}</span>
+                  </div>
+                  <div style={styles.totalsRow}>
+                    <span style={styles.totalsLabel}>Tax (GST 18%)</span>
+                    <span style={styles.totalsValue}>{formatCurrency(calculateTax())}</span>
+                  </div>
+                  <div style={styles.totalRow}>
+                    <span style={styles.totalLabel}>TOTAL</span>
+                    <span style={styles.totalValue}>{formatCurrency(calculateTotal())}</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Payment Summary */}
-          {selectedInvoice.status === "CONFIRMED" && (
-            <div className="flex justify-end mx-6 mb-6">
-              <div className="bg-gradient-to-b from-gray-800 to-gray-900 rounded-xl p-5 space-y-3 min-w-[300px] border border-gray-600 shadow-xl">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400">Paid Via Cash</span>
-                  <span className="text-white font-medium">
-                    {formatCurrency(paymentInfo.paidCash)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400">Paid Via Bank</span>
-                  <span className="text-white font-medium">
-                    {formatCurrency(paymentInfo.paidBank)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center border-t-2 border-gray-600 pt-3">
-                  <span className="text-pink-400 font-medium">Amount Due</span>
-                  <span
-                    className={`font-bold text-lg px-3 py-1 rounded-lg ${
-                      paymentInfo.amountDue > 0
-                        ? "text-red-400 bg-red-900/20 border border-red-500"
-                        : "text-green-400 bg-green-900/20 border border-green-500"
-                    }`}
-                  >
-                    {formatCurrency(paymentInfo.amountDue)}
-                  </span>
-                </div>
-                <div className="text-xs text-gray-500 text-right">
-                  ( Total - Payment )
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Actions */}
+          <div style={{ display: "flex", gap: "12px" }}>
+            <button type="submit" style={styles.successBtn}>
+              <Check size={16} />
+              {selectedInvoice ? "Update Invoice" : "Save Draft"}
+            </button>
+            <button type="button" style={styles.secondaryBtn} onClick={() => setView("list")}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 
-          {/* Payment Status Legend */}
-          {selectedInvoice.status === "CONFIRMED" && (
-            <div className="mx-6 mb-6 space-y-2">
-              <div className="flex items-center gap-3">
-                <span className="px-3 py-1 bg-green-600/20 text-green-400 border border-green-500 rounded text-sm">
-                  Paid
-                </span>
-                <span className="text-gray-400 text-sm">If amount due = 0</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="px-3 py-1 bg-yellow-600/20 text-yellow-400 border border-yellow-500 rounded text-sm">
-                  Partial
-                </span>
-                <span className="text-gray-400 text-sm">
-                  If amount due &lt; Invoice Total
-                </span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="px-3 py-1 bg-red-600/20 text-red-400 border border-red-500 rounded text-sm">
-                  Not Paid
-                </span>
-                <span className="text-gray-400 text-sm">
-                  If amount due = Invoice Total
-                </span>
-              </div>
-            </div>
-          )}
+  // Detail View - Professional Invoice
+  const renderDetailView = () => {
+    if (!selectedInvoice) return null;
 
-          {/* Linked SO */}
-          {selectedInvoice.parentTransaction && (
-            <div className="mx-6 mb-6 bg-gradient-to-r from-blue-900/30 to-indigo-900/30 border-2 border-blue-500 rounded-xl p-5 shadow-lg shadow-blue-500/10">
-              <div className="text-blue-400 font-bold text-lg mb-3 flex items-center gap-2">
-                📋 Invoice created from SO
-              </div>
-              <div className="flex justify-between items-center bg-gray-800/50 p-3 rounded-lg">
-                <span className="text-white font-medium">
-                  {selectedInvoice.parentTransaction.transactionNumber}
-                </span>
-                <button
-                  onClick={() =>
-                    navigate(`/sales-orders?id=${selectedInvoice.parentId}`)
-                  }
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all font-medium"
-                >
-                  View SO →
+    const paymentInfo = calculatePaymentInfo();
+    const canPay = selectedInvoice.status === "CONFIRMED" && paymentInfo.amountDue > 0;
+    const subtotal = selectedInvoice.lines.reduce((sum, line) => sum + Number(line.lineTotal || 0), 0);
+    const tax = subtotal * 0.18;
+
+    const getStatusColor = () => {
+      switch (selectedInvoice.status) {
+        case "CONFIRMED":
+          return selectedInvoice.paymentStatus === "PAID"
+            ? { bg: "#D1FAE5", color: "#065F46", text: "PAID" }
+            : selectedInvoice.paymentStatus === "PARTIALLY_PAID"
+            ? { bg: "#FEF3C7", color: "#92400E", text: "PARTIAL" }
+            : { bg: "#FEE2E2", color: "#991B1B", text: "PENDING" };
+        case "DRAFT":
+          return { bg: "#FEF3C7", color: "#92400E", text: "DRAFT" };
+        case "CANCELLED":
+          return { bg: "#FEE2E2", color: "#991B1B", text: "CANCELLED" };
+        default:
+          return { bg: "#F3F4F6", color: "#374151", text: selectedInvoice.status };
+      }
+    };
+
+    const statusInfo = getStatusColor();
+
+    return (
+      <div style={styles.pageContainer}>
+        <div style={styles.contentWrapper}>
+          {/* Invoice Header */}
+          <div style={styles.invoiceHeader}>
+            <div style={styles.invoiceTitle}>
+              <h1 style={styles.invoiceTitleText}>Invoice {selectedInvoice.transactionNumber}</h1>
+              <span
+                style={{
+                  ...styles.statusBadge,
+                  backgroundColor: statusInfo.bg,
+                  color: statusInfo.color,
+                }}
+              >
+                {statusInfo.text}
+              </span>
+            </div>
+            <p style={styles.invoiceSubtitle}>
+              Issued on {formatDate(selectedInvoice.transactionDate)}
+              {selectedInvoice.dueDate && ` • Due on ${formatDate(selectedInvoice.dueDate)}`}
+            </p>
+
+            <div style={styles.headerActions}>
+              <button style={styles.secondaryBtn} onClick={() => setView("list")}>
+                <ArrowLeft size={16} />
+                Back to List
+              </button>
+              <div style={styles.actionButtons}>
+                {selectedInvoice.status === "DRAFT" && (
+                  <>
+                    <button
+                      style={styles.successBtn}
+                      onClick={handleConfirm}
+                    >
+                      <Check size={16} />
+                      Confirm
+                    </button>
+                    <button
+                      style={styles.primaryBtn}
+                      onClick={() => handleEditInvoice(selectedInvoice)}
+                    >
+                      <Edit size={16} />
+                      Edit
+                    </button>
+                  </>
+                )}
+                <button style={styles.pdfButton} onClick={() => alert("PDF download coming soon")}>
+                  <Download size={16} />
+                  PDF
+                </button>
+                <button style={styles.printButton} onClick={() => window.print()}>
+                  <Printer size={16} />
+                  Print
                 </button>
               </div>
-              <div className="text-xs text-gray-500 mt-2">
-                fetch customer name, product, price, qty
+            </div>
+          </div>
+
+          {/* Amount Due Banner */}
+          {canPay && (
+            <div style={styles.amountDueBanner}>
+              <div style={styles.amountDueLeft}>
+                <div style={styles.amountDueIcon}>
+                  <CreditCard size={24} color="white" />
+                </div>
+                <div style={styles.amountDueInfo}>
+                  <p style={styles.amountDueTitle}>Amount Due: {formatCurrency(paymentInfo.amountDue)}</p>
+                  <p style={styles.amountDueSubtitle}>
+                    Please complete the payment
+                    {selectedInvoice.dueDate && ` by ${formatDate(selectedInvoice.dueDate)}`} to avoid a 2% late fee.
+                  </p>
+                </div>
               </div>
+              <button
+                style={styles.payNowBtn}
+                onClick={handlePay}
+                onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#4338CA")}
+                onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#4F46E5")}
+              >
+                Pay Now
+              </button>
             </div>
           )}
 
-          {/* Edit/Delete for Draft */}
+          {/* Invoice Paper */}
+          <div style={styles.invoicePaper}>
+            <div style={styles.invoicePaperContent}>
+              {/* Company Header */}
+              <div style={styles.companyHeader}>
+                <div style={styles.companyInfo}>
+                  <h2 style={styles.companyName}>SHIV FURNITURE</h2>
+                  <p style={styles.companyAddress}>
+                    123 Industrial Area, Phase II
+                    <br />
+                    Mumbai, MH 400001
+                    <br />
+                    GSTIN: 27AAAA0000A1Z5
+                  </p>
+                </div>
+                <div style={styles.invoiceToSection}>
+                  <p style={styles.invoiceToLabel}>INVOICE TO</p>
+                  <h3 style={styles.invoiceToName}>{selectedInvoice.customer?.name || "Customer"}</h3>
+                  <p style={styles.invoiceToAddress}>
+                    {selectedInvoice.customer?.address || "Address not provided"}
+                    <br />
+                    {selectedInvoice.customer?.phone && selectedInvoice.customer.phone}
+                  </p>
+                </div>
+              </div>
+
+              {/* Invoice Meta */}
+              <div style={styles.invoiceMeta}>
+                <div style={styles.metaItem}>
+                  <span style={styles.metaLabel}>Invoice ID</span>
+                  <span style={styles.metaValue}>{selectedInvoice.transactionNumber}</span>
+                </div>
+                <div style={styles.metaItem}>
+                  <span style={styles.metaLabel}>Issue Date</span>
+                  <span style={styles.metaValue}>{formatDate(selectedInvoice.transactionDate)}</span>
+                </div>
+                <div style={styles.metaItem}>
+                  <span style={styles.metaLabel}>Due Date</span>
+                  <span style={styles.metaValue}>{formatDate(selectedInvoice.dueDate)}</span>
+                </div>
+                <div style={styles.metaItem}>
+                  <span style={styles.metaLabel}>P.O. Number</span>
+                  <span style={styles.metaValue}>{selectedInvoice.reference || "-"}</span>
+                </div>
+              </div>
+
+              {/* Line Items Table */}
+              <table style={styles.lineItemsTable}>
+                <thead>
+                  <tr>
+                    <th style={styles.tableTh}>Description</th>
+                    <th style={{ ...styles.tableTh, textAlign: "center", width: "80px" }}>Qty</th>
+                    <th style={{ ...styles.tableTh, textAlign: "right", width: "120px" }}>Price</th>
+                    <th style={{ ...styles.tableTh, textAlign: "right", width: "120px" }}>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedInvoice.lines.map((line, index) => (
+                    <tr key={line.id || index}>
+                      <td style={styles.tableTd}>
+                        <div style={styles.productName}>{line.product?.name || "Product"}</div>
+                        <div style={styles.productDescription}>{line.product?.description || ""}</div>
+                      </td>
+                      <td style={{ ...styles.tableTd, textAlign: "center" }}>{Number(line.quantity)}</td>
+                      <td style={{ ...styles.tableTd, textAlign: "right" }}>{formatCurrency(line.unitPrice)}</td>
+                      <td style={{ ...styles.tableTd, textAlign: "right", fontWeight: "500" }}>
+                        {formatCurrency(line.lineTotal)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {/* Totals Section */}
+              <div style={styles.totalsSection}>
+                <div style={styles.totalsBox}>
+                  <div style={styles.totalsRow}>
+                    <span style={styles.totalsLabel}>Subtotal</span>
+                    <span style={styles.totalsValue}>{formatCurrency(subtotal)}</span>
+                  </div>
+                  <div style={styles.totalsRow}>
+                    <span style={styles.totalsLabel}>Tax (GST 18%)</span>
+                    <span style={styles.totalsValue}>{formatCurrency(tax)}</span>
+                  </div>
+                  {paymentInfo.paidAmount > 0 && (
+                    <div style={styles.totalsRow}>
+                      <span style={styles.totalsLabel}>Discount (Loyalty)</span>
+                      <span style={styles.discountValue}>-{formatCurrency(paymentInfo.paidAmount)}</span>
+                    </div>
+                  )}
+                  <div style={styles.totalRow}>
+                    <span style={styles.totalLabel}>TOTAL</span>
+                    <span style={styles.totalValue}>{formatCurrency(selectedInvoice.totalAmount)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Terms & Conditions */}
+              <div style={styles.termsSection}>
+                <h4 style={styles.termsTitle}>TERMS & CONDITIONS</h4>
+                <p style={styles.termsText}>
+                  1. Goods once sold will not be taken back or exchanged. 2. 50% advance for custom furniture orders. 3. Warranty
+                  covers manufacturing defects only for a period of 12 months. 4. Please mention the Invoice ID in all payment
+                  communications.
+                </p>
+              </div>
+            </div>
+
+            {/* Invoice Footer */}
+            <div style={styles.invoiceFooter}>
+              <div style={styles.footerLinks}>
+                <span style={styles.footerLink}>
+                  <Globe size={14} />
+                  www.shivfurniture.com
+                </span>
+                <span style={styles.footerLink}>
+                  <Mail size={14} />
+                  billing@shivfurniture.com
+                </span>
+              </div>
+              <span style={styles.thankYouText}>Thank you for choosing Shiv Furniture!</span>
+            </div>
+          </div>
+
+          {/* Delete button for Draft */}
           {selectedInvoice.status === "DRAFT" && (
-            <div className="flex gap-4 p-6 border-t border-gray-700">
+            <div style={{ marginTop: "24px", display: "flex", gap: "12px" }}>
               <button
-                onClick={() => handleEditInvoice(selectedInvoice)}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-500/20 transition-all"
-              >
-                ✏️ Edit Invoice
-              </button>
-              <button
+                style={styles.dangerBtn}
                 onClick={handleDelete}
-                className="px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg font-medium hover:from-red-700 hover:to-red-800 shadow-lg shadow-red-500/20 transition-all"
               >
-                🗑️ Delete Invoice
+                <Trash2 size={16} />
+                Delete Invoice
               </button>
             </div>
           )}
+
+          {/* Footer */}
+          <div style={styles.footer}>
+            <span style={styles.footerText}>© 2023 Shiv Furniture Portal. All rights reserved.</span>
+            <div style={styles.footerLinksBottom}>
+              <span style={styles.footerLinkBottom}>Privacy Policy</span>
+              <span style={styles.footerLinkBottom}>Terms of Service</span>
+              <span style={styles.footerLinkBottom}>Support</span>
+            </div>
+          </div>
         </div>
       </div>
     );
   };
 
   return (
-    <div className="min-h-screen bg-black p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Page Title */}
-        <h1 className="text-3xl font-light text-white text-center mb-8 tracking-wide">
-          Customer Invoice
-        </h1>
-
-        {view === "list" && renderListView()}
-        {view === "form" && renderFormView()}
-        {view === "detail" && renderDetailView()}
-      </div>
-    </div>
+    <>
+      {view === "list" && renderListView()}
+      {view === "form" && renderFormView()}
+      {view === "detail" && renderDetailView()}
+    </>
   );
 }
 
