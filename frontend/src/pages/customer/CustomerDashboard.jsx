@@ -55,7 +55,9 @@ export default function CustomerDashboard() {
         type: "CUSTOMER_INVOICE",
         contactId: customer.id,
       });
-      const confirmedInvoices = response.data.filter((inv) => inv.status === "CONFIRMED");
+      const confirmedInvoices = response.data.filter(
+        (inv) => inv.status === "CONFIRMED",
+      );
       setInvoices(confirmedInvoices);
 
       // Calculate stats
@@ -65,10 +67,11 @@ export default function CustomerDashboard() {
       let nextDue = null;
 
       confirmedInvoices.forEach((inv) => {
-        const amountDue = Number(inv.totalAmount || 0) - Number(inv.paidAmount || 0);
+        const amountDue =
+          Number(inv.totalAmount || 0) - Number(inv.paidAmount || 0);
         if (amountDue > 0) {
           totalOutstanding += amountDue;
-          
+
           if (inv.dueDate) {
             const dueDate = new Date(inv.dueDate);
             if (dueDate < now) {
@@ -124,7 +127,9 @@ export default function CustomerDashboard() {
 
   const isOverdue = (invoice) => {
     if (!invoice.dueDate) return false;
-    return new Date(invoice.dueDate) < new Date() && calculateAmountDue(invoice) > 0;
+    return (
+      new Date(invoice.dueDate) < new Date() && calculateAmountDue(invoice) > 0
+    );
   };
 
   // Razorpay Payment Handler
@@ -223,7 +228,7 @@ export default function CustomerDashboard() {
   const totalPages = Math.ceil(invoices.length / itemsPerPage);
   const paginatedInvoices = invoices.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
 
   // Styles
@@ -615,7 +620,14 @@ export default function CustomerDashboard() {
 
   if (loading) {
     return (
-      <div style={{ ...styles.pageContainer, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div
+        style={{
+          ...styles.pageContainer,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
       </div>
     );
@@ -628,14 +640,17 @@ export default function CustomerDashboard() {
         <div style={styles.headerSection}>
           <div style={styles.titleSection}>
             <h1 style={styles.pageTitle}>Customer Portal Dashboard</h1>
-            <p style={styles.pageSubtitle}>Manage your furniture purchase invoices, bills, and account statements.</p>
+            <p style={styles.pageSubtitle}>
+              Manage your furniture purchase invoices, bills, and account
+              statements.
+            </p>
           </div>
           <div style={styles.headerButtons}>
             <button style={styles.statementBtn}>
               <Download size={16} />
               Statement
             </button>
-            <button 
+            <button
               style={styles.newRequestBtn}
               onClick={() => navigate("/customer/invoices")}
             >
@@ -655,7 +670,9 @@ export default function CustomerDashboard() {
                 -2%
               </span>
             </div>
-            <div style={styles.statSubtext}>Current balance across all projects</div>
+            <div style={styles.statSubtext}>
+              Current balance across all projects
+            </div>
             <div style={{ ...styles.statIcon, ...styles.statIconBlue }}>
               <Receipt size={20} />
             </div>
@@ -679,7 +696,9 @@ export default function CustomerDashboard() {
           <div style={styles.statCard}>
             <div style={styles.statLabel}>Next Payment Due</div>
             <div style={styles.statValue}>
-              {stats.nextPaymentDue ? formatDate(stats.nextPaymentDue) : "No pending"}
+              {stats.nextPaymentDue
+                ? formatDate(stats.nextPaymentDue)
+                : "No pending"}
             </div>
             <div style={styles.statSubtext}>Automatic payment scheduled</div>
             <div style={{ ...styles.statIcon, ...styles.statIconBlue }}>
@@ -742,7 +761,9 @@ export default function CustomerDashboard() {
                 <th style={styles.tableHeader}>Due Date</th>
                 <th style={styles.tableHeader}>Amount Due</th>
                 <th style={styles.tableHeader}>Status</th>
-                <th style={{ ...styles.tableHeader, textAlign: "right" }}>Action</th>
+                <th style={{ ...styles.tableHeader, textAlign: "right" }}>
+                  Action
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -756,11 +777,20 @@ export default function CustomerDashboard() {
                     <td style={{ ...styles.tableCell, ...styles.invoiceNo }}>
                       #{invoice.transactionNumber}
                     </td>
-                    <td style={styles.tableCell}>{formatDate(invoice.transactionDate)}</td>
-                    <td style={{ ...styles.tableCell, ...(overdue ? styles.dueDateOverdue : {}) }}>
+                    <td style={styles.tableCell}>
+                      {formatDate(invoice.transactionDate)}
+                    </td>
+                    <td
+                      style={{
+                        ...styles.tableCell,
+                        ...(overdue ? styles.dueDateOverdue : {}),
+                      }}
+                    >
                       {formatDate(invoice.dueDate)}
                     </td>
-                    <td style={styles.tableCell}>{formatCurrency(amountDue)}</td>
+                    <td style={styles.tableCell}>
+                      {formatCurrency(amountDue)}
+                    </td>
                     <td style={styles.tableCell}>
                       <span
                         style={{
@@ -768,11 +798,15 @@ export default function CustomerDashboard() {
                           ...(status === "PAID"
                             ? styles.statusPaid
                             : status === "PARTIAL"
-                            ? styles.statusPartial
-                            : styles.statusNotPaid),
+                              ? styles.statusPartial
+                              : styles.statusNotPaid),
                         }}
                       >
-                        {status === "PAID" ? "Paid" : status === "PARTIAL" ? "Partial" : "Not Paid"}
+                        {status === "PAID"
+                          ? "Paid"
+                          : status === "PARTIAL"
+                            ? "Partial"
+                            : "Not Paid"}
                       </span>
                     </td>
                     <td style={{ ...styles.tableCell, textAlign: "right" }}>
@@ -789,7 +823,9 @@ export default function CustomerDashboard() {
                           onClick={() => handlePayNow(invoice)}
                           disabled={payingInvoiceId === invoice.id}
                         >
-                          {payingInvoiceId === invoice.id ? "Processing..." : "Pay Now"}
+                          {payingInvoiceId === invoice.id
+                            ? "Processing..."
+                            : "Pay Now"}
                         </button>
                       )}
                     </td>
@@ -798,7 +834,15 @@ export default function CustomerDashboard() {
               })}
               {paginatedInvoices.length === 0 && (
                 <tr>
-                  <td colSpan={6} style={{ ...styles.tableCell, textAlign: "center", color: "#64748B", padding: "40px" }}>
+                  <td
+                    colSpan={6}
+                    style={{
+                      ...styles.tableCell,
+                      textAlign: "center",
+                      color: "#64748B",
+                      padding: "40px",
+                    }}
+                  >
                     No invoices found
                   </td>
                 </tr>
@@ -821,25 +865,33 @@ export default function CustomerDashboard() {
                 Previous
               </button>
               <div style={styles.pageNumbers}>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <button
-                    key={page}
-                    style={{
-                      ...styles.pageNumber,
-                      ...(currentPage === page ? styles.pageNumberActive : {}),
-                    }}
-                    onClick={() => setCurrentPage(page)}
-                  >
-                    {page}
-                  </button>
-                ))}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <button
+                      key={page}
+                      style={{
+                        ...styles.pageNumber,
+                        ...(currentPage === page
+                          ? styles.pageNumberActive
+                          : {}),
+                      }}
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </button>
+                  ),
+                )}
               </div>
               <button
                 style={{
                   ...styles.paginationBtn,
-                  ...(currentPage === totalPages ? styles.paginationBtnDisabled : {}),
+                  ...(currentPage === totalPages
+                    ? styles.paginationBtnDisabled
+                    : {}),
                 }}
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
                 disabled={currentPage === totalPages}
               >
                 Next
@@ -858,7 +910,8 @@ export default function CustomerDashboard() {
             <div>
               <div style={styles.helpTitle}>Need help with an invoice?</div>
               <div style={styles.helpText}>
-                If you notice any discrepancies in your billing, please contact our accounts department directly.
+                If you notice any discrepancies in your billing, please contact
+                our accounts department directly.
               </div>
               <a style={styles.helpLink}>Contact Support →</a>
             </div>
@@ -871,7 +924,8 @@ export default function CustomerDashboard() {
             <div>
               <div style={styles.helpTitle}>Payment Methods</div>
               <div style={styles.helpText}>
-                We accept all major credit cards, bank transfers, and corporate purchasing cards.
+                We accept all major credit cards, bank transfers, and corporate
+                purchasing cards.
               </div>
               <a style={styles.helpLink}>Manage Wallet →</a>
             </div>
@@ -881,8 +935,8 @@ export default function CustomerDashboard() {
         {/* Footer */}
         <div style={styles.footer}>
           <div style={styles.footerLeft}>
-            <span>🏠</span>
-            © {new Date().getFullYear()} Shiv Furniture Portal. All rights reserved.
+            <span>🏠</span>© {new Date().getFullYear()} Shiv Furniture Portal.
+            All rights reserved.
           </div>
           <div style={styles.footerLinks}>
             <a style={styles.footerLink}>Privacy Policy</a>
