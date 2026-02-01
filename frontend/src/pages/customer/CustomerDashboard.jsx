@@ -162,7 +162,7 @@ export default function CustomerDashboard() {
       const { razorpayApi } = await import("../../services/api");
       const orderResponse = await razorpayApi.createOrder({
         amount: amountDue,
-        transactionId: invoice.id,
+        invoiceId: invoice.id,
         currency: "INR",
         notes: {
           invoiceNumber: invoice.transactionNumber,
@@ -186,8 +186,9 @@ export default function CustomerDashboard() {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
-              transactionId: invoice.id,
-              contactId: customer.id,
+              invoiceId: invoice.id,
+              amount: amountDue,
+              customerId: customer.id,
             });
             alert("Payment successful!");
             fetchData();
