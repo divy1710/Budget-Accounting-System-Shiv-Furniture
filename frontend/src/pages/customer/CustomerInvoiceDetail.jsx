@@ -155,28 +155,19 @@ export default function CustomerInvoiceDetail() {
           </Link>
           <div className="flex items-center gap-2">
             <button
+              onClick={() => generateInvoicePDF(invoice)}
+              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+            >
+              <Download size={18} />
+              PDF
+            </button>
+            <button
               onClick={handlePrint}
               className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
             >
               <Printer size={18} />
               Print
             </button>
-            <button
-              onClick={() => generateInvoicePDF(invoice)}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-            >
-              <Download size={18} />
-              Download PDF
-            </button>
-            {invoice.paymentStatus !== "PAID" && (
-              <Link
-                to={`/customer/payments?invoice=${invoice.id}`}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-              >
-                <CreditCard size={18} />
-                Pay Now
-              </Link>
-            )}
           </div>
         </div>
 

@@ -1561,40 +1561,6 @@ function CustomerInvoices() {
             </div>
           </div>
 
-          {/* Amount Due Banner */}
-          {canPay && (
-            <div style={styles.amountDueBanner}>
-              <div style={styles.amountDueLeft}>
-                <div style={styles.amountDueIcon}>
-                  <CreditCard size={24} color="white" />
-                </div>
-                <div style={styles.amountDueInfo}>
-                  <p style={styles.amountDueTitle}>
-                    Amount Due: {formatCurrency(paymentInfo.amountDue)}
-                  </p>
-                  <p style={styles.amountDueSubtitle}>
-                    Please complete the payment
-                    {selectedInvoice.dueDate &&
-                      ` by ${formatDate(selectedInvoice.dueDate)}`}{" "}
-                    to avoid a 2% late fee.
-                  </p>
-                </div>
-              </div>
-              <button
-                style={styles.payNowBtn}
-                onClick={handlePay}
-                onMouseOver={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#4338CA")
-                }
-                onMouseOut={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#4F46E5")
-                }
-              >
-                Pay Now
-              </button>
-            </div>
-          )}
-
           {/* Invoice Paper */}
           <div style={styles.invoicePaper}>
             <div style={styles.invoicePaperContent}>

@@ -651,7 +651,7 @@ export default function CustomerDashboard() {
     return (
       <div
         style={{
-          ...styles.pageContainer,
+          ...styles.container,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -662,315 +662,380 @@ export default function CustomerDashboard() {
     );
   }
 
+  // Calculate payment percentage
+  const totalAmount = stats.totalOutstanding + stats.totalPaid;
+  const paymentPercentage =
+    totalAmount > 0 ? Math.round((stats.totalPaid / totalAmount) * 100) : 0;
+
   return (
-    <div style={styles.pageContainer}>
-      <div style={styles.contentWrapper}>
-        {/* Header Section */}
-        <div style={styles.headerSection}>
-          <div style={styles.titleSection}>
-            <h1 style={styles.pageTitle}>Customer Portal Dashboard</h1>
-            <p style={styles.pageSubtitle}>
-              Manage your furniture purchase invoices, bills, and account
-              statements.
-            </p>
+    <div style={styles.container}>
+      {/* Header */}
+      <div style={styles.header}>
+        <div style={styles.titleSection}>
+          <h1 style={styles.title}>Customer Dashboard</h1>
+          <p style={styles.subtitle}>
+            Welcome back, {customer?.name || "Customer"}! Here's your account
+            overview.
+          </p>
+        </div>
+        <div style={styles.headerButtons}>
+          <button
+            style={styles.headerBtn}
+            onClick={() => navigate("/customer/invoices")}
+          >
+            <Calendar size={16} />
+            View All Invoices
+          </button>
+          <button style={styles.logoutBtn} onClick={handleLogout}>
+            <LogOut size={16} />
+            Logout
+          </button>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div style={styles.statsGrid}>
+        {/* Total Outstanding */}
+        <div style={styles.statCard}>
+          <div style={styles.statHeader}>
+            <div
+              style={{
+                ...styles.statIconWrapper,
+                backgroundColor: "#EEF2FF",
+              }}
+            >
+              <Receipt size={24} color="#4F46E5" />
+            </div>
+            <div
+              style={{
+                ...styles.statTrend,
+                ...styles.statTrendNegative,
+              }}
+            >
+              <TrendingDown size={16} />
+              -2%
+            </div>
           </div>
-          <div style={styles.headerButtons}>
-            <button
-              style={styles.newRequestBtn}
+          <div style={styles.statLabel}>Total Outstanding</div>
+          <div style={styles.statValue}>
+            {formatCurrency(stats.totalOutstanding)}
+          </div>
+        </div>
+
+        {/* Payment Progress */}
+        <div style={styles.statCard}>
+          <div style={styles.statHeader}>
+            <div
+              style={{
+                ...styles.statIconWrapper,
+                backgroundColor: "#DBEAFE",
+              }}
+            >
+              <CreditCard size={24} color="#3B82F6" />
+            </div>
+            <div
+              style={{
+                ...styles.statTrend,
+                ...styles.statTrendPositive,
+              }}
+            >
+              <TrendingUp size={16} />+{paymentPercentage > 50 ? "5" : "2"}%
+            </div>
+          </div>
+          <div style={styles.statLabel}>Payment Progress</div>
+          <div style={styles.progressContainer}>
+            <div style={styles.statValue}>{paymentPercentage}%</div>
+            <div style={styles.progressBar}>
+              <div
+                style={{
+                  ...styles.progressFill,
+                  width: `${paymentPercentage}%`,
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Total Paid */}
+        <div style={styles.statCard}>
+          <div style={styles.statHeader}>
+            <div
+              style={{
+                ...styles.statIconWrapper,
+                backgroundColor: "#D1FAE5",
+              }}
+            >
+              <TrendingUp size={24} color="#10B981" />
+            </div>
+            <div
+              style={{
+                ...styles.statTrend,
+                ...styles.statTrendPositive,
+              }}
+            >
+              <TrendingUp size={16} />
+              +18%
+            </div>
+          </div>
+          <div style={styles.statLabel}>Total Paid</div>
+          <div style={styles.statValue}>{formatCurrency(stats.totalPaid)}</div>
+        </div>
+
+        {/* Overdue Amount */}
+        <div style={styles.statCard}>
+          <div style={styles.statHeader}>
+            <div
+              style={{
+                ...styles.statIconWrapper,
+                backgroundColor: "#FEE2E2",
+              }}
+            >
+              <AlertCircle size={24} color="#EF4444" />
+            </div>
+            <div
+              style={{
+                ...styles.statTrend,
+                ...styles.statTrendNegative,
+              }}
+            >
+              <TrendingDown size={16} />
+              -5%
+            </div>
+          </div>
+          <div style={styles.statLabel}>Overdue Amount</div>
+          <div style={{ ...styles.statValue, color: "#EF4444" }}>
+            {formatCurrency(stats.overdueAmount)}
+          </div>
+        </div>
+      </div>
+
+      {/* Three Column Layout */}
+      <div style={styles.columnsGrid}>
+        {/* Recent Invoices */}
+        <div style={styles.column}>
+          <div style={styles.columnHeader}>
+            <div style={styles.columnTitle}>
+              <div
+                style={{
+                  ...styles.columnTitleIcon,
+                  backgroundColor: "#FEF3C7",
+                }}
+              >
+                <FileText size={18} color="#D97706" />
+              </div>
+              Recent Invoices
+            </div>
+            <span
+              style={styles.viewAllLink}
               onClick={() => navigate("/customer/invoices")}
             >
-              + New Request
-            </button>
-            <button style={styles.logoutBtn} onClick={handleLogout}>
-              <LogOut size={16} />
-              Logout
-            </button>
+              View All
+            </span>
           </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div style={styles.statsGrid}>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Total Outstanding</div>
-            <div style={styles.statValue}>
-              {formatCurrency(stats.totalOutstanding)}
-              <span style={styles.statTrend}>
-                <TrendingDown size={14} />
-                -2%
-              </span>
-            </div>
-            <div style={styles.statSubtext}>
-              Current balance across all projects
-            </div>
-            <div style={{ ...styles.statIcon, ...styles.statIconBlue }}>
-              <Receipt size={20} />
-            </div>
+          <div style={styles.tableHeader}>
+            <span style={styles.tableHeaderCell}>No.</span>
+            <span style={styles.tableHeaderCell}>Amount</span>
+            <span style={styles.tableHeaderCell}>Status</span>
+            <span style={styles.tableHeaderCell}></span>
           </div>
+          {recentInvoices.length > 0 ? (
+            recentInvoices.map((invoice) => {
+              const status = getPaymentStatus(invoice);
+              const overdue = isOverdue(invoice);
+              const amountDue = calculateAmountDue(invoice);
 
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Overdue Amount</div>
-            <div style={{ ...styles.statValue, color: "#EF4444" }}>
-              {formatCurrency(stats.overdueAmount)}
-              <span style={styles.statTrendNegative}>
-                <TrendingDown size={14} />
-                -5%
-              </span>
-            </div>
-            <div style={styles.statSubtext}>Requires immediate attention</div>
-            <div style={{ ...styles.statIcon, ...styles.statIconRed }}>
-              <AlertCircle size={20} />
-            </div>
-          </div>
-
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Next Payment Due</div>
-            <div style={styles.statValue}>
-              {stats.nextPaymentDue
-                ? formatDate(stats.nextPaymentDue)
-                : "No pending"}
-            </div>
-            <div style={styles.statSubtext}>Automatic payment scheduled</div>
-            <div style={{ ...styles.statIcon, ...styles.statIconBlue }}>
-              <Calendar size={20} />
-            </div>
-          </div>
-        </div>
-
-        {/* Tabs & Table Section */}
-        <div style={styles.tabsContainer}>
-          {/* Tabs Header */}
-          <div style={styles.tabsHeader}>
-            <button
-              style={{
-                ...styles.tab,
-                ...(activeTab === "invoices" ? styles.tabActive : {}),
-              }}
-              onClick={() => setActiveTab("invoices")}
-            >
-              <FileText size={16} />
-              Invoices
-              <span style={styles.tabBadge}>{invoices.length}</span>
-            </button>
-            <button
-              style={{
-                ...styles.tab,
-                ...(activeTab === "bills" ? styles.tabActive : {}),
-              }}
-              onClick={() => setActiveTab("bills")}
-            >
-              <Receipt size={16} />
-              Bills
-              <span style={styles.tabBadge}>{bills.length}</span>
-            </button>
-          </div>
-
-          {/* Filter Bar */}
-          <div style={styles.filterBar}>
-            <div style={styles.filterButtons}>
-              <button style={styles.filterBtn}>
-                <Filter size={14} />
-                Filter
-              </button>
-              <button style={styles.filterBtn}>
-                <ArrowUpDown size={14} />
-                Sort
-              </button>
-            </div>
-            <div style={styles.showingText}>
-              Showing {paginatedInvoices.length} of {invoices.length} invoices
-            </div>
-          </div>
-
-          {/* Table */}
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.tableHeader}>Invoice No</th>
-                <th style={styles.tableHeader}>Date</th>
-                <th style={styles.tableHeader}>Due Date</th>
-                <th style={styles.tableHeader}>Amount Due</th>
-                <th style={styles.tableHeader}>Status</th>
-                <th style={{ ...styles.tableHeader, textAlign: "right" }}>
-                  Action
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedInvoices.map((invoice) => {
-                const status = getPaymentStatus(invoice);
-                const amountDue = calculateAmountDue(invoice);
-                const overdue = isOverdue(invoice);
-
-                return (
-                  <tr key={invoice.id} style={styles.tableRow}>
-                    <td style={{ ...styles.tableCell, ...styles.invoiceNo }}>
-                      #{invoice.transactionNumber}
-                    </td>
-                    <td style={styles.tableCell}>
-                      {formatDate(invoice.transactionDate)}
-                    </td>
-                    <td
-                      style={{
-                        ...styles.tableCell,
-                        ...(overdue ? styles.dueDateOverdue : {}),
-                      }}
-                    >
-                      {formatDate(invoice.dueDate)}
-                    </td>
-                    <td style={styles.tableCell}>
-                      {formatCurrency(amountDue)}
-                    </td>
-                    <td style={styles.tableCell}>
-                      <span
-                        style={{
-                          ...styles.statusBadge,
-                          ...(status === "PAID"
-                            ? styles.statusPaid
-                            : status === "PARTIAL"
-                              ? styles.statusPartial
-                              : styles.statusNotPaid),
-                        }}
-                      >
-                        {status === "PAID"
-                          ? "Paid"
-                          : status === "PARTIAL"
-                            ? "Partial"
-                            : "Not Paid"}
-                      </span>
-                    </td>
-                    <td style={{ ...styles.tableCell, textAlign: "right" }}>
-                      {status === "PAID" ? (
-                        <button
-                          style={{ ...styles.actionBtn, ...styles.viewPdfBtn }}
-                          onClick={() => generateInvoicePDF(invoice)}
-                        >
-                          View PDF
-                        </button>
-                      ) : (
-                        <button
-                          style={{ ...styles.actionBtn, ...styles.payNowBtn }}
-                          onClick={() => handlePayNow(invoice)}
-                          disabled={payingInvoiceId === invoice.id}
-                        >
-                          {payingInvoiceId === invoice.id
-                            ? "Processing..."
-                            : "Pay Now"}
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-              {paginatedInvoices.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={6}
-                    style={{
-                      ...styles.tableCell,
-                      textAlign: "center",
-                      color: "#64748B",
-                      padding: "40px",
-                    }}
+              return (
+                <div key={invoice.id} style={styles.tableRow}>
+                  <span
+                    style={{ ...styles.tableCell, ...styles.tableCellBold }}
                   >
-                    No invoices found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div style={styles.pagination}>
-              <button
-                style={{
-                  ...styles.paginationBtn,
-                  ...(currentPage === 1 ? styles.paginationBtnDisabled : {}),
-                }}
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft size={16} />
-                Previous
-              </button>
-              <div style={styles.pageNumbers}>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                  (page) => (
-                    <button
-                      key={page}
+                    {invoice.transactionNumber?.split("-").slice(-1)[0] ||
+                      invoice.transactionNumber}
+                  </span>
+                  <span style={styles.tableCell}>
+                    {formatCurrency(amountDue)}
+                  </span>
+                  <span style={styles.tableCell}>
+                    <span
                       style={{
-                        ...styles.pageNumber,
-                        ...(currentPage === page
-                          ? styles.pageNumberActive
-                          : {}),
+                        ...styles.statusBadge,
+                        ...(status === "Paid"
+                          ? styles.statusPaid
+                          : overdue
+                            ? styles.statusOverdue
+                            : styles.statusPending),
                       }}
-                      onClick={() => setCurrentPage(page)}
                     >
-                      {page}
-                    </button>
-                  ),
-                )}
-              </div>
-              <button
-                style={{
-                  ...styles.paginationBtn,
-                  ...(currentPage === totalPages
-                    ? styles.paginationBtnDisabled
-                    : {}),
-                }}
-                onClick={() =>
-                  setCurrentPage((p) => Math.min(totalPages, p + 1))
-                }
-                disabled={currentPage === totalPages}
-              >
-                Next
-                <ChevronRight size={16} />
-              </button>
-            </div>
+                      {overdue ? "Overdue" : status}
+                    </span>
+                  </span>
+                  <span style={styles.tableCell}>
+                    {status !== "Paid" && (
+                      <button
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: "#4F46E5",
+                          cursor: "pointer",
+                          fontSize: "13px",
+                          fontWeight: "600",
+                        }}
+                        onClick={() => handlePayNow(invoice)}
+                        disabled={payingInvoiceId === invoice.id}
+                      >
+                        {payingInvoiceId === invoice.id ? "..." : "Pay"}
+                      </button>
+                    )}
+                  </span>
+                </div>
+              );
+            })
+          ) : (
+            <div style={styles.emptyState}>No invoices found</div>
           )}
         </div>
 
-        {/* Help Section */}
-        <div style={styles.helpSection}>
-          <div style={{ ...styles.helpCard, ...styles.helpCardBlue }}>
-            <div style={styles.helpIcon}>
-              <HelpCircle size={20} />
-            </div>
-            <div>
-              <div style={styles.helpTitle}>Need help with an invoice?</div>
-              <div style={styles.helpText}>
-                If you notice any discrepancies in your billing, please contact
-                our accounts department directly.
+        {/* Payment History */}
+        <div style={styles.column}>
+          <div style={styles.columnHeader}>
+            <div style={styles.columnTitle}>
+              <div
+                style={{
+                  ...styles.columnTitleIcon,
+                  backgroundColor: "#DBEAFE",
+                }}
+              >
+                <CreditCard size={18} color="#3B82F6" />
               </div>
-              <a style={styles.helpLink}>Contact Support →</a>
+              Payment History
             </div>
+            <span style={styles.viewAllLink}>View All</span>
           </div>
-
-          <div style={styles.helpCard}>
-            <div style={{ ...styles.helpIcon, ...styles.helpIconGray }}>
-              <CreditCard size={20} />
-            </div>
-            <div>
-              <div style={styles.helpTitle}>Payment Methods</div>
-              <div style={styles.helpText}>
-                We accept all major credit cards, bank transfers, and corporate
-                purchasing cards.
-              </div>
-              <a style={styles.helpLink}>Manage Wallet →</a>
-            </div>
+          <div style={styles.tableHeader}>
+            <span style={styles.tableHeaderCell}>Invoice</span>
+            <span style={styles.tableHeaderCell}>Amount</span>
+            <span style={styles.tableHeaderCell}>Date</span>
+            <span style={styles.tableHeaderCell}></span>
           </div>
+          {invoices.filter((inv) => Number(inv.paidAmount || 0) > 0).length >
+          0 ? (
+            invoices
+              .filter((inv) => Number(inv.paidAmount || 0) > 0)
+              .slice(0, 5)
+              .map((invoice) => (
+                <div key={invoice.id} style={styles.tableRow}>
+                  <span
+                    style={{ ...styles.tableCell, ...styles.tableCellBold }}
+                  >
+                    {invoice.transactionNumber?.split("-").slice(-1)[0] ||
+                      invoice.transactionNumber}
+                  </span>
+                  <span style={styles.tableCell}>
+                    {formatCurrency(invoice.paidAmount)}
+                  </span>
+                  <span style={styles.tableCell}>
+                    {formatDate(invoice.updatedAt)}
+                  </span>
+                  <span style={styles.tableCell}>
+                    <span
+                      style={{ ...styles.statusBadge, ...styles.statusPaid }}
+                    >
+                      Paid
+                    </span>
+                  </span>
+                </div>
+              ))
+          ) : (
+            <div style={styles.emptyState}>No payments yet</div>
+          )}
         </div>
 
-        {/* Footer */}
-        <div style={styles.footer}>
-          <div style={styles.footerLeft}>
-            <span>🏠</span>© {new Date().getFullYear()} Shiv Furniture Portal.
-            All rights reserved.
+        {/* Pending Actions */}
+        <div style={styles.column}>
+          <div style={styles.columnHeader}>
+            <div style={styles.columnTitle}>
+              <div
+                style={{
+                  ...styles.columnTitleIcon,
+                  backgroundColor: "#FEE2E2",
+                }}
+              >
+                <AlertTriangle size={18} color="#DC2626" />
+              </div>
+              Pending Actions
+            </div>
+            {overdueInvoices.length > 0 && (
+              <span style={styles.criticalBadge}>
+                {overdueInvoices.length} Critical
+              </span>
+            )}
           </div>
-          <div style={styles.footerLinks}>
-            <a style={styles.footerLink}>Privacy Policy</a>
-            <a style={styles.footerLink}>Terms of Service</a>
-            <a style={styles.footerLink}>Contact Us</a>
+          <div style={styles.alertsContainer}>
+            {/* Overdue Invoices Alert */}
+            {overdueInvoices.length > 0 && (
+              <div style={{ ...styles.alertCard, ...styles.alertCardRed }}>
+                <div style={styles.alertHeader}>
+                  <div style={{ ...styles.alertIcon, ...styles.alertIconRed }}>
+                    <AlertCircle size={14} />
+                  </div>
+                  <span style={styles.alertTitle}>
+                    {overdueInvoices.length} Overdue Invoice
+                    {overdueInvoices.length > 1 ? "s" : ""}
+                  </span>
+                </div>
+                <p style={styles.alertText}>
+                  Total overdue amount: {formatCurrency(stats.overdueAmount)}.
+                  Immediate payment required.
+                </p>
+                <span
+                  style={styles.alertLink}
+                  onClick={() => navigate("/customer/invoices")}
+                >
+                  Pay Now
+                </span>
+              </div>
+            )}
+
+            {/* Pending Invoices Alert */}
+            {stats.pendingInvoices > 0 && (
+              <div style={{ ...styles.alertCard, ...styles.alertCardYellow }}>
+                <div style={styles.alertHeader}>
+                  <div
+                    style={{ ...styles.alertIcon, ...styles.alertIconYellow }}
+                  >
+                    <Clock size={14} />
+                  </div>
+                  <span style={styles.alertTitle}>Payment Reminder</span>
+                </div>
+                <p style={styles.alertText}>
+                  You have {stats.pendingInvoices} pending invoice
+                  {stats.pendingInvoices > 1 ? "s" : ""} due soon.
+                </p>
+                <span
+                  style={{ ...styles.alertLink, ...styles.alertLinkYellow }}
+                  onClick={() => navigate("/customer/invoices")}
+                >
+                  View Invoices
+                </span>
+              </div>
+            )}
+
+            {/* Contact Support */}
+            <div style={{ ...styles.alertCard, ...styles.alertCardBlue }}>
+              <div style={styles.alertHeader}>
+                <div style={{ ...styles.alertIcon, ...styles.alertIconBlue }}>
+                  <Send size={14} />
+                </div>
+                <span style={styles.alertTitle}>Need Help?</span>
+              </div>
+              <p style={styles.alertText}>
+                Contact our support team for any billing inquiries or payment
+                assistance.
+              </p>
+              <span style={{ ...styles.alertLink, ...styles.alertLinkBlue }}>
+                Contact Support
+              </span>
+            </div>
           </div>
         </div>
       </div>

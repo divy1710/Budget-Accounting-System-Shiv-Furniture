@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import MainLayout from "./components/layout/MainLayout";
 import LandingPage from "./pages/LandingPage";
 import Dashboard from "./pages/Dashboard";
+import FinancialDashboard from "./pages/FinancialDashboard";
 import Contacts from "./pages/Contacts";
 import Products from "./pages/Products";
 import AnalyticalAccounts from "./pages/AnalyticalAccounts";
@@ -44,7 +45,8 @@ function App() {
 
       {/* Admin Portal */}
       <Route path="/" element={<MainLayout />}>
-        <Route index element={<Dashboard />} />
+        <Route index element={<FinancialDashboard />} />
+        <Route path="dashboard" element={<Dashboard />} />
 
         {/* Master Data */}
         <Route path="contacts" element={<Contacts />} />
