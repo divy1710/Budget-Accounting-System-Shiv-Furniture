@@ -34,7 +34,6 @@ const menuItems = [
   { divider: true, label: "Sales" },
   { path: "/sales-orders", label: "Sales Orders", icon: FileText },
   { path: "/customer-invoices", label: "Customer Invoices", icon: FileText },
-  { path: "/invoice-payments", label: "Invoice Payments", icon: CreditCard },
   { divider: true, label: "Reports" },
   { path: "/budget-cockpit", label: "Budget Cockpit", icon: BarChart3 },
 ];

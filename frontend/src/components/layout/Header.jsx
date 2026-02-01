@@ -83,7 +83,6 @@ export default function Header() {
       items: [
         { path: "/sales-orders", label: "Sale Order", icon: FileText },
         { path: "/customer-invoices", label: "Sale Invoice", icon: Receipt },
-        { path: "/invoice-payments", label: "Receipt", icon: DollarSign },
       ],
     },
   };

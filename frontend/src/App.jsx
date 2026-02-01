@@ -21,7 +21,7 @@ import BillPayments from "./pages/BillPayments";
 // New Sales Order Flow Pages
 import SalesOrders from "./pages/SalesOrders";
 import CustomerInvoicesPage from "./pages/CustomerInvoices";
-import InvoicePayments from "./pages/InvoicePayments";
+
 // Auth Pages
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
@@ -62,7 +62,6 @@ function App() {
         {/* Transactions - New Sales Order Flow */}
         <Route path="sales-orders" element={<SalesOrders />} />
         <Route path="customer-invoices" element={<CustomerInvoicesPage />} />
-        <Route path="invoice-payments" element={<InvoicePayments />} />
 
         {/* Transactions - Old (keeping for backwards compatibility) */}
         <Route path="transactions/new" element={<TransactionForm />} />

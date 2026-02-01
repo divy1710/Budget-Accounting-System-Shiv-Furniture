@@ -836,8 +836,12 @@ function CustomerInvoices() {
   const handlePay = async () => {
     if (!selectedInvoice) return;
     try {
-      const res = await paymentsApi.createFromTransaction(selectedInvoice.id);
-      navigate(`/invoice-payments?id=${res.data.id}`);
+      await paymentsApi.createFromTransaction(selectedInvoice.id);
+      alert("Payment recorded successfully!");
+      await fetchData();
+      // Refresh the selected invoice
+      const res = await transactionsApi.getById(selectedInvoice.id);
+      setSelectedInvoice(res.data);
     } catch (error) {
       console.error("Error creating payment:", error);
       alert(error.response?.data?.error || "Error creating payment");
