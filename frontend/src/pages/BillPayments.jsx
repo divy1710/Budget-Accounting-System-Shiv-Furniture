@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { paymentsApi, contactsApi } from "../services/api";
-import { 
-  FileText, 
-  Download, 
-  Clock, 
-  AlertTriangle, 
+import { generatePaymentReceiptPDF } from "../services/pdfGenerator";
+import {
+  FileText,
+  Download,
+  Clock,
+  AlertTriangle,
   TrendingUp,
   Eye,
   CreditCard,
@@ -21,7 +22,7 @@ import {
   Edit,
   Trash2,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
 } from "lucide-react";
 
 function BillPayments() {
@@ -543,7 +544,7 @@ function BillPayments() {
       await paymentsApi.confirm(selectedPayment.id);
       await fetchData();
       const updated = (await paymentsApi.getAll()).data.find(
-        (p) => p.id === selectedPayment.id
+        (p) => p.id === selectedPayment.id,
       );
       if (updated) setSelectedPayment(updated);
     } catch (error) {
@@ -554,13 +555,14 @@ function BillPayments() {
 
   const handleCancel = async () => {
     if (!selectedPayment) return;
-    if (!window.confirm("Are you sure you want to cancel this payment?")) return;
+    if (!window.confirm("Are you sure you want to cancel this payment?"))
+      return;
 
     try {
       await paymentsApi.cancel(selectedPayment.id);
       await fetchData();
       const updated = (await paymentsApi.getAll()).data.find(
-        (p) => p.id === selectedPayment.id
+        (p) => p.id === selectedPayment.id,
       );
       if (updated) setSelectedPayment(updated);
     } catch (error) {
@@ -571,7 +573,8 @@ function BillPayments() {
 
   const handleDelete = async () => {
     if (!selectedPayment) return;
-    if (!window.confirm("Are you sure you want to delete this payment?")) return;
+    if (!window.confirm("Are you sure you want to delete this payment?"))
+      return;
 
     try {
       await paymentsApi.delete(selectedPayment.id);
@@ -616,12 +619,21 @@ function BillPayments() {
   const filteredPayments = getFilteredPayments();
   const totalPages = Math.ceil(filteredPayments.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedPayments = filteredPayments.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedPayments = filteredPayments.slice(
+    startIndex,
+    startIndex + itemsPerPage,
+  );
 
   // Calculate summary stats
-  const totalDraft = payments.filter((p) => p.status === "DRAFT").reduce((sum, p) => sum + p.amount, 0);
-  const totalCancelled = payments.filter((p) => p.status === "CANCELLED").reduce((sum, p) => sum + p.amount, 0);
-  const totalConfirmed = payments.filter((p) => p.status === "CONFIRMED").reduce((sum, p) => sum + p.amount, 0);
+  const totalDraft = payments
+    .filter((p) => p.status === "DRAFT")
+    .reduce((sum, p) => sum + p.amount, 0);
+  const totalCancelled = payments
+    .filter((p) => p.status === "CANCELLED")
+    .reduce((sum, p) => sum + p.amount, 0);
+  const totalConfirmed = payments
+    .filter((p) => p.status === "CONFIRMED")
+    .reduce((sum, p) => sum + p.amount, 0);
   const draftCount = payments.filter((p) => p.status === "DRAFT").length;
 
   const getStatusBadgeStyle = (status) => {
@@ -662,15 +674,20 @@ function BillPayments() {
           <div style={styles.headerLeft}>
             <h1 style={styles.pageTitle}>Billing History</h1>
             <p style={styles.pageSubtitle}>
-              Manage and track your furniture purchase billing history with Shiv Furniture.
+              Manage and track your furniture purchase billing history with Shiv
+              Furniture.
             </p>
           </div>
           <div style={{ display: "flex", gap: "12px" }}>
             <button
               style={styles.primaryButton}
               onClick={handleNewPayment}
-              onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#4338CA")}
-              onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#4F46E5")}
+              onMouseOver={(e) =>
+                (e.currentTarget.style.backgroundColor = "#4338CA")
+              }
+              onMouseOut={(e) =>
+                (e.currentTarget.style.backgroundColor = "#4F46E5")
+              }
             >
               <Plus size={16} />
               New Payment
@@ -678,8 +695,12 @@ function BillPayments() {
             <button
               style={styles.exportButton}
               onClick={() => alert("Export feature coming soon")}
-              onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#4338CA")}
-              onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#4F46E5")}
+              onMouseOver={(e) =>
+                (e.currentTarget.style.backgroundColor = "#4338CA")
+              }
+              onMouseOut={(e) =>
+                (e.currentTarget.style.backgroundColor = "#4F46E5")
+              }
             >
               <Download size={16} />
               Export Statement
@@ -739,7 +760,8 @@ function BillPayments() {
               }}
             >
               <AlertTriangle size={12} />
-              {payments.filter((p) => p.status === "CANCELLED").length} Payments Cancelled
+              {payments.filter((p) => p.status === "CANCELLED").length} Payments
+              Cancelled
             </span>
           </div>
 
@@ -767,7 +789,8 @@ function BillPayments() {
               }}
             >
               <TrendingUp size={12} />
-              {payments.filter((p) => p.status === "CONFIRMED").length} Payments Confirmed
+              {payments.filter((p) => p.status === "CONFIRMED").length} Payments
+              Confirmed
             </span>
           </div>
         </div>
@@ -799,7 +822,9 @@ function BillPayments() {
         {/* Table */}
         <div style={styles.tableContainer}>
           {loading ? (
-            <div style={{ padding: "48px", textAlign: "center", color: "#6B7280" }}>
+            <div
+              style={{ padding: "48px", textAlign: "center", color: "#6B7280" }}
+            >
               Loading payments...
             </div>
           ) : (
@@ -813,7 +838,9 @@ function BillPayments() {
                     <th style={styles.th}>Date</th>
                     <th style={styles.th}>Method</th>
                     <th style={{ ...styles.th, textAlign: "right" }}>Amount</th>
-                    <th style={{ ...styles.th, textAlign: "center" }}>Status</th>
+                    <th style={{ ...styles.th, textAlign: "center" }}>
+                      Status
+                    </th>
                     <th style={styles.th}>Actions</th>
                   </tr>
                 </thead>
@@ -824,8 +851,13 @@ function BillPayments() {
                       <tr
                         key={payment.id}
                         style={{ transition: "background-color 0.2s" }}
-                        onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#F9FAFB")}
-                        onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                        onMouseOver={(e) =>
+                          (e.currentTarget.style.backgroundColor = "#F9FAFB")
+                        }
+                        onMouseOut={(e) =>
+                          (e.currentTarget.style.backgroundColor =
+                            "transparent")
+                        }
                       >
                         <td style={styles.td}>
                           <span
@@ -845,8 +877,14 @@ function BillPayments() {
                               borderRadius: "6px",
                               fontSize: "12px",
                               fontWeight: "500",
-                              backgroundColor: payment.paymentType === "SEND" ? "#FEE2E2" : "#D1FAE5",
-                              color: payment.paymentType === "SEND" ? "#991B1B" : "#065F46",
+                              backgroundColor:
+                                payment.paymentType === "SEND"
+                                  ? "#FEE2E2"
+                                  : "#D1FAE5",
+                              color:
+                                payment.paymentType === "SEND"
+                                  ? "#991B1B"
+                                  : "#065F46",
                             }}
                           >
                             {payment.paymentType === "SEND" ? (
@@ -860,18 +898,31 @@ function BillPayments() {
                             )}
                           </span>
                         </td>
-                        <td style={styles.td}>{payment.contact?.name || "-"}</td>
                         <td style={styles.td}>
-                          {new Date(payment.paymentDate).toLocaleDateString("en-IN", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                          })}
+                          {payment.contact?.name || "-"}
                         </td>
-                        <td style={{ ...styles.td, textTransform: "capitalize" }}>
+                        <td style={styles.td}>
+                          {new Date(payment.paymentDate).toLocaleDateString(
+                            "en-IN",
+                            {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            },
+                          )}
+                        </td>
+                        <td
+                          style={{ ...styles.td, textTransform: "capitalize" }}
+                        >
                           {payment.paymentMethod}
                         </td>
-                        <td style={{ ...styles.td, textAlign: "right", fontWeight: "600" }}>
+                        <td
+                          style={{
+                            ...styles.td,
+                            textAlign: "right",
+                            fontWeight: "600",
+                          }}
+                        >
                           {formatCurrency(payment.amount)}
                         </td>
                         <td style={{ ...styles.td, textAlign: "center" }}>
@@ -896,7 +947,8 @@ function BillPayments() {
                               e.currentTarget.style.backgroundColor = "#F3F4F6";
                             }}
                             onMouseOut={(e) => {
-                              e.currentTarget.style.backgroundColor = "transparent";
+                              e.currentTarget.style.backgroundColor =
+                                "transparent";
                             }}
                           >
                             <Eye size={14} />
@@ -914,14 +966,19 @@ function BillPayments() {
                                   await paymentsApi.confirm(payment.id);
                                   await fetchData();
                                 } catch (error) {
-                                  alert(error.response?.data?.error || "Error confirming payment");
+                                  alert(
+                                    error.response?.data?.error ||
+                                      "Error confirming payment",
+                                  );
                                 }
                               }}
                               onMouseOver={(e) => {
-                                e.currentTarget.style.backgroundColor = "#EEF2FF";
+                                e.currentTarget.style.backgroundColor =
+                                  "#EEF2FF";
                               }}
                               onMouseOut={(e) => {
-                                e.currentTarget.style.backgroundColor = "transparent";
+                                e.currentTarget.style.backgroundColor =
+                                  "transparent";
                               }}
                             >
                               <Check size={14} />
@@ -968,8 +1025,11 @@ function BillPayments() {
                 <div style={styles.pagination}>
                   <span style={styles.paginationText}>
                     Showing {startIndex + 1} to{" "}
-                    {Math.min(startIndex + itemsPerPage, filteredPayments.length)} of{" "}
-                    {filteredPayments.length} payments
+                    {Math.min(
+                      startIndex + itemsPerPage,
+                      filteredPayments.length,
+                    )}{" "}
+                    of {filteredPayments.length} payments
                   </span>
                   <div style={styles.paginationButtons}>
                     <button
@@ -978,7 +1038,9 @@ function BillPayments() {
                         opacity: currentPage === 1 ? 0.5 : 1,
                         cursor: currentPage === 1 ? "not-allowed" : "pointer",
                       }}
-                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      }
                       disabled={currentPage === 1}
                     >
                       <ChevronLeft size={16} />
@@ -988,9 +1050,14 @@ function BillPayments() {
                       style={{
                         ...styles.paginationButton,
                         opacity: currentPage === totalPages ? 0.5 : 1,
-                        cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+                        cursor:
+                          currentPage === totalPages
+                            ? "not-allowed"
+                            : "pointer",
                       }}
-                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                      }
                       disabled={currentPage === totalPages}
                     >
                       Next
@@ -1005,7 +1072,9 @@ function BillPayments() {
 
         {/* Footer */}
         <div style={styles.footer}>
-          <span style={styles.footerText}>© 2023 Shiv Furniture Portal. All rights reserved.</span>
+          <span style={styles.footerText}>
+            © 2023 Shiv Furniture Portal. All rights reserved.
+          </span>
           <div style={styles.footerLinks}>
             <span style={styles.footerLink}>Privacy Policy</span>
             <span style={styles.footerLink}>Terms of Service</span>
@@ -1023,14 +1092,20 @@ function BillPayments() {
         {/* Top Bar */}
         <div style={styles.topBar}>
           <h1 style={styles.pageTitle}>
-            {selectedPayment ? `Edit: ${selectedPayment.paymentNumber}` : "New Bill Payment"}
+            {selectedPayment
+              ? `Edit: ${selectedPayment.paymentNumber}`
+              : "New Bill Payment"}
           </h1>
           <div style={styles.navButtons}>
             <button
               style={styles.secondaryButton}
               onClick={() => navigate("/")}
-              onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#F3F4F6")}
-              onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "white")}
+              onMouseOver={(e) =>
+                (e.currentTarget.style.backgroundColor = "#F3F4F6")
+              }
+              onMouseOut={(e) =>
+                (e.currentTarget.style.backgroundColor = "white")
+              }
             >
               <Home size={16} />
               Home
@@ -1038,8 +1113,12 @@ function BillPayments() {
             <button
               style={styles.secondaryButton}
               onClick={() => setView("list")}
-              onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#F3F4F6")}
-              onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "white")}
+              onMouseOver={(e) =>
+                (e.currentTarget.style.backgroundColor = "#F3F4F6")
+              }
+              onMouseOut={(e) =>
+                (e.currentTarget.style.backgroundColor = "white")
+              }
             >
               <ArrowLeft size={16} />
               Back
@@ -1057,8 +1136,10 @@ function BillPayments() {
                   <label
                     style={{
                       ...styles.radioOption,
-                      backgroundColor: formData.paymentType === "SEND" ? "#FEE2E2" : "white",
-                      borderColor: formData.paymentType === "SEND" ? "#EF4444" : "#E5E7EB",
+                      backgroundColor:
+                        formData.paymentType === "SEND" ? "#FEE2E2" : "white",
+                      borderColor:
+                        formData.paymentType === "SEND" ? "#EF4444" : "#E5E7EB",
                     }}
                   >
                     <input
@@ -1067,13 +1148,38 @@ function BillPayments() {
                       value="SEND"
                       checked={formData.paymentType === "SEND"}
                       onChange={(e) =>
-                        setFormData({ ...formData, paymentType: e.target.value, contactId: "" })
+                        setFormData({
+                          ...formData,
+                          paymentType: e.target.value,
+                          contactId: "",
+                        })
                       }
                       style={{ accentColor: "#EF4444" }}
                     />
-                    <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <ArrowUp size={18} color={formData.paymentType === "SEND" ? "#EF4444" : "#6B7280"} />
-                      <span style={{ fontWeight: "500", color: formData.paymentType === "SEND" ? "#991B1B" : "#374151" }}>
+                    <span
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      <ArrowUp
+                        size={18}
+                        color={
+                          formData.paymentType === "SEND"
+                            ? "#EF4444"
+                            : "#6B7280"
+                        }
+                      />
+                      <span
+                        style={{
+                          fontWeight: "500",
+                          color:
+                            formData.paymentType === "SEND"
+                              ? "#991B1B"
+                              : "#374151",
+                        }}
+                      >
                         Send Money
                       </span>
                     </span>
@@ -1081,8 +1187,14 @@ function BillPayments() {
                   <label
                     style={{
                       ...styles.radioOption,
-                      backgroundColor: formData.paymentType === "RECEIVE" ? "#D1FAE5" : "white",
-                      borderColor: formData.paymentType === "RECEIVE" ? "#10B981" : "#E5E7EB",
+                      backgroundColor:
+                        formData.paymentType === "RECEIVE"
+                          ? "#D1FAE5"
+                          : "white",
+                      borderColor:
+                        formData.paymentType === "RECEIVE"
+                          ? "#10B981"
+                          : "#E5E7EB",
                     }}
                   >
                     <input
@@ -1091,13 +1203,38 @@ function BillPayments() {
                       value="RECEIVE"
                       checked={formData.paymentType === "RECEIVE"}
                       onChange={(e) =>
-                        setFormData({ ...formData, paymentType: e.target.value, contactId: "" })
+                        setFormData({
+                          ...formData,
+                          paymentType: e.target.value,
+                          contactId: "",
+                        })
                       }
                       style={{ accentColor: "#10B981" }}
                     />
-                    <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <ArrowDown size={18} color={formData.paymentType === "RECEIVE" ? "#10B981" : "#6B7280"} />
-                      <span style={{ fontWeight: "500", color: formData.paymentType === "RECEIVE" ? "#065F46" : "#374151" }}>
+                    <span
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      <ArrowDown
+                        size={18}
+                        color={
+                          formData.paymentType === "RECEIVE"
+                            ? "#10B981"
+                            : "#6B7280"
+                        }
+                      />
+                      <span
+                        style={{
+                          fontWeight: "500",
+                          color:
+                            formData.paymentType === "RECEIVE"
+                              ? "#065F46"
+                              : "#374151",
+                        }}
+                      >
                         Receive Money
                       </span>
                     </span>
@@ -1107,7 +1244,13 @@ function BillPayments() {
             </div>
 
             <div style={styles.cardBody}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "24px",
+                }}
+              >
                 {/* Partner */}
                 <div style={styles.formGroup}>
                   <label style={styles.label}>
@@ -1116,11 +1259,14 @@ function BillPayments() {
                   <select
                     style={styles.select}
                     value={formData.contactId}
-                    onChange={(e) => setFormData({ ...formData, contactId: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, contactId: e.target.value })
+                    }
                     required
                   >
                     <option value="">
-                      Select {formData.paymentType === "SEND" ? "Vendor" : "Customer"}
+                      Select{" "}
+                      {formData.paymentType === "SEND" ? "Vendor" : "Customer"}
                     </option>
                     {getFilteredContacts().map((contact) => (
                       <option key={contact.id} value={contact.id}>
@@ -1128,7 +1274,14 @@ function BillPayments() {
                       </option>
                     ))}
                   </select>
-                  <span style={{ fontSize: "12px", color: "#6B7280", marginTop: "4px", display: "block" }}>
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      color: "#6B7280",
+                      marginTop: "4px",
+                      display: "block",
+                    }}
+                  >
                     Auto fill partner name from Invoice/Bill
                   </span>
                 </div>
@@ -1140,30 +1293,59 @@ function BillPayments() {
                     type="date"
                     style={styles.input}
                     value={formData.paymentDate}
-                    onChange={(e) => setFormData({ ...formData, paymentDate: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, paymentDate: e.target.value })
+                    }
                     required
                   />
-                  <span style={{ fontSize: "12px", color: "#6B7280", marginTop: "4px", display: "block" }}>
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      color: "#6B7280",
+                      marginTop: "4px",
+                      display: "block",
+                    }}
+                  >
                     Default: Today's Date
                   </span>
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "24px",
+                }}
+              >
                 {/* Amount */}
                 <div style={styles.formGroup}>
                   <label style={styles.label}>Amount</label>
                   <input
                     type="number"
-                    style={{ ...styles.input, fontSize: "18px", fontWeight: "600", color: "#4F46E5" }}
+                    style={{
+                      ...styles.input,
+                      fontSize: "18px",
+                      fontWeight: "600",
+                      color: "#4F46E5",
+                    }}
                     value={formData.amount}
-                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, amount: e.target.value })
+                    }
                     placeholder="0.00"
                     min="0"
                     step="0.01"
                     required
                   />
-                  <span style={{ fontSize: "12px", color: "#6B7280", marginTop: "4px", display: "block" }}>
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      color: "#6B7280",
+                      marginTop: "4px",
+                      display: "block",
+                    }}
+                  >
                     Auto fill amount due from Invoice/Bill
                   </span>
                 </div>
@@ -1174,7 +1356,12 @@ function BillPayments() {
                   <select
                     style={styles.select}
                     value={formData.paymentMethod}
-                    onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        paymentMethod: e.target.value,
+                      })
+                    }
                     required
                   >
                     <option value="bank">🏦 Bank</option>
@@ -1182,7 +1369,14 @@ function BillPayments() {
                     <option value="upi">📱 UPI</option>
                     <option value="card">💳 Card</option>
                   </select>
-                  <span style={{ fontSize: "12px", color: "#6B7280", marginTop: "4px", display: "block" }}>
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      color: "#6B7280",
+                      marginTop: "4px",
+                      display: "block",
+                    }}
+                  >
                     Default: Bank (can be changed to Cash)
                   </span>
                 </div>
@@ -1195,7 +1389,9 @@ function BillPayments() {
                   type="text"
                   style={styles.input}
                   value={formData.reference}
-                  onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, reference: e.target.value })
+                  }
                   placeholder="Bank ref, UPI ID, etc."
                 />
               </div>
@@ -1206,18 +1402,31 @@ function BillPayments() {
                 <textarea
                   style={styles.textarea}
                   value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, notes: e.target.value })
+                  }
                   placeholder="Add any additional notes..."
                 />
               </div>
 
               {/* Actions */}
-              <div style={{ display: "flex", gap: "12px", paddingTop: "16px", borderTop: "1px solid #E5E7EB" }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "12px",
+                  paddingTop: "16px",
+                  borderTop: "1px solid #E5E7EB",
+                }}
+              >
                 <button
                   type="submit"
                   style={styles.successButton}
-                  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#059669")}
-                  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#10B981")}
+                  onMouseOver={(e) =>
+                    (e.currentTarget.style.backgroundColor = "#059669")
+                  }
+                  onMouseOut={(e) =>
+                    (e.currentTarget.style.backgroundColor = "#10B981")
+                  }
                 >
                   <Check size={16} />
                   {selectedPayment ? "Update Payment" : "Save Draft"}
@@ -1226,8 +1435,12 @@ function BillPayments() {
                   type="button"
                   style={styles.secondaryButton}
                   onClick={() => setView("list")}
-                  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#F3F4F6")}
-                  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "white")}
+                  onMouseOver={(e) =>
+                    (e.currentTarget.style.backgroundColor = "#F3F4F6")
+                  }
+                  onMouseOut={(e) =>
+                    (e.currentTarget.style.backgroundColor = "white")
+                  }
                 >
                   Cancel
                 </button>
@@ -1258,8 +1471,12 @@ function BillPayments() {
               <button
                 style={styles.primaryButton}
                 onClick={handleNewPayment}
-                onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#4338CA")}
-                onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#4F46E5")}
+                onMouseOver={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#4338CA")
+                }
+                onMouseOut={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#4F46E5")
+                }
               >
                 <Plus size={16} />
                 New
@@ -1267,8 +1484,12 @@ function BillPayments() {
               <button
                 style={styles.secondaryButton}
                 onClick={() => navigate("/")}
-                onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#F3F4F6")}
-                onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "white")}
+                onMouseOver={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#F3F4F6")
+                }
+                onMouseOut={(e) =>
+                  (e.currentTarget.style.backgroundColor = "white")
+                }
               >
                 <Home size={16} />
                 Home
@@ -1276,8 +1497,12 @@ function BillPayments() {
               <button
                 style={styles.secondaryButton}
                 onClick={() => setView("list")}
-                onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#F3F4F6")}
-                onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "white")}
+                onMouseOver={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#F3F4F6")
+                }
+                onMouseOut={(e) =>
+                  (e.currentTarget.style.backgroundColor = "white")
+                }
               >
                 <ArrowLeft size={16} />
                 Back
@@ -1303,8 +1528,12 @@ function BillPayments() {
                     <button
                       style={styles.successButton}
                       onClick={handleConfirm}
-                      onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#059669")}
-                      onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#10B981")}
+                      onMouseOver={(e) =>
+                        (e.currentTarget.style.backgroundColor = "#059669")
+                      }
+                      onMouseOut={(e) =>
+                        (e.currentTarget.style.backgroundColor = "#10B981")
+                      }
                     >
                       <Check size={16} />
                       Confirm
@@ -1312,26 +1541,55 @@ function BillPayments() {
                     <button
                       style={styles.secondaryButton}
                       onClick={() => window.print()}
-                      onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#F3F4F6")}
-                      onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "white")}
+                      onMouseOver={(e) =>
+                        (e.currentTarget.style.backgroundColor = "#F3F4F6")
+                      }
+                      onMouseOut={(e) =>
+                        (e.currentTarget.style.backgroundColor = "white")
+                      }
                     >
                       <Printer size={16} />
                       Print
                     </button>
                     <button
                       style={styles.secondaryButton}
+                      onClick={() => generatePaymentReceiptPDF(selectedPayment)}
+                      onMouseOver={(e) =>
+                        (e.currentTarget.style.backgroundColor = "#F3F4F6")
+                      }
+                      onMouseOut={(e) =>
+                        (e.currentTarget.style.backgroundColor = "white")
+                      }
+                    >
+                      <Download size={16} />
+                      PDF
+                    </button>
+                    <button
+                      style={styles.secondaryButton}
                       onClick={() => alert("Send feature coming soon")}
-                      onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#F3F4F6")}
-                      onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "white")}
+                      onMouseOver={(e) =>
+                        (e.currentTarget.style.backgroundColor = "#F3F4F6")
+                      }
+                      onMouseOut={(e) =>
+                        (e.currentTarget.style.backgroundColor = "white")
+                      }
                     >
                       <Send size={16} />
                       Send
                     </button>
                     <button
-                      style={{ ...styles.secondaryButton, color: "#EF4444", borderColor: "#EF4444" }}
+                      style={{
+                        ...styles.secondaryButton,
+                        color: "#EF4444",
+                        borderColor: "#EF4444",
+                      }}
                       onClick={handleCancel}
-                      onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#FEE2E2")}
-                      onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "white")}
+                      onMouseOver={(e) =>
+                        (e.currentTarget.style.backgroundColor = "#FEE2E2")
+                      }
+                      onMouseOut={(e) =>
+                        (e.currentTarget.style.backgroundColor = "white")
+                      }
                     >
                       <X size={16} />
                       Cancel
@@ -1345,9 +1603,18 @@ function BillPayments() {
                 <span
                   style={{
                     ...styles.statusIndicator,
-                    backgroundColor: selectedPayment.status === "DRAFT" ? "#FEF3C7" : "#F3F4F6",
-                    color: selectedPayment.status === "DRAFT" ? "#92400E" : "#9CA3AF",
-                    borderColor: selectedPayment.status === "DRAFT" ? "#F59E0B" : "#E5E7EB",
+                    backgroundColor:
+                      selectedPayment.status === "DRAFT"
+                        ? "#FEF3C7"
+                        : "#F3F4F6",
+                    color:
+                      selectedPayment.status === "DRAFT"
+                        ? "#92400E"
+                        : "#9CA3AF",
+                    borderColor:
+                      selectedPayment.status === "DRAFT"
+                        ? "#F59E0B"
+                        : "#E5E7EB",
                   }}
                 >
                   ● Draft
@@ -1355,9 +1622,18 @@ function BillPayments() {
                 <span
                   style={{
                     ...styles.statusIndicator,
-                    backgroundColor: selectedPayment.status === "CONFIRMED" ? "#D1FAE5" : "#F3F4F6",
-                    color: selectedPayment.status === "CONFIRMED" ? "#065F46" : "#9CA3AF",
-                    borderColor: selectedPayment.status === "CONFIRMED" ? "#10B981" : "#E5E7EB",
+                    backgroundColor:
+                      selectedPayment.status === "CONFIRMED"
+                        ? "#D1FAE5"
+                        : "#F3F4F6",
+                    color:
+                      selectedPayment.status === "CONFIRMED"
+                        ? "#065F46"
+                        : "#9CA3AF",
+                    borderColor:
+                      selectedPayment.status === "CONFIRMED"
+                        ? "#10B981"
+                        : "#E5E7EB",
                   }}
                 >
                   ● Confirmed
@@ -1365,9 +1641,18 @@ function BillPayments() {
                 <span
                   style={{
                     ...styles.statusIndicator,
-                    backgroundColor: selectedPayment.status === "CANCELLED" ? "#FEE2E2" : "#F3F4F6",
-                    color: selectedPayment.status === "CANCELLED" ? "#991B1B" : "#9CA3AF",
-                    borderColor: selectedPayment.status === "CANCELLED" ? "#EF4444" : "#E5E7EB",
+                    backgroundColor:
+                      selectedPayment.status === "CANCELLED"
+                        ? "#FEE2E2"
+                        : "#F3F4F6",
+                    color:
+                      selectedPayment.status === "CANCELLED"
+                        ? "#991B1B"
+                        : "#9CA3AF",
+                    borderColor:
+                      selectedPayment.status === "CANCELLED"
+                        ? "#EF4444"
+                        : "#E5E7EB",
                   }}
                 >
                   ● Cancelled
@@ -1380,7 +1665,9 @@ function BillPayments() {
               <div style={styles.detailGrid}>
                 <div style={styles.detailItem}>
                   <p style={styles.detailLabel}>Payment Type</p>
-                  <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
+                  <div
+                    style={{ display: "flex", gap: "12px", marginTop: "8px" }}
+                  >
                     <span
                       style={{
                         display: "inline-flex",
@@ -1390,9 +1677,18 @@ function BillPayments() {
                         borderRadius: "8px",
                         border: "2px solid",
                         fontWeight: "500",
-                        backgroundColor: selectedPayment.paymentType === "SEND" ? "#FEE2E2" : "#F3F4F6",
-                        color: selectedPayment.paymentType === "SEND" ? "#991B1B" : "#9CA3AF",
-                        borderColor: selectedPayment.paymentType === "SEND" ? "#EF4444" : "#E5E7EB",
+                        backgroundColor:
+                          selectedPayment.paymentType === "SEND"
+                            ? "#FEE2E2"
+                            : "#F3F4F6",
+                        color:
+                          selectedPayment.paymentType === "SEND"
+                            ? "#991B1B"
+                            : "#9CA3AF",
+                        borderColor:
+                          selectedPayment.paymentType === "SEND"
+                            ? "#EF4444"
+                            : "#E5E7EB",
                       }}
                     >
                       <ArrowUp size={16} /> Send
@@ -1406,9 +1702,18 @@ function BillPayments() {
                         borderRadius: "8px",
                         border: "2px solid",
                         fontWeight: "500",
-                        backgroundColor: selectedPayment.paymentType === "RECEIVE" ? "#D1FAE5" : "#F3F4F6",
-                        color: selectedPayment.paymentType === "RECEIVE" ? "#065F46" : "#9CA3AF",
-                        borderColor: selectedPayment.paymentType === "RECEIVE" ? "#10B981" : "#E5E7EB",
+                        backgroundColor:
+                          selectedPayment.paymentType === "RECEIVE"
+                            ? "#D1FAE5"
+                            : "#F3F4F6",
+                        color:
+                          selectedPayment.paymentType === "RECEIVE"
+                            ? "#065F46"
+                            : "#9CA3AF",
+                        borderColor:
+                          selectedPayment.paymentType === "RECEIVE"
+                            ? "#10B981"
+                            : "#E5E7EB",
                       }}
                     >
                       <ArrowDown size={16} /> Receive
@@ -1418,23 +1723,33 @@ function BillPayments() {
 
                 <div style={styles.detailItem}>
                   <p style={styles.detailLabel}>Partner</p>
-                  <p style={styles.detailValue}>{selectedPayment.contact?.name || "-"}</p>
+                  <p style={styles.detailValue}>
+                    {selectedPayment.contact?.name || "-"}
+                  </p>
                 </div>
 
                 <div style={styles.detailItem}>
                   <p style={styles.detailLabel}>Payment Date</p>
                   <p style={styles.detailValue}>
-                    {new Date(selectedPayment.paymentDate).toLocaleDateString("en-IN", {
-                      day: "2-digit",
-                      month: "long",
-                      year: "numeric",
-                    })}
+                    {new Date(selectedPayment.paymentDate).toLocaleDateString(
+                      "en-IN",
+                      {
+                        day: "2-digit",
+                        month: "long",
+                        year: "numeric",
+                      },
+                    )}
                   </p>
                 </div>
 
                 <div style={styles.detailItem}>
                   <p style={styles.detailLabel}>Payment Method</p>
-                  <p style={{ ...styles.detailValue, textTransform: "capitalize" }}>
+                  <p
+                    style={{
+                      ...styles.detailValue,
+                      textTransform: "capitalize",
+                    }}
+                  >
                     {selectedPayment.paymentMethod}
                   </p>
                 </div>
@@ -1448,7 +1763,9 @@ function BillPayments() {
 
                 <div style={styles.amountHighlight}>
                   <p style={styles.amountLabel}>Amount</p>
-                  <p style={styles.amountValue}>{formatCurrency(selectedPayment.amount)}</p>
+                  <p style={styles.amountValue}>
+                    {formatCurrency(selectedPayment.amount)}
+                  </p>
                 </div>
               </div>
 
@@ -1465,13 +1782,23 @@ function BillPayments() {
               {/* Allocations */}
               {selectedPayment.allocations?.length > 0 && (
                 <div style={{ marginTop: "24px" }}>
-                  <p style={{ ...styles.detailLabel, marginBottom: "16px" }}>Applied To</p>
-                  <div style={{ borderRadius: "12px", overflow: "hidden", border: "1px solid #E5E7EB" }}>
+                  <p style={{ ...styles.detailLabel, marginBottom: "16px" }}>
+                    Applied To
+                  </p>
+                  <div
+                    style={{
+                      borderRadius: "12px",
+                      overflow: "hidden",
+                      border: "1px solid #E5E7EB",
+                    }}
+                  >
                     <table style={styles.table}>
                       <thead style={styles.tableHeader}>
                         <tr>
                           <th style={styles.th}>Transaction</th>
-                          <th style={{ ...styles.th, textAlign: "right" }}>Amount</th>
+                          <th style={{ ...styles.th, textAlign: "right" }}>
+                            Amount
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1483,16 +1810,27 @@ function BillPayments() {
                                 onClick={() => {
                                   const type = alloc.transaction?.type;
                                   if (type === "VENDOR_BILL") {
-                                    navigate(`/vendor-bills?id=${alloc.transactionId}`);
+                                    navigate(
+                                      `/vendor-bills?id=${alloc.transactionId}`,
+                                    );
                                   } else if (type === "CUSTOMER_INVOICE") {
-                                    navigate(`/customer-invoices?id=${alloc.transactionId}`);
+                                    navigate(
+                                      `/customer-invoices?id=${alloc.transactionId}`,
+                                    );
                                   }
                                 }}
                               >
-                                {alloc.transaction?.transactionNumber || alloc.transactionId}
+                                {alloc.transaction?.transactionNumber ||
+                                  alloc.transactionId}
                               </span>
                             </td>
-                            <td style={{ ...styles.td, textAlign: "right", fontWeight: "600" }}>
+                            <td
+                              style={{
+                                ...styles.td,
+                                textAlign: "right",
+                                fontWeight: "600",
+                              }}
+                            >
                               {formatCurrency(alloc.allocatedAmount)}
                             </td>
                           </tr>
@@ -1505,12 +1843,24 @@ function BillPayments() {
 
               {/* Edit/Delete for Draft */}
               {selectedPayment.status === "DRAFT" && (
-                <div style={{ display: "flex", gap: "12px", marginTop: "24px", paddingTop: "24px", borderTop: "1px solid #E5E7EB" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "12px",
+                    marginTop: "24px",
+                    paddingTop: "24px",
+                    borderTop: "1px solid #E5E7EB",
+                  }}
+                >
                   <button
                     style={styles.primaryButton}
                     onClick={() => handleEditPayment(selectedPayment)}
-                    onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#4338CA")}
-                    onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#4F46E5")}
+                    onMouseOver={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#4338CA")
+                    }
+                    onMouseOut={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#4F46E5")
+                    }
                   >
                     <Edit size={16} />
                     Edit Payment
@@ -1518,8 +1868,12 @@ function BillPayments() {
                   <button
                     style={styles.dangerButton}
                     onClick={handleDelete}
-                    onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#DC2626")}
-                    onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#EF4444")}
+                    onMouseOver={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#DC2626")
+                    }
+                    onMouseOut={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#EF4444")
+                    }
                   >
                     <Trash2 size={16} />
                     Delete Payment
@@ -1531,7 +1885,9 @@ function BillPayments() {
 
           {/* Footer */}
           <div style={styles.footer}>
-            <span style={styles.footerText}>© 2023 Shiv Furniture Portal. All rights reserved.</span>
+            <span style={styles.footerText}>
+              © 2023 Shiv Furniture Portal. All rights reserved.
+            </span>
             <div style={styles.footerLinks}>
               <span style={styles.footerLink}>Privacy Policy</span>
               <span style={styles.footerLink}>Terms of Service</span>

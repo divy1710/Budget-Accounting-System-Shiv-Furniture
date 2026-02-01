@@ -7,6 +7,7 @@ import {
   analyticalAccountsApi,
   paymentsApi,
 } from "../services/api";
+import { generateInvoicePDF } from "../services/pdfGenerator";
 import {
   FileText,
   Download,
@@ -47,7 +48,9 @@ function CustomerInvoices() {
     reference: "",
     transactionDate: new Date().toISOString().split("T")[0],
     dueDate: "",
-    lines: [{ productId: "", analyticalAccountId: "", quantity: 1, unitPrice: 0 }],
+    lines: [
+      { productId: "", analyticalAccountId: "", quantity: 1, unitPrice: 0 },
+    ],
   });
 
   // Styles
@@ -648,12 +651,13 @@ function CustomerInvoices() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [invoicesRes, customersRes, productsRes, analyticalRes] = await Promise.all([
-        transactionsApi.getAll({ type: "CUSTOMER_INVOICE" }),
-        contactsApi.getCustomers(),
-        productsApi.getAll(),
-        analyticalAccountsApi.getAll(),
-      ]);
+      const [invoicesRes, customersRes, productsRes, analyticalRes] =
+        await Promise.all([
+          transactionsApi.getAll({ type: "CUSTOMER_INVOICE" }),
+          contactsApi.getCustomers(),
+          productsApi.getAll(),
+          analyticalAccountsApi.getAll(),
+        ]);
       setInvoices(invoicesRes.data);
       setCustomers(customersRes.data);
       setProducts(productsRes.data);
@@ -672,7 +676,9 @@ function CustomerInvoices() {
       reference: "",
       transactionDate: new Date().toISOString().split("T")[0],
       dueDate: "",
-      lines: [{ productId: "", analyticalAccountId: "", quantity: 1, unitPrice: 0 }],
+      lines: [
+        { productId: "", analyticalAccountId: "", quantity: 1, unitPrice: 0 },
+      ],
     });
     setView("form");
   };
@@ -692,8 +698,12 @@ function CustomerInvoices() {
     setFormData({
       customerId: invoice.customerId || "",
       reference: invoice.reference || "",
-      transactionDate: new Date(invoice.transactionDate).toISOString().split("T")[0],
-      dueDate: invoice.dueDate ? new Date(invoice.dueDate).toISOString().split("T")[0] : "",
+      transactionDate: new Date(invoice.transactionDate)
+        .toISOString()
+        .split("T")[0],
+      dueDate: invoice.dueDate
+        ? new Date(invoice.dueDate).toISOString().split("T")[0]
+        : "",
       lines: invoice.lines.map((line) => ({
         productId: line.productId,
         analyticalAccountId: line.analyticalAccountId || "",
@@ -707,7 +717,10 @@ function CustomerInvoices() {
   const handleAddLine = () => {
     setFormData({
       ...formData,
-      lines: [...formData.lines, { productId: "", analyticalAccountId: "", quantity: 1, unitPrice: 0 }],
+      lines: [
+        ...formData.lines,
+        { productId: "", analyticalAccountId: "", quantity: 1, unitPrice: 0 },
+      ],
     });
   };
 
@@ -725,7 +738,11 @@ function CustomerInvoices() {
     if (field === "productId") {
       const product = products.find((p) => p.id === parseInt(value));
       if (product) {
-        newLines[index].unitPrice = Number(product.salesPrice) || Number(product.salePrice) || Number(product.price) || 0;
+        newLines[index].unitPrice =
+          Number(product.salesPrice) ||
+          Number(product.salePrice) ||
+          Number(product.price) ||
+          0;
       }
     }
 
@@ -739,7 +756,10 @@ function CustomerInvoices() {
   };
 
   const calculateSubtotal = () => {
-    return formData.lines.reduce((sum, line) => sum + calculateLineTotal(line), 0);
+    return formData.lines.reduce(
+      (sum, line) => sum + calculateLineTotal(line),
+      0,
+    );
   };
 
   const calculateTax = () => {
@@ -761,7 +781,9 @@ function CustomerInvoices() {
         dueDate: formData.dueDate || null,
         lines: formData.lines.map((line) => ({
           productId: parseInt(line.productId),
-          analyticalAccountId: line.analyticalAccountId ? parseInt(line.analyticalAccountId) : null,
+          analyticalAccountId: line.analyticalAccountId
+            ? parseInt(line.analyticalAccountId)
+            : null,
           quantity: parseFloat(line.quantity),
           unitPrice: parseFloat(line.unitPrice),
           gstRate: 18,
@@ -797,7 +819,8 @@ function CustomerInvoices() {
 
   const handleCancel = async () => {
     if (!selectedInvoice) return;
-    if (!window.confirm("Are you sure you want to cancel this invoice?")) return;
+    if (!window.confirm("Are you sure you want to cancel this invoice?"))
+      return;
 
     try {
       await transactionsApi.cancel(selectedInvoice.id);
@@ -823,7 +846,8 @@ function CustomerInvoices() {
 
   const handleDelete = async () => {
     if (!selectedInvoice) return;
-    if (!window.confirm("Are you sure you want to delete this invoice?")) return;
+    if (!window.confirm("Are you sure you want to delete this invoice?"))
+      return;
 
     try {
       await transactionsApi.delete(selectedInvoice.id);
@@ -872,7 +896,9 @@ function CustomerInvoices() {
       case "paid":
         return invoices.filter((i) => i.paymentStatus === "PAID");
       case "unpaid":
-        return invoices.filter((i) => i.status === "CONFIRMED" && i.paymentStatus !== "PAID");
+        return invoices.filter(
+          (i) => i.status === "CONFIRMED" && i.paymentStatus !== "PAID",
+        );
       default:
         return invoices;
     }
@@ -881,7 +907,10 @@ function CustomerInvoices() {
   const filteredInvoices = getFilteredInvoices();
   const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedInvoices = filteredInvoices.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedInvoices = filteredInvoices.slice(
+    startIndex,
+    startIndex + itemsPerPage,
+  );
 
   const getStatusBadgeStyle = (status) => {
     switch (status) {
@@ -915,13 +944,19 @@ function CustomerInvoices() {
         <div style={styles.listHeader}>
           <div>
             <h1 style={styles.pageTitle}>Customer Invoices</h1>
-            <p style={styles.pageSubtitle}>Manage and track your customer billing</p>
+            <p style={styles.pageSubtitle}>
+              Manage and track your customer billing
+            </p>
           </div>
           <button
             style={styles.newInvoiceBtn}
             onClick={handleNewInvoice}
-            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#4338CA")}
-            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#4F46E5")}
+            onMouseOver={(e) =>
+              (e.currentTarget.style.backgroundColor = "#4338CA")
+            }
+            onMouseOut={(e) =>
+              (e.currentTarget.style.backgroundColor = "#4F46E5")
+            }
           >
             <Plus size={16} />
             New Invoice
@@ -956,7 +991,11 @@ function CustomerInvoices() {
         {/* Table */}
         <div style={styles.tableContainer}>
           {loading ? (
-            <div style={{ padding: "48px", textAlign: "center", color: "#6B7280" }}>Loading...</div>
+            <div
+              style={{ padding: "48px", textAlign: "center", color: "#6B7280" }}
+            >
+              Loading...
+            </div>
           ) : (
             <>
               <table style={styles.listTable}>
@@ -966,9 +1005,15 @@ function CustomerInvoices() {
                     <th style={styles.listTh}>Customer</th>
                     <th style={styles.listTh}>Date</th>
                     <th style={styles.listTh}>Due Date</th>
-                    <th style={{ ...styles.listTh, textAlign: "right" }}>Amount</th>
-                    <th style={{ ...styles.listTh, textAlign: "center" }}>Status</th>
-                    <th style={{ ...styles.listTh, textAlign: "center" }}>Payment</th>
+                    <th style={{ ...styles.listTh, textAlign: "right" }}>
+                      Amount
+                    </th>
+                    <th style={{ ...styles.listTh, textAlign: "center" }}>
+                      Status
+                    </th>
+                    <th style={{ ...styles.listTh, textAlign: "center" }}>
+                      Payment
+                    </th>
                     <th style={styles.listTh}>Actions</th>
                   </tr>
                 </thead>
@@ -976,39 +1021,72 @@ function CustomerInvoices() {
                   {paginatedInvoices.map((invoice) => (
                     <tr
                       key={invoice.id}
-                      onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#F9FAFB")}
-                      onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                      onMouseOver={(e) =>
+                        (e.currentTarget.style.backgroundColor = "#F9FAFB")
+                      }
+                      onMouseOut={(e) =>
+                        (e.currentTarget.style.backgroundColor = "transparent")
+                      }
                     >
                       <td style={styles.listTd}>
-                        <span style={styles.invoiceLink} onClick={() => handleViewInvoice(invoice)}>
+                        <span
+                          style={styles.invoiceLink}
+                          onClick={() => handleViewInvoice(invoice)}
+                        >
                           {invoice.transactionNumber}
                         </span>
                       </td>
-                      <td style={styles.listTd}>{invoice.customer?.name || "-"}</td>
-                      <td style={styles.listTd}>{formatDate(invoice.transactionDate)}</td>
-                      <td style={styles.listTd}>{formatDate(invoice.dueDate)}</td>
-                      <td style={{ ...styles.listTd, textAlign: "right", fontWeight: "600" }}>
+                      <td style={styles.listTd}>
+                        {invoice.customer?.name || "-"}
+                      </td>
+                      <td style={styles.listTd}>
+                        {formatDate(invoice.transactionDate)}
+                      </td>
+                      <td style={styles.listTd}>
+                        {formatDate(invoice.dueDate)}
+                      </td>
+                      <td
+                        style={{
+                          ...styles.listTd,
+                          textAlign: "right",
+                          fontWeight: "600",
+                        }}
+                      >
                         {formatCurrency(invoice.totalAmount)}
                       </td>
                       <td style={{ ...styles.listTd, textAlign: "center" }}>
-                        <span style={{ ...styles.listStatusBadge, ...getStatusBadgeStyle(invoice.status) }}>
+                        <span
+                          style={{
+                            ...styles.listStatusBadge,
+                            ...getStatusBadgeStyle(invoice.status),
+                          }}
+                        >
                           {invoice.status}
                         </span>
                       </td>
                       <td style={{ ...styles.listTd, textAlign: "center" }}>
                         {invoice.status === "CONFIRMED" && (
-                          <span style={{ ...styles.listStatusBadge, ...getPaymentBadgeStyle(invoice.paymentStatus) }}>
+                          <span
+                            style={{
+                              ...styles.listStatusBadge,
+                              ...getPaymentBadgeStyle(invoice.paymentStatus),
+                            }}
+                          >
                             {invoice.paymentStatus === "PAID"
                               ? "Paid"
                               : invoice.paymentStatus === "PARTIALLY_PAID"
-                              ? "Partial"
-                              : "Not Paid"}
+                                ? "Partial"
+                                : "Not Paid"}
                           </span>
                         )}
                       </td>
                       <td style={styles.listTd}>
                         <button
-                          style={{ ...styles.actionBtn, borderColor: "#D1D5DB", color: "#374151" }}
+                          style={{
+                            ...styles.actionBtn,
+                            borderColor: "#D1D5DB",
+                            color: "#374151",
+                          }}
                           onClick={() => handleViewInvoice(invoice)}
                         >
                           <Eye size={14} />
@@ -1019,7 +1097,15 @@ function CustomerInvoices() {
                   ))}
                   {paginatedInvoices.length === 0 && (
                     <tr>
-                      <td colSpan="8" style={{ ...styles.listTd, textAlign: "center", padding: "48px", color: "#9CA3AF" }}>
+                      <td
+                        colSpan="8"
+                        style={{
+                          ...styles.listTd,
+                          textAlign: "center",
+                          padding: "48px",
+                          color: "#9CA3AF",
+                        }}
+                      >
                         No invoices found. Click "New Invoice" to create one.
                       </td>
                     </tr>
@@ -1030,21 +1116,35 @@ function CustomerInvoices() {
               {filteredInvoices.length > 0 && (
                 <div style={styles.pagination}>
                   <span style={styles.paginationText}>
-                    Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredInvoices.length)} of{" "}
-                    {filteredInvoices.length} invoices
+                    Showing {startIndex + 1} to{" "}
+                    {Math.min(
+                      startIndex + itemsPerPage,
+                      filteredInvoices.length,
+                    )}{" "}
+                    of {filteredInvoices.length} invoices
                   </span>
                   <div style={styles.paginationButtons}>
                     <button
-                      style={{ ...styles.paginationBtn, opacity: currentPage === 1 ? 0.5 : 1 }}
-                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                      style={{
+                        ...styles.paginationBtn,
+                        opacity: currentPage === 1 ? 0.5 : 1,
+                      }}
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      }
                       disabled={currentPage === 1}
                     >
                       <ChevronLeft size={16} />
                       Previous
                     </button>
                     <button
-                      style={{ ...styles.paginationBtn, opacity: currentPage === totalPages ? 0.5 : 1 }}
-                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                      style={{
+                        ...styles.paginationBtn,
+                        opacity: currentPage === totalPages ? 0.5 : 1,
+                      }}
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                      }
                       disabled={currentPage === totalPages}
                     >
                       Next
@@ -1059,7 +1159,9 @@ function CustomerInvoices() {
 
         {/* Footer */}
         <div style={styles.footer}>
-          <span style={styles.footerText}>© 2023 Shiv Furniture Portal. All rights reserved.</span>
+          <span style={styles.footerText}>
+            © 2023 Shiv Furniture Portal. All rights reserved.
+          </span>
           <div style={styles.footerLinksBottom}>
             <span style={styles.footerLinkBottom}>Privacy Policy</span>
             <span style={styles.footerLinkBottom}>Terms of Service</span>
@@ -1075,16 +1177,24 @@ function CustomerInvoices() {
     <div style={styles.pageContainer}>
       <div style={{ ...styles.contentWrapper, maxWidth: "1000px" }}>
         {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "24px",
+          }}
+        >
           <div>
-            <h1 style={styles.pageTitle}>{selectedInvoice ? "Edit Invoice" : "Create Invoice"}</h1>
-            <p style={styles.pageSubtitle}>{selectedInvoice?.transactionNumber || "New Customer Invoice"}</p>
+            <h1 style={styles.pageTitle}>
+              {selectedInvoice ? "Edit Invoice" : "Create Invoice"}
+            </h1>
+            <p style={styles.pageSubtitle}>
+              {selectedInvoice?.transactionNumber || "New Customer Invoice"}
+            </p>
           </div>
           <div style={{ display: "flex", gap: "12px" }}>
-            <button
-              style={styles.secondaryBtn}
-              onClick={() => setView("list")}
-            >
+            <button style={styles.secondaryBtn} onClick={() => setView("list")}>
               <ArrowLeft size={16} />
               Back
             </button>
@@ -1104,7 +1214,9 @@ function CustomerInvoices() {
                   <select
                     style={styles.select}
                     value={formData.customerId}
-                    onChange={(e) => setFormData({ ...formData, customerId: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, customerId: e.target.value })
+                    }
                     required
                   >
                     <option value="">Select Customer</option>
@@ -1121,7 +1233,9 @@ function CustomerInvoices() {
                     type="text"
                     style={styles.input}
                     value={formData.reference}
-                    onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, reference: e.target.value })
+                    }
                     placeholder="PO Number, etc."
                   />
                 </div>
@@ -1133,7 +1247,12 @@ function CustomerInvoices() {
                     type="date"
                     style={styles.input}
                     value={formData.transactionDate}
-                    onChange={(e) => setFormData({ ...formData, transactionDate: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        transactionDate: e.target.value,
+                      })
+                    }
                     required
                   />
                 </div>
@@ -1143,7 +1262,9 @@ function CustomerInvoices() {
                     type="date"
                     style={styles.input}
                     value={formData.dueDate}
-                    onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, dueDate: e.target.value })
+                    }
                   />
                 </div>
               </div>
@@ -1152,7 +1273,14 @@ function CustomerInvoices() {
 
           {/* Line Items */}
           <div style={styles.card}>
-            <div style={{ ...styles.cardHeader, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div
+              style={{
+                ...styles.cardHeader,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
               <h3 style={styles.cardTitle}>Line Items</h3>
               <button
                 type="button"
@@ -1168,9 +1296,33 @@ function CustomerInvoices() {
                 <thead>
                   <tr>
                     <th style={styles.tableTh}>Product</th>
-                    <th style={{ ...styles.tableTh, width: "100px", textAlign: "center" }}>Qty</th>
-                    <th style={{ ...styles.tableTh, width: "140px", textAlign: "right" }}>Unit Price</th>
-                    <th style={{ ...styles.tableTh, width: "140px", textAlign: "right" }}>Amount</th>
+                    <th
+                      style={{
+                        ...styles.tableTh,
+                        width: "100px",
+                        textAlign: "center",
+                      }}
+                    >
+                      Qty
+                    </th>
+                    <th
+                      style={{
+                        ...styles.tableTh,
+                        width: "140px",
+                        textAlign: "right",
+                      }}
+                    >
+                      Unit Price
+                    </th>
+                    <th
+                      style={{
+                        ...styles.tableTh,
+                        width: "140px",
+                        textAlign: "right",
+                      }}
+                    >
+                      Amount
+                    </th>
                     <th style={{ ...styles.tableTh, width: "60px" }}></th>
                   </tr>
                 </thead>
@@ -1181,7 +1333,9 @@ function CustomerInvoices() {
                         <select
                           style={{ ...styles.select, width: "100%" }}
                           value={line.productId}
-                          onChange={(e) => handleLineChange(index, "productId", e.target.value)}
+                          onChange={(e) =>
+                            handleLineChange(index, "productId", e.target.value)
+                          }
                           required
                         >
                           <option value="">Select Product</option>
@@ -1195,9 +1349,15 @@ function CustomerInvoices() {
                       <td style={{ ...styles.tableTd, textAlign: "center" }}>
                         <input
                           type="number"
-                          style={{ ...styles.input, width: "80px", textAlign: "center" }}
+                          style={{
+                            ...styles.input,
+                            width: "80px",
+                            textAlign: "center",
+                          }}
                           value={line.quantity}
-                          onChange={(e) => handleLineChange(index, "quantity", e.target.value)}
+                          onChange={(e) =>
+                            handleLineChange(index, "quantity", e.target.value)
+                          }
                           min="1"
                           required
                         />
@@ -1205,21 +1365,38 @@ function CustomerInvoices() {
                       <td style={{ ...styles.tableTd, textAlign: "right" }}>
                         <input
                           type="number"
-                          style={{ ...styles.input, width: "120px", textAlign: "right" }}
+                          style={{
+                            ...styles.input,
+                            width: "120px",
+                            textAlign: "right",
+                          }}
                           value={line.unitPrice}
-                          onChange={(e) => handleLineChange(index, "unitPrice", e.target.value)}
+                          onChange={(e) =>
+                            handleLineChange(index, "unitPrice", e.target.value)
+                          }
                           min="0"
                           step="0.01"
                           required
                         />
                       </td>
-                      <td style={{ ...styles.tableTd, textAlign: "right", fontWeight: "600" }}>
+                      <td
+                        style={{
+                          ...styles.tableTd,
+                          textAlign: "right",
+                          fontWeight: "600",
+                        }}
+                      >
                         {formatCurrency(calculateLineTotal(line))}
                       </td>
                       <td style={styles.tableTd}>
                         <button
                           type="button"
-                          style={{ ...styles.dangerBtn, padding: "8px", backgroundColor: "#FEE2E2", color: "#EF4444" }}
+                          style={{
+                            ...styles.dangerBtn,
+                            padding: "8px",
+                            backgroundColor: "#FEE2E2",
+                            color: "#EF4444",
+                          }}
                           onClick={() => handleRemoveLine(index)}
                         >
                           <Trash2 size={16} />
@@ -1237,15 +1414,21 @@ function CustomerInvoices() {
                 <div style={styles.totalsBox}>
                   <div style={styles.totalsRow}>
                     <span style={styles.totalsLabel}>Subtotal</span>
-                    <span style={styles.totalsValue}>{formatCurrency(calculateSubtotal())}</span>
+                    <span style={styles.totalsValue}>
+                      {formatCurrency(calculateSubtotal())}
+                    </span>
                   </div>
                   <div style={styles.totalsRow}>
                     <span style={styles.totalsLabel}>Tax (GST 18%)</span>
-                    <span style={styles.totalsValue}>{formatCurrency(calculateTax())}</span>
+                    <span style={styles.totalsValue}>
+                      {formatCurrency(calculateTax())}
+                    </span>
                   </div>
                   <div style={styles.totalRow}>
                     <span style={styles.totalLabel}>TOTAL</span>
-                    <span style={styles.totalValue}>{formatCurrency(calculateTotal())}</span>
+                    <span style={styles.totalValue}>
+                      {formatCurrency(calculateTotal())}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1258,7 +1441,11 @@ function CustomerInvoices() {
               <Check size={16} />
               {selectedInvoice ? "Update Invoice" : "Save Draft"}
             </button>
-            <button type="button" style={styles.secondaryBtn} onClick={() => setView("list")}>
+            <button
+              type="button"
+              style={styles.secondaryBtn}
+              onClick={() => setView("list")}
+            >
               Cancel
             </button>
           </div>
@@ -1272,8 +1459,12 @@ function CustomerInvoices() {
     if (!selectedInvoice) return null;
 
     const paymentInfo = calculatePaymentInfo();
-    const canPay = selectedInvoice.status === "CONFIRMED" && paymentInfo.amountDue > 0;
-    const subtotal = selectedInvoice.lines.reduce((sum, line) => sum + Number(line.lineTotal || 0), 0);
+    const canPay =
+      selectedInvoice.status === "CONFIRMED" && paymentInfo.amountDue > 0;
+    const subtotal = selectedInvoice.lines.reduce(
+      (sum, line) => sum + Number(line.lineTotal || 0),
+      0,
+    );
     const tax = subtotal * 0.18;
 
     const getStatusColor = () => {
@@ -1282,14 +1473,18 @@ function CustomerInvoices() {
           return selectedInvoice.paymentStatus === "PAID"
             ? { bg: "#D1FAE5", color: "#065F46", text: "PAID" }
             : selectedInvoice.paymentStatus === "PARTIALLY_PAID"
-            ? { bg: "#FEF3C7", color: "#92400E", text: "PARTIAL" }
-            : { bg: "#FEE2E2", color: "#991B1B", text: "PENDING" };
+              ? { bg: "#FEF3C7", color: "#92400E", text: "PARTIAL" }
+              : { bg: "#FEE2E2", color: "#991B1B", text: "PENDING" };
         case "DRAFT":
           return { bg: "#FEF3C7", color: "#92400E", text: "DRAFT" };
         case "CANCELLED":
           return { bg: "#FEE2E2", color: "#991B1B", text: "CANCELLED" };
         default:
-          return { bg: "#F3F4F6", color: "#374151", text: selectedInvoice.status };
+          return {
+            bg: "#F3F4F6",
+            color: "#374151",
+            text: selectedInvoice.status,
+          };
       }
     };
 
@@ -1301,7 +1496,9 @@ function CustomerInvoices() {
           {/* Invoice Header */}
           <div style={styles.invoiceHeader}>
             <div style={styles.invoiceTitle}>
-              <h1 style={styles.invoiceTitleText}>Invoice {selectedInvoice.transactionNumber}</h1>
+              <h1 style={styles.invoiceTitleText}>
+                Invoice {selectedInvoice.transactionNumber}
+              </h1>
               <span
                 style={{
                   ...styles.statusBadge,
@@ -1314,21 +1511,22 @@ function CustomerInvoices() {
             </div>
             <p style={styles.invoiceSubtitle}>
               Issued on {formatDate(selectedInvoice.transactionDate)}
-              {selectedInvoice.dueDate && ` • Due on ${formatDate(selectedInvoice.dueDate)}`}
+              {selectedInvoice.dueDate &&
+                ` • Due on ${formatDate(selectedInvoice.dueDate)}`}
             </p>
 
             <div style={styles.headerActions}>
-              <button style={styles.secondaryBtn} onClick={() => setView("list")}>
+              <button
+                style={styles.secondaryBtn}
+                onClick={() => setView("list")}
+              >
                 <ArrowLeft size={16} />
                 Back to List
               </button>
               <div style={styles.actionButtons}>
                 {selectedInvoice.status === "DRAFT" && (
                   <>
-                    <button
-                      style={styles.successBtn}
-                      onClick={handleConfirm}
-                    >
+                    <button style={styles.successBtn} onClick={handleConfirm}>
                       <Check size={16} />
                       Confirm
                     </button>
@@ -1341,11 +1539,17 @@ function CustomerInvoices() {
                     </button>
                   </>
                 )}
-                <button style={styles.pdfButton} onClick={() => alert("PDF download coming soon")}>
+                <button
+                  style={styles.pdfButton}
+                  onClick={() => generateInvoicePDF(selectedInvoice)}
+                >
                   <Download size={16} />
                   PDF
                 </button>
-                <button style={styles.printButton} onClick={() => window.print()}>
+                <button
+                  style={styles.printButton}
+                  onClick={() => window.print()}
+                >
                   <Printer size={16} />
                   Print
                 </button>
@@ -1361,18 +1565,26 @@ function CustomerInvoices() {
                   <CreditCard size={24} color="white" />
                 </div>
                 <div style={styles.amountDueInfo}>
-                  <p style={styles.amountDueTitle}>Amount Due: {formatCurrency(paymentInfo.amountDue)}</p>
+                  <p style={styles.amountDueTitle}>
+                    Amount Due: {formatCurrency(paymentInfo.amountDue)}
+                  </p>
                   <p style={styles.amountDueSubtitle}>
                     Please complete the payment
-                    {selectedInvoice.dueDate && ` by ${formatDate(selectedInvoice.dueDate)}`} to avoid a 2% late fee.
+                    {selectedInvoice.dueDate &&
+                      ` by ${formatDate(selectedInvoice.dueDate)}`}{" "}
+                    to avoid a 2% late fee.
                   </p>
                 </div>
               </div>
               <button
                 style={styles.payNowBtn}
                 onClick={handlePay}
-                onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#4338CA")}
-                onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#4F46E5")}
+                onMouseOver={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#4338CA")
+                }
+                onMouseOut={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#4F46E5")
+                }
               >
                 Pay Now
               </button>
@@ -1396,11 +1608,15 @@ function CustomerInvoices() {
                 </div>
                 <div style={styles.invoiceToSection}>
                   <p style={styles.invoiceToLabel}>INVOICE TO</p>
-                  <h3 style={styles.invoiceToName}>{selectedInvoice.customer?.name || "Customer"}</h3>
+                  <h3 style={styles.invoiceToName}>
+                    {selectedInvoice.customer?.name || "Customer"}
+                  </h3>
                   <p style={styles.invoiceToAddress}>
-                    {selectedInvoice.customer?.address || "Address not provided"}
+                    {selectedInvoice.customer?.address ||
+                      "Address not provided"}
                     <br />
-                    {selectedInvoice.customer?.phone && selectedInvoice.customer.phone}
+                    {selectedInvoice.customer?.phone &&
+                      selectedInvoice.customer.phone}
                   </p>
                 </div>
               </div>
@@ -1409,19 +1625,27 @@ function CustomerInvoices() {
               <div style={styles.invoiceMeta}>
                 <div style={styles.metaItem}>
                   <span style={styles.metaLabel}>Invoice ID</span>
-                  <span style={styles.metaValue}>{selectedInvoice.transactionNumber}</span>
+                  <span style={styles.metaValue}>
+                    {selectedInvoice.transactionNumber}
+                  </span>
                 </div>
                 <div style={styles.metaItem}>
                   <span style={styles.metaLabel}>Issue Date</span>
-                  <span style={styles.metaValue}>{formatDate(selectedInvoice.transactionDate)}</span>
+                  <span style={styles.metaValue}>
+                    {formatDate(selectedInvoice.transactionDate)}
+                  </span>
                 </div>
                 <div style={styles.metaItem}>
                   <span style={styles.metaLabel}>Due Date</span>
-                  <span style={styles.metaValue}>{formatDate(selectedInvoice.dueDate)}</span>
+                  <span style={styles.metaValue}>
+                    {formatDate(selectedInvoice.dueDate)}
+                  </span>
                 </div>
                 <div style={styles.metaItem}>
                   <span style={styles.metaLabel}>P.O. Number</span>
-                  <span style={styles.metaValue}>{selectedInvoice.reference || "-"}</span>
+                  <span style={styles.metaValue}>
+                    {selectedInvoice.reference || "-"}
+                  </span>
                 </div>
               </div>
 
@@ -1430,21 +1654,59 @@ function CustomerInvoices() {
                 <thead>
                   <tr>
                     <th style={styles.tableTh}>Description</th>
-                    <th style={{ ...styles.tableTh, textAlign: "center", width: "80px" }}>Qty</th>
-                    <th style={{ ...styles.tableTh, textAlign: "right", width: "120px" }}>Price</th>
-                    <th style={{ ...styles.tableTh, textAlign: "right", width: "120px" }}>Amount</th>
+                    <th
+                      style={{
+                        ...styles.tableTh,
+                        textAlign: "center",
+                        width: "80px",
+                      }}
+                    >
+                      Qty
+                    </th>
+                    <th
+                      style={{
+                        ...styles.tableTh,
+                        textAlign: "right",
+                        width: "120px",
+                      }}
+                    >
+                      Price
+                    </th>
+                    <th
+                      style={{
+                        ...styles.tableTh,
+                        textAlign: "right",
+                        width: "120px",
+                      }}
+                    >
+                      Amount
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {selectedInvoice.lines.map((line, index) => (
                     <tr key={line.id || index}>
                       <td style={styles.tableTd}>
-                        <div style={styles.productName}>{line.product?.name || "Product"}</div>
-                        <div style={styles.productDescription}>{line.product?.description || ""}</div>
+                        <div style={styles.productName}>
+                          {line.product?.name || "Product"}
+                        </div>
+                        <div style={styles.productDescription}>
+                          {line.product?.description || ""}
+                        </div>
                       </td>
-                      <td style={{ ...styles.tableTd, textAlign: "center" }}>{Number(line.quantity)}</td>
-                      <td style={{ ...styles.tableTd, textAlign: "right" }}>{formatCurrency(line.unitPrice)}</td>
-                      <td style={{ ...styles.tableTd, textAlign: "right", fontWeight: "500" }}>
+                      <td style={{ ...styles.tableTd, textAlign: "center" }}>
+                        {Number(line.quantity)}
+                      </td>
+                      <td style={{ ...styles.tableTd, textAlign: "right" }}>
+                        {formatCurrency(line.unitPrice)}
+                      </td>
+                      <td
+                        style={{
+                          ...styles.tableTd,
+                          textAlign: "right",
+                          fontWeight: "500",
+                        }}
+                      >
                         {formatCurrency(line.lineTotal)}
                       </td>
                     </tr>
@@ -1457,21 +1719,29 @@ function CustomerInvoices() {
                 <div style={styles.totalsBox}>
                   <div style={styles.totalsRow}>
                     <span style={styles.totalsLabel}>Subtotal</span>
-                    <span style={styles.totalsValue}>{formatCurrency(subtotal)}</span>
+                    <span style={styles.totalsValue}>
+                      {formatCurrency(subtotal)}
+                    </span>
                   </div>
                   <div style={styles.totalsRow}>
                     <span style={styles.totalsLabel}>Tax (GST 18%)</span>
-                    <span style={styles.totalsValue}>{formatCurrency(tax)}</span>
+                    <span style={styles.totalsValue}>
+                      {formatCurrency(tax)}
+                    </span>
                   </div>
                   {paymentInfo.paidAmount > 0 && (
                     <div style={styles.totalsRow}>
                       <span style={styles.totalsLabel}>Discount (Loyalty)</span>
-                      <span style={styles.discountValue}>-{formatCurrency(paymentInfo.paidAmount)}</span>
+                      <span style={styles.discountValue}>
+                        -{formatCurrency(paymentInfo.paidAmount)}
+                      </span>
                     </div>
                   )}
                   <div style={styles.totalRow}>
                     <span style={styles.totalLabel}>TOTAL</span>
-                    <span style={styles.totalValue}>{formatCurrency(selectedInvoice.totalAmount)}</span>
+                    <span style={styles.totalValue}>
+                      {formatCurrency(selectedInvoice.totalAmount)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1480,9 +1750,10 @@ function CustomerInvoices() {
               <div style={styles.termsSection}>
                 <h4 style={styles.termsTitle}>TERMS & CONDITIONS</h4>
                 <p style={styles.termsText}>
-                  1. Goods once sold will not be taken back or exchanged. 2. 50% advance for custom furniture orders. 3. Warranty
-                  covers manufacturing defects only for a period of 12 months. 4. Please mention the Invoice ID in all payment
-                  communications.
+                  1. Goods once sold will not be taken back or exchanged. 2. 50%
+                  advance for custom furniture orders. 3. Warranty covers
+                  manufacturing defects only for a period of 12 months. 4.
+                  Please mention the Invoice ID in all payment communications.
                 </p>
               </div>
             </div>
@@ -1499,17 +1770,16 @@ function CustomerInvoices() {
                   billing@shivfurniture.com
                 </span>
               </div>
-              <span style={styles.thankYouText}>Thank you for choosing Shiv Furniture!</span>
+              <span style={styles.thankYouText}>
+                Thank you for choosing Shiv Furniture!
+              </span>
             </div>
           </div>
 
           {/* Delete button for Draft */}
           {selectedInvoice.status === "DRAFT" && (
             <div style={{ marginTop: "24px", display: "flex", gap: "12px" }}>
-              <button
-                style={styles.dangerBtn}
-                onClick={handleDelete}
-              >
+              <button style={styles.dangerBtn} onClick={handleDelete}>
                 <Trash2 size={16} />
                 Delete Invoice
               </button>
@@ -1518,7 +1788,9 @@ function CustomerInvoices() {
 
           {/* Footer */}
           <div style={styles.footer}>
-            <span style={styles.footerText}>© 2023 Shiv Furniture Portal. All rights reserved.</span>
+            <span style={styles.footerText}>
+              © 2023 Shiv Furniture Portal. All rights reserved.
+            </span>
             <div style={styles.footerLinksBottom}>
               <span style={styles.footerLinkBottom}>Privacy Policy</span>
               <span style={styles.footerLinkBottom}>Terms of Service</span>

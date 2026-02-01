@@ -14,6 +14,7 @@ import {
   Package,
 } from "lucide-react";
 import { transactionsApi } from "../../services/api";
+import { generateInvoicePDF } from "../../services/pdfGenerator";
 
 export default function CustomerInvoiceDetail() {
   const { id } = useParams();
@@ -160,7 +161,10 @@ export default function CustomerInvoiceDetail() {
               <Printer size={18} />
               Print
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+            <button
+              onClick={() => generateInvoicePDF(invoice)}
+              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+            >
               <Download size={18} />
               Download PDF
             </button>

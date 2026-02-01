@@ -32,6 +32,7 @@ import {
   analyticalAccountsApi,
   paymentsApi,
 } from "../services/api";
+import { generateBillPDF } from "../services/pdfGenerator";
 
 function VendorBills() {
   const navigate = useNavigate();
@@ -1840,7 +1841,7 @@ function VendorBills() {
               Print Bill
             </button>
             <button
-              onClick={() => alert("Download PDF feature coming soon")}
+              onClick={() => generateBillPDF(selectedBill)}
               style={{
                 display: "flex",
                 alignItems: "center",

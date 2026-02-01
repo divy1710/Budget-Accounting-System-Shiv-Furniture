@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { paymentsApi, contactsApi } from "../services/api";
+import { generatePaymentReceiptPDF } from "../services/pdfGenerator";
 
 function InvoicePayments() {
   const navigate = useNavigate();
@@ -458,6 +459,18 @@ function InvoicePayments() {
             </button>
           </div>
           <div className="flex gap-3">
+            <button
+              onClick={() => generatePaymentReceiptPDF(selectedPayment)}
+              className="px-5 py-2.5 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-600 border border-gray-600 transition-all"
+            >
+              📄 PDF
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="px-5 py-2.5 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-600 border border-gray-600 transition-all"
+            >
+              🖨️ Print
+            </button>
             <button
               onClick={() => navigate("/")}
               className="px-5 py-2.5 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-600 border border-gray-600 transition-all"
