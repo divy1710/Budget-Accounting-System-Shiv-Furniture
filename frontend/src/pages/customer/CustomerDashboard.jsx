@@ -15,6 +15,7 @@ import {
   Calendar,
   TrendingDown,
   AlertCircle,
+  LogOut,
 } from "lucide-react";
 
 export default function CustomerDashboard() {
@@ -61,7 +62,10 @@ export default function CustomerDashboard() {
       setInvoices(confirmedInvoices);
 
       // Calculate stats
-      const now = new Date();
+      // Get today's date at midnight for accurate comparison
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
       let totalOutstanding = 0;
       let overdueAmount = 0;
       let nextDue = null;
@@ -74,7 +78,10 @@ export default function CustomerDashboard() {
 
           if (inv.dueDate) {
             const dueDate = new Date(inv.dueDate);
-            if (dueDate < now) {
+            dueDate.setHours(0, 0, 0, 0);
+
+            // Invoice is overdue if due date is before today
+            if (dueDate < today) {
               overdueAmount += amountDue;
             } else if (!nextDue || dueDate < nextDue) {
               nextDue = dueDate;
@@ -112,6 +119,11 @@ export default function CustomerDashboard() {
     });
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("customerPortal");
+    navigate("/login");
+  };
+
   const calculateAmountDue = (invoice) => {
     const total = Number(invoice.totalAmount || 0);
     const paid = Number(invoice.paidAmount || 0);
@@ -127,9 +139,11 @@ export default function CustomerDashboard() {
 
   const isOverdue = (invoice) => {
     if (!invoice.dueDate) return false;
-    return (
-      new Date(invoice.dueDate) < new Date() && calculateAmountDue(invoice) > 0
-    );
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dueDate = new Date(invoice.dueDate);
+    dueDate.setHours(0, 0, 0, 0);
+    return dueDate < today && calculateAmountDue(invoice) > 0;
   };
 
   // Razorpay Payment Handler
@@ -293,6 +307,20 @@ export default function CustomerDashboard() {
       fontWeight: "500",
       color: "white",
       cursor: "pointer",
+    },
+    logoutBtn: {
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+      padding: "10px 20px",
+      backgroundColor: "white",
+      border: "1px solid #E2E8F0",
+      borderRadius: "8px",
+      fontSize: "14px",
+      fontWeight: "500",
+      color: "#DC2626",
+      cursor: "pointer",
+      transition: "all 0.2s",
     },
     // Stats Cards
     statsGrid: {
@@ -647,15 +675,15 @@ export default function CustomerDashboard() {
             </p>
           </div>
           <div style={styles.headerButtons}>
-            <button style={styles.statementBtn}>
-              <Download size={16} />
-              Statement
-            </button>
             <button
               style={styles.newRequestBtn}
               onClick={() => navigate("/customer/invoices")}
             >
               + New Request
+            </button>
+            <button style={styles.logoutBtn} onClick={handleLogout}>
+              <LogOut size={16} />
+              Logout
             </button>
           </div>
         </div>
